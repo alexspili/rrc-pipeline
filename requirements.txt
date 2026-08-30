@@ -6,6 +6,10 @@ anthropic>=1.0          # page classification (Haiku), extraction (Sonnet)
 # Test runner
 pytest>=8
 
+# Tooling. openpyxl builds the labelling workbook (scripts/make_label_workbook.py);
+# nothing in pipeline/ imports it and the tests skip if it is absent.
+openpyxl>=3.1
+
 # System dependency, NOT pip-installable: poppler (pdfimages, pdftotext).
 #   macOS: brew install poppler
 # pipeline/render.py preflights for it and fails with this hint.
