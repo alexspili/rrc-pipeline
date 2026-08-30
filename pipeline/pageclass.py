@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+"""Page-class domain for the RRC classifier: types, guards, ids, census.
+
+Pure. No I/O, no network, no model calls. Everything here is tier-1 testable,
+which is the point: the rules that matter are cheap to check and cannot be
+skipped by a slow test nobody runs.
+
+Two orthogonal axes describe a page. `form_class` says which form family it
+belongs to; `part` says which page of that form it is. They are separate
+because a completion report is not contiguous in the file: in record 1501720
+the G-1 face is page 2 and its Section III is page 5, with a P-4 between.
+Flattening the two into one label would have to re-encode the section axis
+for every form family that has sections.
+
+Two defects are enforced here as constructor invariants rather than as prose
+in docs/modules:
+  DEFECTS #1  an oversize page is never extraction-eligible.
+  DEFECTS #2  document counts and record counts are different numbers, and
+              the census does not derive a permit count from either.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from collections import Counter
+from dataclasses import dataclass, field
+from enum import Enum
+
+
+# ------------------------------------------------------------------- vocabulary
+
+class PageClass(str, Enum):
+    # Tier A. Extraction targets: full schema, Sonnet.
+    G1 = "g1"                                # gas well completion report
+    W2 = "w2"                                # oil well completion report
+
+    # Tier B. Identity-bearing: identity fields only, cross-form disagreement.
+    W3 = "w3"                                # plugging record
+    P4 = "p4"                                # producer's transporter auth
+    G5 = "g5"                                # gas well classification
+    W15 = "w15"                              # cementing report
+    P17 = "p17"                              # permit application
+    W4_FAMILY = "w4_family"                  # W-4 / W-4A / W-5 / W-6
+    WS1_SW1 = "ws1_sw1"                      # pre-1970 form families
+
+    # Tier C. Census only: never extracted.
+    LETTER_MEMO = "letter_memo"
+    PLAT_MAP = "plat_map"
+    SCHEMATIC = "schematic"
+    CARD_HANDWRITTEN = "card_handwritten"    # separator, ID, X-reference cards
+    BLANK_OR_ARTIFACT = "blank_or_artifact"
+    OTHER_FORM = "other_form"                # an RRC form not enumerated above
+    OTHER_NONFORM = "other_nonform"          # not a form at all
+
+
+EXTRACTION_TARGETS = frozenset({PageClass.G1, PageClass.W2})
+
+IDENTITY_BEARING = frozenset({
+    PageClass.W3, PageClass.P4, PageClass.G5, PageClass.W15,
+    PageClass.P17, PageClass.W4_FAMILY, PageClass.WS1_SW1,
+})
+
+# Classes where `part` is meaningful. A plat has no Section III.
+FORM_CLASSES = EXTRACTION_TARGETS | IDENTITY_BEARING
+
+CENSUS_ONLY = frozenset(PageClass) - FORM_CLASSES
+
+
+class Part(str, Enum):
+    FACE = "face"
+    SEC_II = "sec_ii"
+    SEC_III = "sec_iii"
+    CONTINUATION = "continuation"
+    BACK_INSTRUCTIONS = "back_instructions"  # pre-printed reverse; carries no data
+    UNKNOWN = "unknown"
+
+
+# Parts that carry filled-in data. A printed form back does not, and looks
+# like a face to a classifier: same header, same form number, no values.
+DATA_BEARING_PARTS = frozenset({
+    Part.FACE, Part.SEC_II, Part.SEC_III, Part.CONTINUATION,
+})
+
+
+class Orientation(str, Enum):
+    UP = "up"
+    CW90 = "cw90"
+    CCW90 = "ccw90"
+    DOWN = "down"
+
+
+class Confidence(str, Enum):
+    """Coarse and self-reported. Not a probability. Its meaning comes from the
+    measured accuracy-per-bucket table on the labeled set, not from the model
+    saying "high".
+    """
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+# --------------------------------------------------------------- geometry guard
+
+#: Above this aspect ratio a long-edge downscale crushes the short edge.
+#: The corpus tops out at 3.71 (11264x3040, record 1495350). DEFECTS #1's
+#: original page was 1010x15167, ratio 15.0.
+MAX_ASPECT_RATIO = 2.0
+
+#: Anthropic downscales images whose long edge exceeds this.
+DEFAULT_LONG_EDGE = 1568
+
+
+def is_oversize(width: int, height: int) -> bool:
+    """True when the page is not page-shaped. Orientation must not matter."""
+    if width <= 0 or height <= 0:
+        raise ValueError(f"bad page dimensions: {width}x{height}")
+    return max(width, height) / min(width, height) > MAX_ASPECT_RATIO
+
+
+def downscale_target(width: int, height: int,
+                     cap: int = DEFAULT_LONG_EDGE) -> tuple[int, int]:
+    """Target size with the long edge capped. Never upscales: enlarging a
+    bilevel scan invents ink that was never on the paper.
+    """
+    if width <= 0 or height <= 0:
+        raise ValueError(f"bad page dimensions: {width}x{height}")
+    longest = max(width, height)
+    if longest <= cap:
+        return width, height
+    scale = cap / longest
+    return max(1, round(width * scale)), max(1, round(height * scale))
+
+
+def estimate_image_tokens(width: int, height: int) -> int:
+    """Published width*height/750 rule of thumb.
+
+    UNVERIFIED against the API. scripts/probe_haiku.py replaces this with a
+    measured count_tokens figure before any cost number reaches prose
+    (CLAUDE.md rule 8: numbers are measured or absent).
+    """
+    return round(width * height / 750)
+
+
+# -------------------------------------------------------------------- page ids
+
+#: record id, file index within that record's manifest entry, 1-based page.
+_PAGE_ID = re.compile(r"^(\d+)-(\d+)-([1-9]\d*)$")
+
+
+def page_id(record_id: str, file_index: int, page: int) -> str:
+    """Batch API custom_id for one page.
+
+    File index rather than file name: names run ~30 characters
+    ("Neubus0_17-1501720_3833992.pdf") and the custom_id budget is 64. The
+    index resolves against the manifest's file order, which is stable.
+    """
+    made = f"{record_id}-{file_index}-{page}"
+    if not _PAGE_ID.match(made):
+        raise ValueError(f"cannot form a page id from {record_id!r}, "
+                         f"{file_index!r}, {page!r}")
+    if len(made) > 64:
+        raise ValueError(f"page id exceeds the 64-char custom_id limit: {made}")
+    return made
+
+
+def parse_page_id(value: str) -> tuple[str, int, int]:
+    m = _PAGE_ID.match(value or "")
+    if not m:
+        raise ValueError(f"not a page id: {value!r}")
+    return m.group(1), int(m.group(2)), int(m.group(3))
+
+
+# ------------------------------------------------------------------- cache keys
+
+def prompt_hash(prompt: str) -> str:
+    return hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
+
+
+def cache_key(doc_hash: str, prompt_hash_: str) -> str:
+    """CLAUDE.md rule 7: never re-infer an unchanged (document, prompt) pair.
+
+    Our own result cache. Not Anthropic prompt caching, which will not engage
+    on a prompt this short.
+    """
+    return f"{doc_hash}.{prompt_hash_}"
+
+
+# ------------------------------------------------------------------- page label
+
+@dataclass(frozen=True)
+class PageLabel:
+    record_id: str
+    file_index: int
+    page: int
+    form_class: PageClass
+    part: Part | None
+    orientation: Orientation
+    confidence: Confidence
+    alt_class: PageClass | None = None
+    oversize: bool = False
+
+    def __post_init__(self) -> None:
+        if self.form_class in FORM_CLASSES and self.part is None:
+            raise ValueError(
+                f"{self.form_class.value} is a form class; part is required")
+        if self.form_class not in FORM_CLASSES and self.part is not None:
+            raise ValueError(
+                f"{self.form_class.value} has no sections; part must be None, "
+                f"got {self.part.value}")
+
+    @property
+    def identity_bearing(self) -> bool:
+        return self.form_class in IDENTITY_BEARING
+
+    @property
+    def extraction_eligible(self) -> bool:
+        """DEFECTS #1 as an invariant: a page whose short edge was crushed by
+        the downscale is refused until tiling exists. A printed form back is
+        refused because it holds no values to extract.
+        """
+        return (self.form_class in EXTRACTION_TARGETS
+                and not self.oversize
+                and self.part in DATA_BEARING_PARTS)
+
+    @property
+    def id(self) -> str:
+        return page_id(self.record_id, self.file_index, self.page)
+
+
+# -------------------------------------------------------------- model response
+
+_REQUIRED = ("form_class", "part", "orientation", "confidence", "alt_class")
+
+
+def _enum(cls, value, field_name: str):
+    if value is None:
+        return None
+    try:
+        return cls(value)
+    except ValueError:
+        allowed = ", ".join(m.value for m in cls)
+        raise ValueError(
+            f"{field_name}={value!r} is not one of: {allowed}") from None
+
+
+def _json_object(body: str) -> dict:
+    """Accept a bare JSON object, or one fenced or prefaced with prose. Accept
+    nothing else. Repairing malformed output hides a prompt problem.
+    """
+    text = (body or "").strip()
+    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.S)
+    if fence:
+        text = fence.group(1)
+    elif not text.startswith("{"):
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end <= start:
+            raise ValueError(f"no JSON object in response: {body[:120]!r}")
+        text = text[start:end + 1]
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"malformed JSON in response: {exc}") from None
+    if not isinstance(parsed, dict):
+        raise ValueError(f"expected a JSON object, got {type(parsed).__name__}")
+    return parsed
+
+
+def parse_response(body: str, *, record_id: str, file_index: int,
+                   page: int, oversize: bool) -> PageLabel:
+    """Strict. An out-of-enum class is a prompt or model problem and surfaces
+    as one; it does not quietly become other_nonform.
+    """
+    obj = _json_object(body)
+    missing = [k for k in _REQUIRED if k not in obj]
+    if missing:
+        raise ValueError(f"response missing {', '.join(missing)}")
+    return PageLabel(
+        record_id=record_id, file_index=file_index, page=page,
+        form_class=_enum(PageClass, obj["form_class"], "form_class"),
+        part=_enum(Part, obj["part"], "part"),
+        orientation=_enum(Orientation, obj["orientation"], "orientation"),
+        confidence=_enum(Confidence, obj["confidence"], "confidence"),
+        alt_class=_enum(PageClass, obj["alt_class"], "alt_class"),
+        oversize=oversize)
+
+
+# ----------------------------------------------------------------- census
+
+@dataclass(frozen=True)
+class Census:
+    """Deliberately has no `permits` field. DEFECTS #2: amended filings mean a
+    record can hold the same permit twice as two documents, and nothing in the
+    page labels distinguishes an amendment from an original. Page counts and
+    record counts are derivable; a permit count is not.
+    """
+    total_pages: int = 0
+    total_records: int = 0
+    pages_by_class: Counter = field(default_factory=Counter)
+    records_by_class: Counter = field(default_factory=Counter)
+    records_with_completion_report: int = 0
+    oversize_pages: int = 0
+    extraction_eligible_pages: int = 0
+    pages_by_confidence: Counter = field(default_factory=Counter)
+
+
+def aggregate(labels) -> Census:
+    """Union over records, never a sum over classes: a record holding both a
+    G-1 and a W-2 is one record with a completion report, not two.
+    """
+    pages_by_class: Counter = Counter()
+    pages_by_confidence: Counter = Counter()
+    classes_per_record: dict[str, set[PageClass]] = {}
+    oversize = eligible = total = 0
+
+    for label in labels:
+        total += 1
+        pages_by_class[label.form_class] += 1
+        pages_by_confidence[label.confidence] += 1
+        oversize += bool(label.oversize)
+        eligible += bool(label.extraction_eligible)
+        classes_per_record.setdefault(label.record_id, set()).add(label.form_class)
+
+    records_by_class: Counter = Counter()
+    for classes in classes_per_record.values():
+        for cls in classes:
+            records_by_class[cls] += 1
+
+    with_report = sum(
+        1 for classes in classes_per_record.values()
+        if classes & EXTRACTION_TARGETS)
+
+    return Census(
+        total_pages=total,
+        total_records=len(classes_per_record),
+        pages_by_class=pages_by_class,
+        records_by_class=records_by_class,
+        records_with_completion_report=with_report,
+        oversize_pages=oversize,
+        extraction_eligible_pages=eligible,
+        pages_by_confidence=pages_by_confidence)
