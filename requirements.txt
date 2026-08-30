@@ -1,1 +1,11 @@
-requests>=2.31
+# Runtime
+requests>=2.31          # fetch.py
+pillow>=10              # page image downscale (bilevel -> grayscale, area filter)
+anthropic>=1.0          # page classification (Haiku), extraction (Sonnet)
+
+# Test runner
+pytest>=8
+
+# System dependency, NOT pip-installable: poppler (pdfimages, pdftotext).
+#   macOS: brew install poppler
+# pipeline/render.py preflights for it and fails with this hint.

@@ -1,7 +1,11 @@
+# Use the venv interpreter, not whatever python3 is on PATH: the deps in
+# requirements.txt are installed there (see SETUP.md step 5).
+PY := .venv/bin/python
+
 .PHONY: fetch test eval
 fetch:
-@set -a; . ./.env; set +a; python3 fetch.py $(ARGS)
+@set -a; . ./.env; set +a; $(PY) fetch.py $(ARGS)
 test:
-python3 -m pytest tests/tier1 tests/tier2 -q
+$(PY) -m pytest tests/tier1 tests/tier2 -q
 eval:
-python3 -m pytest tests/tier3 -q
+$(PY) -m pytest tests/tier3 -q
