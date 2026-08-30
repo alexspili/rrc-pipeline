@@ -63,7 +63,7 @@ def test_records_with_no_completion_report_are_counted():
     """
     census = pc.aggregate([
         _label("1493418", 0, 1, pc.PageClass.WS1_SW1, pc.Part.FACE),
-        _label("1494070", 0, 1, pc.PageClass.CARD_HANDWRITTEN),
+        _label("1494070", 0, 1, pc.PageClass.SEPARATOR_CARD),
     ])
     assert census.records_with_completion_report == 0
     assert census.total_records == 2

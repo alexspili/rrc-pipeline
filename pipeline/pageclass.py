@@ -57,7 +57,7 @@ class PageClass(str, Enum):
     LETTER_MEMO = "letter_memo"
     PLAT_MAP = "plat_map"
     SCHEMATIC = "schematic"
-    CARD_HANDWRITTEN = "card_handwritten"    # separator, ID, X-reference cards
+    SEPARATOR_CARD = "separator_card"        # ID / separator / X-reference cards
     BLANK_OR_ARTIFACT = "blank_or_artifact"
     OTHER_FORM = "other_form"                # an RRC form not enumerated above
     OTHER_NONFORM = "other_nonform"          # not a form at all
@@ -97,8 +97,9 @@ GLOSS = {
     PageClass.LETTER_MEMO: "a letter, memo or printed email",
     PageClass.PLAT_MAP: "a survey plat or map",
     PageClass.SCHEMATIC: "a wellbore diagram",
-    PageClass.CARD_HANDWRITTEN: "a small handwritten separator, ID or "
-                                "cross-reference card",
+    PageClass.SEPARATOR_CARD: "a card or slip opening or dividing a file: a "
+                              "large ID or file number, a separator, or a "
+                              "cross-reference. Handwritten, stencilled or typed",
     PageClass.BLANK_OR_ARTIFACT: "a blank page or a scan with no content",
     PageClass.OTHER_FORM: "an RRC form whose number is not listed above",
     PageClass.OTHER_NONFORM: "not a form and none of the above",

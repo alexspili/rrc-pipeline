@@ -131,7 +131,7 @@ caused a scan of the whole corpus to report P-5 on 373 pages when it is on 147.
 | `letter_memo` | Any correspondence: a typed 1960s letter, an internal RRC memo, a printed email thread |
 | `plat_map` | A survey plat or map. Tract boundaries, a north arrow, bearings and distances |
 | `schematic` | A wellbore diagram. Vertical section, casing strings, depths down the side |
-| `card_handwritten` | A small handwritten card: separator, ID, or X-reference. These three are merged deliberately |
+| `separator_card` | A card or slip that opens or divides a file: a large ID or file number, a separator, or a cross-reference. Handwritten, stencilled or typed. See below |
 | `blank_or_artifact` | A blank page, or a scan with no content. Expect white paper inside a heavy black scanner border, sometimes with hole punches |
 | `other_form` | A recognisable RRC form whose number is not in the list above |
 | `other_nonform` | Not a form and not any of the above |
@@ -218,8 +218,16 @@ cross-form checker is meant to catch. Read the form number twice here.
 number in the header.
 
 **A form covered in handwriting is still that form.** Many faces are filled in
-entirely by hand. Handwriting does not make a page `card_handwritten`; that
-class is for small cards with no form structure at all.
+entirely by hand. Handwriting does not make a page `separator_card`; that class
+is for cards with no form structure at all.
+
+**The big-number first page is a `separator_card`.** Roughly half the files
+open with one: a card carrying nothing but a large ID or file number, either
+handwritten (`35157`) or stencilled (`ID # 110431`), usually with a microfilm
+frame number printed small down one edge. They are almost always **sideways**,
+so set `orientation` to `cw90` or `ccw90` rather than `up`. Leave `part` blank,
+since this is a census-only class. The class was named `card_handwritten` until
+one of these turned out to be stencilled.
 
 **"A-38" on a plat is not a form.** In a Texas land description `A-nn` is the
 abstract number of an original survey: "L. McLaughlin A-38", "ELIZA PEAKS
