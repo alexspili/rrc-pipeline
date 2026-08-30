@@ -42,14 +42,21 @@ MAX_TOKENS = 256          # the response is one small JSON object
 
 
 def _vocabulary() -> str:
+    """The class list with one line of gloss each.
+
+    A bare token like `l1` or `gt1` tells the model nothing about what to look
+    for. Naming the form costs a few hundred tokens on a prompt that is nowhere
+    near any cache threshold anyway.
+    """
     lines = []
     for title, classes in (
         ("completion reports, the extraction targets", pc.EXTRACTION_TARGETS),
         ("other RRC forms that carry well identity", pc.IDENTITY_BEARING),
         ("everything else", pc.CENSUS_ONLY),
     ):
-        names = "  ".join(sorted(c.value for c in classes))
-        lines.append(f"{title}:\n  {names}")
+        lines.append(f"{title}:")
+        for cls in sorted(classes, key=lambda c: c.value):
+            lines.append(f"  {cls.value:<18} {pc.GLOSS[cls]}")
     return "\n".join(lines)
 
 

@@ -37,9 +37,14 @@ class PageClass(str, Enum):
     W2 = "w2"                                # oil well completion report
 
     # Tier B. Identity-bearing: identity fields only, cross-form disagreement.
+    W1 = "w1"                                # drilling permit application
     W3 = "w3"                                # plugging record
     P4 = "p4"                                # producer's transporter auth
+    P5 = "p5"                                # operator organization report
     G5 = "g5"                                # gas well classification
+    GT1 = "gt1"                              # gas tax / gatherer's report
+    L1 = "l1"                                # gas gathering and load report
+    W12 = "w12"                              # directional survey / inclination
     W15 = "w15"                              # cementing report
     P17 = "p17"                              # permit application
     W4_FAMILY = "w4_family"                  # W-4 / W-4A / W-5 / W-6
@@ -58,9 +63,67 @@ class PageClass(str, Enum):
 EXTRACTION_TARGETS = frozenset({PageClass.G1, PageClass.W2})
 
 IDENTITY_BEARING = frozenset({
-    PageClass.W3, PageClass.P4, PageClass.G5, PageClass.W15,
+    PageClass.W1, PageClass.W3, PageClass.P4, PageClass.P5, PageClass.G5,
+    PageClass.GT1, PageClass.L1, PageClass.W12, PageClass.W15,
     PageClass.P17, PageClass.W4_FAMILY, PageClass.WS1_SW1,
 })
+
+#: One line per class, for the classifier prompt and the labelling protocol.
+#: A bare token like "l1" tells a model nothing; the form's actual name does.
+GLOSS = {
+    PageClass.G1: "Form G-1, gas well completion or recompletion report",
+    PageClass.W2: "Form W-2, oil well completion or recompletion report",
+    PageClass.W1: "Form W-1, application for permit to drill",
+    PageClass.W3: "Form W-3, plugging record",
+    PageClass.P4: "Form P-4, producer's transportation authority",
+    PageClass.P5: "Form P-5, operator organization report",
+    PageClass.G5: "Form G-5, gas well classification report",
+    PageClass.GT1: "Form GT-1, gas gatherer or tax report",
+    PageClass.L1: "Form L-1, gas gathering and load report",
+    PageClass.W12: "Form W-12, directional survey or record of inclination",
+    PageClass.W15: "Form W-15, cementing report",
+    PageClass.P17: "Form P-17, permit application",
+    PageClass.W4_FAMILY: "Form W-4, W-4A, W-5 or W-6",
+    PageClass.WS1_SW1: "Form WS-1 well status report, or Form SW-1",
+    PageClass.LETTER_MEMO: "a letter, memo or printed email",
+    PageClass.PLAT_MAP: "a survey plat or map",
+    PageClass.SCHEMATIC: "a wellbore diagram",
+    PageClass.CARD_HANDWRITTEN: "a small handwritten separator, ID or "
+                                "cross-reference card",
+    PageClass.BLANK_OR_ARTIFACT: "a blank page or a scan with no content",
+    PageClass.OTHER_FORM: "an RRC form whose number is not listed above",
+    PageClass.OTHER_NONFORM: "not a form and none of the above",
+}
+
+#: Form numbers as printed, mapped to the class that owns them. Several forms
+#: share a class; most classes own exactly one number.
+FORM_TOKENS = {
+    "G-1": PageClass.G1,
+    "W-2": PageClass.W2,
+    "W-1": PageClass.W1, "W-1A": PageClass.W1, "W-1C": PageClass.W1,
+    "W-3": PageClass.W3,
+    "P-4": PageClass.P4,
+    "P-5": PageClass.P5,
+    "G-5": PageClass.G5,
+    "GT-1": PageClass.GT1,
+    "L-1": PageClass.L1,
+    "W-12": PageClass.W12,
+    "W-15": PageClass.W15,
+    "P-17": PageClass.P17,
+    "W-4": PageClass.W4_FAMILY, "W-4A": PageClass.W4_FAMILY,
+    "W-5": PageClass.W4_FAMILY, "W-6": PageClass.W4_FAMILY,
+    "WS-1": PageClass.WS1_SW1, "SW-1": PageClass.WS1_SW1,
+}
+
+
+def form_token_class(token: str) -> "PageClass | None":
+    """The class owning a printed form number, or None if the taxonomy has no
+    answer for it.
+
+    Used by the tier-2 coverage test, which fails when a form appearing on
+    more than 20 pages of the corpus lands here as None (DEFECTS #10).
+    """
+    return FORM_TOKENS.get((token or "").upper().strip())
 
 # Classes where `part` is meaningful. A plat has no Section III.
 FORM_CLASSES = EXTRACTION_TARGETS | IDENTITY_BEARING
