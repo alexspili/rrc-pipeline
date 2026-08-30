@@ -84,6 +84,10 @@ hook will (correctly) block them.
     mkdir -p pipeline docs/recon docs/modules tests/tier1 tests/tier2 tests/tier3 tests/fixtures viewer
     printf 'NEUBUS_TOKEN=paste-daily-from-devtools\n' > .env.example
     printf 'requests>=2.31\n' > requirements.txt
+    # NOTE: recipe lines below MUST begin with a literal tab. A plain heredoc
+    # does not strip this document's own indentation, so copy-pasting this
+    # block writes spaces and every target dies with "missing separator".
+    # See DEFECTS #8. Verify with: grep -P '^\t' Makefile
     cat > Makefile <<'EOF'
     .PHONY: fetch test eval
     fetch:
