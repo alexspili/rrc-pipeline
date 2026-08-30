@@ -38,7 +38,11 @@ SEED = 20260830
 SIZE = 60
 THUMB_CAP = 1400          # readable enough to find a form number by eye
 
-COLUMNS = ["page_id", "record_id", "file_index", "page",
+# seq leads so that sorting thumbnails by filename gives exactly the CSV row
+# order. Page ids sort as strings, which puts page 12 before page 3, and a
+# row-misaligned spreadsheet silently corrupts every label after the first
+# mismatch.
+COLUMNS = ["seq", "page_id", "record_id", "file_index", "page",
            "native_w", "native_h", "oversize",
            "form_class", "part", "orientation", "note"]
 
@@ -70,9 +74,12 @@ def main() -> None:
     sample = sorted(random.Random(args.seed).sample(pages, args.size))
     THUMBS.mkdir(parents=True, exist_ok=True)
 
+    for stale in THUMBS.glob("*.png"):
+        stale.unlink()
+
     rows = []
     dims_cache: dict[Path, list[tuple[int, int]]] = {}
-    for record_id, file_index, page, name in sample:
+    for seq, (record_id, file_index, page, name) in enumerate(sample, 1):
         pdf = ROOT / "data" / "raw" / record_id / name
         if pdf not in dims_cache:
             dims_cache[pdf] = render.page_dimensions(pdf)
@@ -81,16 +88,16 @@ def main() -> None:
 
         if not args.no_thumbs:
             png, _ = render.render_page_png(pdf, page, cap=THUMB_CAP)
-            (THUMBS / f"{page_id}.png").write_bytes(png)
+            (THUMBS / f"{seq:02d}_{page_id}.png").write_bytes(png)
 
         rows.append({
-            "page_id": page_id, "record_id": record_id,
+            "seq": seq, "page_id": page_id, "record_id": record_id,
             "file_index": file_index, "page": page,
             "native_w": width, "native_h": height,
             "oversize": "yes" if pc.is_oversize(width, height) else "no",
             "form_class": "", "part": "", "orientation": "", "note": "",
         })
-        print(f"  {page_id}  {width}x{height}")
+        print(f"  {seq:>3}  {page_id}  {width}x{height}")
 
     TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
     with TEMPLATE.open("w", newline="") as fh:
