@@ -25,9 +25,14 @@ CACHE = ROOT / "data" / "form_headers.json"
 
 #: A form on more than this many pages is a class the taxonomy owes an answer
 #: for. Below it, `other_form` is doing its job rather than hiding a hole.
-#: The five missing families were on 27 to 154 pages; the largest legitimately
-#: unclassed token sits at 15.
-COVERAGE_THRESHOLD = 20
+#:
+#: This is a judgement about when a bucket stops being a diagnostic and starts
+#: being a hiding place, not a number fitted to whatever the corpus currently
+#: contains. It was 20 and that was the wrong kind of number: it had been set
+#: just above P-12, a real form nobody had checked, and what it was really
+#: suppressing was the survey-abstract bug in DEFECTS #11. With the scanner
+#: fixed it filters forms rather than noise, so it can sit lower.
+COVERAGE_THRESHOLD = 10
 
 
 def _counts():

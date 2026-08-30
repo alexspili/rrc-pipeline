@@ -106,7 +106,10 @@ disagreement checker as well as the census.
 | `w3` | Plugging record | `FORM W-3`. Plugging, perforation intervals |
 | `p4` | Producer's transportation authority | `FORM P-4`. Gatherer / purchaser / nominator table |
 | `p5` | Operator organization report | `FORM P-5`. **See the P-4 trap below** |
+| `p12` | Certificate of pooling authority | `P-12`, often "Revised 05/2001" |
+| `p15` | Statement of productivity of acreage assigned to proration units | `Form P-15 (5-5-71)` |
 | `g5` | Gas well classification report | `FORM G-5`. Not a G-1, see hard cases |
+| `g6` | Application for exception to statewide rules 28 and/or 32 | `Form G-6` |
 | `gt1` | Gas gatherer or tax report | `FORM GT-1` |
 | `l1` | Gas gathering and load report | `FORM L-1` |
 | `w12` | Directional survey, record of inclination | `FORM W-12`. Depth / course-length tables |
@@ -137,9 +140,10 @@ caused a scan of the whole corpus to report P-5 on 373 pages when it is on 147.
 above, or a form page that does not identify itself. Write the number in `note`
 if you can read one.
 
-The list above was itself corrected before you started: five families (W-1,
-P-5, L-1, GT-1, W-12) occurring on roughly 400 pages were missing from it, and
-would have landed here. See DEFECTS #10. So if one number keeps recurring in
+The list above was corrected twice before you started. Five families (W-1,
+P-5, L-1, GT-1, W-12) on roughly 400 pages were missing from it (DEFECTS #10),
+and then P-12, P-15 and G-6 were found hiding under a coverage threshold that
+had been fitted to the data rather than reasoned about (DEFECTS #11). So if one number keeps recurring in
 `other_form`, the class list is still wrong and that is exactly what this class
 is for. Say so rather than forcing pages into a neighbouring class.
 
@@ -216,6 +220,12 @@ number in the header.
 **A form covered in handwriting is still that form.** Many faces are filled in
 entirely by hand. Handwriting does not make a page `card_handwritten`; that
 class is for small cards with no form structure at all.
+
+**"A-38" on a plat is not a form.** In a Texas land description `A-nn` is the
+abstract number of an original survey: "L. McLaughlin A-38", "ELIZA PEAKS
+A-92". Plats carry several each. A page covered in them is a `plat_map`, and
+the corpus scanner had to be taught this after inventing fifteen form families
+out of them (DEFECTS #11).
 
 **Heavy black borders and speckle are normal.** These are microfilm scans. A
 page is not `blank_or_artifact` because it is dirty, only because it carries

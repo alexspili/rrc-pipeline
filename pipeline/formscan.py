@@ -27,6 +27,14 @@ from pathlib import Path
 #: trailing letter. W-2, P-17, W-4A, GT-1.
 FORM_TOKEN = re.compile(r"\b(?:FORM\s+)?([A-Z]{1,2}-\d{1,2}[A-Z]?)\b")
 
+#: Prefixes that are never RRC form numbers, however form-shaped they look.
+#:
+#: "A-38" is the abstract number of an original Texas land survey, as in
+#: "L. McLaughlin A-38, Robertson County". Plats carry several each, and this
+#: corpus is full of plats, so without this the scanner reports a dozen form
+#: families that do not exist (DEFECTS #11).
+NOT_FORM_PREFIXES = frozenset({"A"})
+
 #: Wording that makes the following token a reference to a different form.
 #:
 #: The leading \b is load-bearing. Without it the bare "on" alternative also
@@ -56,10 +64,13 @@ def header_tokens(text: str, header_chars: int = HEADER_CHARS) -> set[str]:
     head = text[:header_chars]
     found = set()
     for match in FORM_TOKEN.finditer(head):
+        token = match.group(1).upper()
+        if token.split("-", 1)[0] in NOT_FORM_PREFIXES:
+            continue
         preceding = head[max(0, match.start() - LOOKBACK_CHARS):match.start()]
         if CROSS_REFERENCE.search(preceding):
             continue
-        found.add(match.group(1).upper())
+        found.add(token)
     return found
 
 

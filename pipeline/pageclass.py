@@ -41,7 +41,10 @@ class PageClass(str, Enum):
     W3 = "w3"                                # plugging record
     P4 = "p4"                                # producer's transporter auth
     P5 = "p5"                                # operator organization report
+    P12 = "p12"                              # certificate of pooling authority
+    P15 = "p15"                              # statement of productivity of acreage
     G5 = "g5"                                # gas well classification
+    G6 = "g6"                                # exception to statewide rules 28/32
     GT1 = "gt1"                              # gas tax / gatherer's report
     L1 = "l1"                                # gas gathering and load report
     W12 = "w12"                              # directional survey / inclination
@@ -63,9 +66,10 @@ class PageClass(str, Enum):
 EXTRACTION_TARGETS = frozenset({PageClass.G1, PageClass.W2})
 
 IDENTITY_BEARING = frozenset({
-    PageClass.W1, PageClass.W3, PageClass.P4, PageClass.P5, PageClass.G5,
-    PageClass.GT1, PageClass.L1, PageClass.W12, PageClass.W15,
-    PageClass.P17, PageClass.W4_FAMILY, PageClass.WS1_SW1,
+    PageClass.W1, PageClass.W3, PageClass.P4, PageClass.P5, PageClass.P12,
+    PageClass.P15, PageClass.G5, PageClass.G6, PageClass.GT1, PageClass.L1,
+    PageClass.W12, PageClass.W15, PageClass.P17, PageClass.W4_FAMILY,
+    PageClass.WS1_SW1,
 })
 
 #: One line per class, for the classifier prompt and the labelling protocol.
@@ -77,7 +81,12 @@ GLOSS = {
     PageClass.W3: "Form W-3, plugging record",
     PageClass.P4: "Form P-4, producer's transportation authority",
     PageClass.P5: "Form P-5, operator organization report",
+    PageClass.P12: "Form P-12, certificate of pooling authority",
+    PageClass.P15: "Form P-15, statement of productivity of acreage assigned "
+                   "to proration units",
     PageClass.G5: "Form G-5, gas well classification report",
+    PageClass.G6: "Form G-6, application for exception to statewide rules "
+                  "28 and/or 32",
     PageClass.GT1: "Form GT-1, gas gatherer or tax report",
     PageClass.L1: "Form L-1, gas gathering and load report",
     PageClass.W12: "Form W-12, directional survey or record of inclination",
@@ -104,7 +113,10 @@ FORM_TOKENS = {
     "W-3": PageClass.W3,
     "P-4": PageClass.P4,
     "P-5": PageClass.P5,
+    "P-12": PageClass.P12,
+    "P-15": PageClass.P15,
     "G-5": PageClass.G5,
+    "G-6": PageClass.G6,
     "GT-1": PageClass.GT1,
     "L-1": PageClass.L1,
     "W-12": PageClass.W12,
@@ -120,10 +132,12 @@ def form_token_class(token: str) -> "PageClass | None":
     """The class owning a printed form number, or None if the taxonomy has no
     answer for it.
 
-    Used by the tier-2 coverage test, which fails when a form appearing on
-    more than 20 pages of the corpus lands here as None (DEFECTS #10).
+    Used by the tier-2 coverage test, which fails when a form common enough in
+    the corpus lands here as None (DEFECTS #10). That test owns the threshold;
+    this function only answers the question.
     """
     return FORM_TOKENS.get((token or "").upper().strip())
+
 
 # Classes where `part` is meaningful. A plat has no Section III.
 FORM_CLASSES = EXTRACTION_TARGETS | IDENTITY_BEARING
