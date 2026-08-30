@@ -44,6 +44,27 @@ entirely and the rows are short.
 Three columns: `form_class`, `part`, `orientation`. A fourth, `note`, is free
 text. Everything else is pre-filled and should not be touched.
 
+## The one rule that overrides every other
+
+**Label only from what is visible on the page in front of you.** Do not open
+the neighbouring pages to work out which form a page belongs to, even when you
+already know, and even when it is obvious.
+
+The classifier is given one page and no neighbours. A label derived from
+context it cannot see is a label it can never produce, and an accuracy figure
+measured against such labels is a ceiling no model could reach. The number
+stops meaning anything.
+
+So: a page that does not identify its own form is `other_form` with
+`part: unknown`, however certain you are that it is the second sheet of the G-1
+three pages back. If you want that on the record, write it in `note`, which is
+not scored.
+
+This costs some accuracy on paper and buys the only thing that matters, which
+is that the measurement is real. It also tells us something worth knowing: how
+many pages in this corpus are unidentifiable in isolation is itself a result,
+and it decides whether page grouping needs to be a separate pass.
+
 ## Procedure, per page
 
 **1. Find the form number.** Top right of the page, almost always, with a
@@ -59,7 +80,11 @@ survives.
 **3. If it is not a form at all,** it is correspondence, a drawing, a card, a
 blank, or something else. See the census-only classes.
 
-**4. Then set `part`,** and **5. then `orientation`.**
+**4. If it is plainly a form but names no number and no title you recognise,**
+that is `other_form`, `part: unknown`. See the rule above: do not go looking in
+the neighbouring pages.
+
+**5. Then set `part`,** and **6. then `orientation`.**
 
 ## form_class
 
@@ -72,15 +97,29 @@ blank, or something else. See the census-only classes.
 
 ### Identity-bearing forms
 
+These carry operator, lease and well identity, so they feed the cross-form
+disagreement checker as well as the census.
+
 | Value | What it is | How you know |
 |---|---|---|
+| `w1` | Application for permit to drill | `FORM W-1`, `W-1A`, `W-1C` |
 | `w3` | Plugging record | `FORM W-3`. Plugging, perforation intervals |
-| `p4` | Producer's transportation authority and certificate of compliance | `FORM P-4`. Gatherer / purchaser / nominator table |
-| `g5` | Gas well classification report | `FORM G-5`. **Not a G-1.** See hard cases |
-| `w15` | Cementing report | `FORM W-15`. Casing cementing data, sacks of cement, slurry volume |
-| `p17` | Permit application | `FORM P-17`. Typed applicant half, handwritten RRC-USE-ONLY block, checkbox dense |
+| `p4` | Producer's transportation authority | `FORM P-4`. Gatherer / purchaser / nominator table |
+| `p5` | Operator organization report | `FORM P-5`. **See the P-4 trap below** |
+| `g5` | Gas well classification report | `FORM G-5`. Not a G-1, see hard cases |
+| `gt1` | Gas gatherer or tax report | `FORM GT-1` |
+| `l1` | Gas gathering and load report | `FORM L-1` |
+| `w12` | Directional survey, record of inclination | `FORM W-12`. Depth / course-length tables |
+| `w15` | Cementing report | `FORM W-15`. Sacks of cement, slurry volume |
+| `p17` | Permit application | `FORM P-17`. Typed applicant half, handwritten RRC block |
 | `w4_family` | W-4, W-4A, W-5, W-6 | Any of those four numbers |
-| `ws1_sw1` | The pre-1970 families: WS-1 well status report, SW-1 transport authority | `FORM WS-1` or `FORM SW-1`, revision dates in the 1950s and 60s, often notarised |
+| `ws1_sw1` | Pre-1970 families: WS-1 well status, SW-1 | `FORM WS-1` / `FORM SW-1`, 1950s-60s revision dates, often notarised |
+
+**The P-4 trap.** A P-4 face carries, in its third field, "Operator name
+exactly as shown on Form P-5 Organization Report". That is a P-4 mentioning a
+P-5, not a P-5. The form number that counts is the one printed alone in the
+top-right corner, not one embedded in a field label. This single sentence
+caused a scan of the whole corpus to report P-5 on 373 pages when it is on 147.
 
 ### Census only
 
@@ -94,12 +133,15 @@ blank, or something else. See the census-only classes.
 | `other_form` | A recognisable RRC form whose number is not in the list above |
 | `other_nonform` | Not a form and not any of the above |
 
-**`other_form` matters.** The corpus contains forms outside this taxonomy: a
-P-6 turns up by name in the correspondence, and there will be others. Use
-`other_form` and write the form number in `note` if you can read it. If one
-number shows up repeatedly, my class list is wrong and that is exactly what
-this class exists to reveal. Do not force such a page into a neighbouring
-class.
+**`other_form` matters.** It means an RRC form whose number is not in the list
+above, or a form page that does not identify itself. Write the number in `note`
+if you can read one.
+
+The list above was itself corrected before you started: five families (W-1,
+P-5, L-1, GT-1, W-12) occurring on roughly 400 pages were missing from it, and
+would have landed here. See DEFECTS #10. So if one number keeps recurring in
+`other_form`, the class list is still wrong and that is exactly what this class
+is for. Say so rather than forcing pages into a neighbouring class.
 
 ## part
 
@@ -117,21 +159,32 @@ class: a plat has no Section III, and the validator rejects a part on one.
 
 ### back_instructions, read this carefully
 
-A form's reverse carries the same header and form number as its face and
-contains **no filled-in values**: solid printed instruction paragraphs,
-numbered notes, sometimes a continuation table that is entirely empty.
+My first version of this section was wrong in both directions. Corrected from
+a scan of the OCR text of all 3,689 pages (DEFECTS #10).
 
-**The trap:** the phrase "READ INSTRUCTIONS ON BACK" appears on the *face*, not
-the back. So does "MUST COMPLY WITH THE INSTRUCTIONS ON REVERSE SIDE HEREOF"
-and "- OVER -". Those phrases are pointers printed on the front. Seeing one
-means you are looking at a face.
+**A back announces itself.** Real reverses in this corpus say so, in words:
 
-The test is filled-in values. A face has an operator name, dates, depths,
-handwriting, a signature. A back has none, only pre-printed text.
+    Side 2 ... Form W-4A ... SKETCH OF MULTIPLE COMPLETION
+    Instructions Form G-5: Gas Well Classification Report. This report shall...
+    RECORD OF INCLINATION (Continued from reverse side)
 
-This distinction is the single most consequential one in the set. A back
-mislabelled as a face teaches the classifier to send data-free pages to the
-extractor, which then invents values with high confidence.
+251 pages, 6.8% of the corpus, carry a marker in that family. If a page does
+not say something of that kind, it is very probably not a back.
+
+**The pointer phrases are printed on the FACE.** "READ INSTRUCTIONS ON BACK",
+"- OVER -", "MUST COMPLY WITH THE INSTRUCTIONS ON REVERSE SIDE HEREOF". Seeing
+one of these means you are looking at the front. 486 pages carry such a
+pointer, and they are faces.
+
+**Instructions and continuations are different.** Only prose telling you how to
+file the form is `back_instructions`. A reverse carrying a data table, like
+`RECORD OF INCLINATION (Continued from reverse side)` with depths and course
+lengths filled in, is a `continuation`. Calling that one `back_instructions`
+would mark real data as not worth extracting.
+
+**A sheet is not reliably two pages.** Of the 486 pages that point to a reverse
+side, only 107 (22%) are actually followed by one in the scan. Imaging was
+inconsistent and mostly front-only. Never assume page N+1 belongs to page N.
 
 ## orientation
 

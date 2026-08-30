@@ -47,6 +47,25 @@ R3. A page whose part is `back_instructions` is never extraction-eligible.
     failure in this stage.
     Pinned by: tests/tier1/test_pageclass.py::test_printed_form_back_is_never_extraction_eligible
 
+R11. The class list is checked against the corpus, not against recon.
+    Origin: DEFECTS #10. The taxonomy was written from the eight documents read
+    during recon and missed W-1, P-5, L-1, GT-1 and W-12, five families on
+    roughly 400 pages across more than half the records. A tier-2 test scans
+    every page's OCR header region and fails if a form appearing on more than
+    20 pages has no `PageClass`. Recon documents are selected for being
+    interesting, which is the opposite of representative.
+    Pinned by: tests/tier2/test_taxonomy_coverage.py::test_every_common_form_has_a_class
+
+R12. `back_instructions` is for prose, `continuation` is for data.
+    Origin: DEFECTS #10. A reverse carrying a filled-in table (`RECORD OF
+    INCLINATION (Continued from reverse side)`) is a continuation and stays
+    extraction-eligible. Only pre-printed filing instructions are
+    `back_instructions`. Conflating them discards real data under R3.
+    Real backs self-identify; the pointer phrases ("READ INSTRUCTIONS ON
+    BACK", "- OVER -") are printed on the face, and only 107 of 486 pages
+    carrying such a pointer are followed by an imaged reverse.
+    Pinned by: pending, the labelled set's part distribution.
+
 R4. Never coerce an out-of-vocabulary class into `other_nonform`.
     An unknown value is a prompt or model problem and must surface as one.
     Silently bucketing it hides taxonomy gaps in exactly the class that exists
