@@ -1,0 +1,21 @@
+#!/bin/sh
+# Block obvious secrets and bulk data from ever being committed.
+fail=0
+# 1. JWTs / bearer tokens in staged content
+if git diff --cached -U0 | grep -qE 'eyJ[A-Za-z0-9_-]{20,}'; then
+  echo "BLOCKED: staged content contains a JWT-shaped string."; fail=1
+fi
+# 2. .env or anything under data/ staged despite gitignore
+if git diff --cached --name-only | grep -qE '^(\.env$|data/)'; then
+  echo "BLOCKED: .env or data/ is staged."; fail=1
+fi
+# 3. fetched-record PDFs anywhere
+if git diff --cached --name-only | grep -qE 'Neubus0_.*\.pdf$'; then
+  echo "BLOCKED: raw fetched PDF staged (contains personal data)."; fail=1
+fi
+# 4. any staged file over 5 MB
+for f in $(git diff --cached --name-only); do
+  [ -f "$f" ] && [ "$(wc -c < "$f")" -gt 5000000 ] && {
+    echo "BLOCKED: $f is >5MB."; fail=1; }
+done
+exit $fail
