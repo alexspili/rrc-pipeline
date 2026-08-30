@@ -20,6 +20,7 @@ import csv
 import json
 import sys
 from collections import Counter, defaultdict
+from math import comb
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -165,21 +166,73 @@ def score(rows, truth):
     }
 
 
+def arm_cost(rows) -> tuple[float, int]:
+    """Dollars per page at list price, from the tokens this run actually used.
+
+    Measured, not assumed. DEFECTS #9 and classify.md R10: the text arm is the
+    cheapest across the corpus and was the most expensive of the three on the
+    first page probed.
+    """
+    priced = [r for r in rows if r.get("input_tokens")]
+    if not priced:
+        return 0.0, 0
+    spend = sum(r["input_tokens"] * classify.PRICE_IN
+                + r["output_tokens"] * classify.PRICE_OUT
+                for r in priced) / 1e6
+    return spend / len(priced), len(priced)
+
+
+def mcnemar(rows_a, rows_b, truth) -> dict:
+    """Paired comparison of two arms scored on the same pages.
+
+    An unpaired +/-6pp error bar is the wrong instrument here: both arms see
+    identical pages, so what matters is the pages where they disagree. b and c
+    are the discordant counts, and under the null they split evenly, which is
+    an exact binomial test on b + c trials.
+    """
+    by_id_a = {r["page_id"]: r for r in rows_a}
+    by_id_b = {r["page_id"]: r for r in rows_b}
+    b = c = n = 0
+    for page_id, row in truth.items():
+        ra, rb = by_id_a.get(page_id), by_id_b.get(page_id)
+        if not ra or not rb or not ra.get("form_class") or not rb.get("form_class"):
+            continue
+        n += 1
+        actual = row["form_class"].strip()
+        a_ok, b_ok = ra["form_class"] == actual, rb["form_class"] == actual
+        b += a_ok and not b_ok
+        c += b_ok and not a_ok
+
+    discordant = b + c
+    if discordant == 0:
+        p_value = 1.0
+    else:
+        tail = max(b, c)
+        p_value = min(1.0, 2 * sum(comb(discordant, k)
+                                   for k in range(tail, discordant + 1))
+                      / 2 ** discordant)
+    return {"n": n, "b": b, "c": c, "discordant": discordant,
+            "difference": (c - b) / n if n else 0.0, "p_value": p_value}
+
+
+def rank_by_cost(all_rows) -> list[str]:
+    return sorted(all_rows, key=lambda arm: arm_cost(all_rows[arm])[0])
+
+
 def report(all_rows, scores, truth):
     print("\n" + "=" * 72)
     print("COST, over the pages actually run")
     print("=" * 72)
     print(f"{'arm':<14}{'pages':>7}{'in tok':>12}{'out':>8}"
-          f"{'$ this run':>13}{'$ census est':>15}")
-    for arm, rows in all_rows.items():
-        live = [r for r in rows if not r.get("cached") and r.get("input_tokens")]
+          f"{'$/page':>11}{'$ census est':>15}")
+    for arm in rank_by_cost(all_rows):
+        rows = all_rows[arm]
         tok_in = sum(r["input_tokens"] for r in rows if r.get("input_tokens"))
         tok_out = sum(r["output_tokens"] for r in rows if r.get("output_tokens"))
-        n = len([r for r in rows if r.get("input_tokens")]) or 1
-        spend = (tok_in * classify.PRICE_IN + tok_out * classify.PRICE_OUT) / 1e6
-        per_page = spend / n
+        per_page, priced = arm_cost(rows)
         print(f"{arm:<14}{len(rows):>7}{tok_in:>12,}{tok_out:>8,}"
-              f"{spend:>13.3f}{per_page * 3689 / 2:>15.2f}")
+              f"{per_page:>11.5f}{per_page * 3689 / 2:>15.2f}")
+    print("  ordered cheapest first, by measured cost per page (R10)")
     print("  census estimate is batched, at 50% of list price")
 
     if not scores:
@@ -222,22 +275,55 @@ def report(all_rows, scores, truth):
                   f"  (alt: {alt}){flag}")
 
     print("\n" + "=" * 72)
-    print("DECISION, by the rule recorded before the run")
+    print("DECISION, by the rule recorded in docs/modules/classify.md")
+    print("  before any arm was run: the cheapest arm wins unless a costlier")
+    print("  one beats it by more than 5 percentage points on the labelled set.")
     print("=" * 72)
-    order = ["text", "vision_1000", "vision_1568"]      # cheapest first
-    ranked = [a for a in order if a in scores]
+
+    ranked = [a for a in rank_by_cost(all_rows) if a in scores]
     cheapest = ranked[0]
     base = scores[cheapest]["class_accuracy"]
-    winner, margin = cheapest, 0.0
+    print(f"  cheapest arm, measured: {cheapest} "
+          f"({arm_cost(all_rows[cheapest])[0]:.5f}/page, "
+          f"{base:.1%} on {scores[cheapest]['n']} labelled pages)\n")
+
+    winner, margin, contested = cheapest, 0.0, []
     for arm in ranked[1:]:
         gain = scores[arm]["class_accuracy"] - base
-        verdict = "beats it" if gain > 0.05 else "inside 5pp, a tie"
-        print(f"  {arm} vs {cheapest}: {gain:+.1%}  {verdict}")
-        if gain > 0.05 and gain > margin:
+        paired = mcnemar(all_rows[cheapest], all_rows[arm], truth)
+        clears = gain > 0.05
+        distinguishable = paired["p_value"] < 0.05
+
+        print(f"  {arm} vs {cheapest}: {gain:+.1%}")
+        print(f"    5pp rule:  {'clears' if clears else 'inside 5pp, a tie'}")
+        print(f"    paired:    {paired['discordant']} pages disagree "
+              f"({paired['b']} only {cheapest} right, "
+              f"{paired['c']} only {arm} right), p={paired['p_value']:.3f}")
+        print(f"    {'distinguishable at n=60' if distinguishable else 'NOT distinguishable at n=60'}")
+
+        if clears and not distinguishable:
+            contested.append((arm, gain, paired))
+        if clears and gain > margin:
             winner, margin = arm, gain
+        print()
+
+    for arm, gain, paired in contested:
+        print("  " + "!" * 60)
+        print(f"  FLAG: {arm} clears the 5pp threshold at {gain:+.1%}, but the")
+        print(f"  paired test cannot separate it from {cheapest} at this sample")
+        print(f"  size (p={paired['p_value']:.3f}, only {paired['discordant']} "
+              "pages disagree). The gap is inside the")
+        print("  error bar that n=60 can resolve. Per the standing instruction,")
+        print("  the cheapest arm wins and this is not overridable on a hunch.")
+        print("  To settle it, enlarge the labelled set; do not eyeball it.")
+        print("  " + "!" * 60)
+        winner = cheapest
+
     print(f"\n  WINNER: {winner}")
-    if winner == cheapest:
+    if winner == cheapest and not contested:
         print("  No costlier arm cleared 5pp, so cost decides.")
+    elif winner == cheapest and contested:
+        print("  Cheapest by rule: no gap survived the paired test.")
 
 
 def spot_checks(all_rows):

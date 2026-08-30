@@ -203,3 +203,47 @@ gains a warning at the heredoc. Pinned by a tier-2 test that parses the
 Makefile and asserts every recipe line begins with a tab, so the next
 regeneration from a document cannot reintroduce it silently.
 **Pin:** tests/tier2/test_repo_consistency.py::test_makefile_recipe_lines_begin_with_tab
+
+---
+
+## #9 — 2026-08-30 — A 400 about my own schema was read as a fact about the vendor
+
+**What happened:** The bounded probe (scripts/probe_haiku.py, written to satisfy
+CLAUDE.md rule 2 before wiring `output_config.format`) reported:
+
+    REJECTED: BadRequestError: 400 output_config.format.schema: Invalid
+    schema: Enum value 'face' does not match declared type '["string","null"]'
+    Keep the plain-JSON parser. Do not wire structured outputs.
+
+That conclusion was about to be written into docs/modules/classify.md as a
+finding about claude-haiku-4-5. It is false. Structured outputs work on that
+model. The 400 was about the schema *I* sent: a nullable enum spelled as
+`{"type": ["string","null"], "enum": [...values..., null]}`, which is invalid
+JSON Schema regardless of vendor. Respelled as an `anyOf` union of a string
+enum and null, the same request is accepted and returns
+`{"form_class": "g1", "part": "face", ...}` on the first try.
+
+**Why it was wrong:** The probe had one branch for "accepted" and one for
+"anything raised", so every failure mode collapsed into a single verdict about
+the feature. A malformed request and an unsupported feature are different
+findings and the probe could not tell them apart. The error message named the
+cause in plain words and was skimmed for its status code.
+
+**Relation to #3 and #5:** same shape, opposite direction. #3 read a response
+echo as evidence that a parameter bound. This read an error about our input as
+evidence about their behaviour. Both are conclusions drawn from a signal that
+was never about the thing being concluded.
+
+**Cost:** none. The probe is two calls and cost under a cent, which is the
+entire argument for bounded probes: the error was caught by re-reading it, one
+minute after it was produced, before anything depended on it.
+
+**Resolution:** The probe now tries both valid spellings of a nullable enum
+and reports which one the server accepts, so "rejected" can only mean every
+well-formed variant was refused. Structured outputs are recorded as available
+and verified, but are NOT wired for the arm competition: constrained decoding
+cannot emit an out-of-vocabulary class, which is the signal R4 exists to
+surface. The decision for the census run is deferred to the measured
+parse-failure rate from the smoke run.
+**Pin:** the probe itself, scripts/probe_haiku.py, which now distinguishes a
+rejected schema from a rejected feature.

@@ -72,24 +72,65 @@ R7. Document counts, record counts and entity counts are different numbers.
     Pinned by: tests/tier1/test_census.py::test_amended_filings_are_documents_not_entities
 
 R8. A parameter value not observed from a working client gets a bounded probe
-    before it reaches a corpus run.
-    Origin: DEFECTS #3, applied to our own vendor rather than Neubus.
-    `output_config.format` is unproven on Haiku here, so the default path is
-    plain JSON parsing and structured outputs are wired only after
-    scripts/probe_haiku.py passes.
-    Pinned by: pending, the probe result recorded below.
+    before it reaches a corpus run, and the probe must be able to tell a
+    rejected request from a rejected feature.
+    Origin: DEFECTS #3, applied to our own vendor rather than Neubus, then
+    DEFECTS #9 when the probe's own error handling collapsed both failure
+    modes into one verdict.
+    Pinned by: scripts/probe_haiku.py, which tries every valid spelling.
+
+R9. Structured outputs stay off for the arm competition.
+    They are verified working (see Probe results). Constrained decoding cannot
+    emit an out-of-vocabulary class, so it removes exactly the signal R4 exists
+    to surface, on the one run where the taxonomy is still being tested. The
+    decision for the census is deferred to the measured parse-failure rate from
+    the smoke run: near zero and the plain path keeps the diagnostic, material
+    and structured outputs get wired.
+    Pinned by: pending, parse-failure rate from the smoke run.
+
+R10. Rank arms by measured cost, never by assumed cost.
+    The text arm is cheapest across the corpus and was more expensive than
+    vision_1568 on the first page probed. The selection rule below reads
+    "cheapest", and cheapest is whatever the run measured.
+    Pinned by: tests/tier2/test_arms.py::test_arms_are_ranked_by_measured_cost
 
 ## Probe results
 
-Not yet run. ANTHROPIC_API_KEY is absent from .env; CLAUDE.md's Environment
-section says it belongs there.
+Run 2026-08-30 against record 1501720 page 2, the G-1 face of the demo
+document. Two calls, under a cent. See DEFECTS #9 for the first run's wrong
+conclusion.
 
 | Probe | Result |
 |---|---|
-| `output_config.format` accepted on claude-haiku-4-5 | pending |
-| Measured image tokens, 1568px long edge | pending |
-| Measured image tokens, 1000px long edge | pending |
-| Estimate (w*h/750) it replaces | 2,540 / 1,033 |
+| `output_config.format` on claude-haiku-4-5 | **accepted**, with a nullable enum spelled as an `anyOf` union. Rejected when spelled `{"type": ["string","null"], "enum": [...]}`, which is invalid JSON Schema and says nothing about the model. |
+| Control call, plain JSON path | correct: `g1 / face / up / high`, 2,078 in, 54 out, $0.00235 |
+
+Measured request tokens, whole request including the ~500-token system prompt:
+
+| Arm | Sent | Counted | Image alone | w*h/750 estimate | Corpus, standard / batched |
+|---|---|---|---|---|---|
+| vision_1000 | 775x1000 | 1,546 | ~1,046 | 1,033 | $5.70 / $2.85 |
+| vision_1568 | 1215x1568 | 2,078 | ~1,578 | 2,540 | $7.67 / $3.83 |
+| text | n/a | 2,115 (this page) | n/a | n/a | $3.88 / $1.94 |
+
+Three things the measurement changed:
+
+1. **The 1568 arm is not a 1568 arm.** 1,578 image tokens is about 1.18
+   megapixels, so the server downsized 1215x1568 (1.9 MP) to roughly a 1,220px
+   long edge before charging for it. The estimate overshot by 38% because it
+   assumed the long-edge cap binds; the area cap binds first. The two vision
+   arms are really 1000 against ~1220, a narrower comparison than intended.
+   Sending 1568 uploads roughly twice the bytes for identical model input
+   (453 KB against 245 KB per page), which matters for a 3,689-page batch and
+   not at all for cost. Left as it is for the competition rather than changed
+   mid-experiment; if this arm wins, the census sends the area cap instead.
+2. **The estimate was good at 1000 and bad at 1568**, for the same reason.
+   estimate_image_tokens keeps its UNVERIFIED marker for anything above about
+   1.15 MP.
+3. **The text arm is cheapest corpus-wide but not on every page.** 8,126,697
+   OCR characters across 249 files, mean 2,274 per page. On this page the text
+   arm cost more than vision_1568, because a dense G-1 face carries more text
+   than a plat. Cost ordering must be measured per run, never assumed.
 
 ## RETIRED
 

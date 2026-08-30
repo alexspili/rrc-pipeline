@@ -38,22 +38,43 @@ from pipeline import render     # noqa: E402
 PDF = ROOT / "data" / "raw" / "1501720" / "Neubus0_17-1501720_3833992.pdf"
 PAGE = 2
 
-SCHEMA = {
-    "type": "object",
-    "properties": {
-        "form_class": {"type": "string",
-                       "enum": [c.value for c in pc.PageClass]},
-        "part": {"type": ["string", "null"],
-                 "enum": [p.value for p in pc.Part] + [None]},
-        "orientation": {"type": "string",
-                        "enum": [o.value for o in pc.Orientation]},
-        "confidence": {"type": "string",
-                       "enum": [c.value for c in pc.Confidence]},
-        "alt_class": {"type": ["string", "null"],
-                      "enum": [c.value for c in pc.PageClass] + [None]},
-    },
-    "required": ["form_class", "part", "orientation", "confidence", "alt_class"],
-    "additionalProperties": False,
+def _enum(values):
+    return {"type": "string", "enum": list(values)}
+
+
+def _nullable_enum_anyof(values):
+    """Nullable enum, spelled as a union of two schemas."""
+    return {"anyOf": [{"type": "string", "enum": list(values)}, {"type": "null"}]}
+
+
+def _nullable_enum_bare(values):
+    """Nullable enum, spelled as a bare enum containing null. JSON Schema
+    allows `enum` without `type`; the first attempt got this wrong by pairing
+    a two-type `type` with an enum, which is invalid and says nothing about
+    whether the feature works.
+    """
+    return {"enum": list(values) + [None]}
+
+
+def schema(nullable):
+    return {
+        "type": "object",
+        "properties": {
+            "form_class": _enum(c.value for c in pc.PageClass),
+            "part": nullable([p.value for p in pc.Part]),
+            "orientation": _enum(o.value for o in pc.Orientation),
+            "confidence": _enum(c.value for c in pc.Confidence),
+            "alt_class": nullable([c.value for c in pc.PageClass]),
+        },
+        "required": ["form_class", "part", "orientation", "confidence",
+                     "alt_class"],
+        "additionalProperties": False,
+    }
+
+
+SCHEMA_VARIANTS = {
+    "anyOf union": _nullable_enum_anyof,
+    "bare enum with null": _nullable_enum_bare,
 }
 
 
@@ -94,21 +115,26 @@ def main() -> None:
     content, _ = classify.build_content("vision_1568", PDF, PAGE)
     message = [{"role": "user", "content": content}]
 
-    structured_ok, structured_body = False, ""
-    try:
-        response = api.messages.create(
-            model=classify.MODEL, max_tokens=classify.MAX_TOKENS,
-            system=classify.SYSTEM, messages=message,
-            output_config={"format": {"type": "json_schema", "schema": SCHEMA}})
-        structured_body = "".join(
-            b.text for b in response.content if b.type == "text")
-        json.loads(structured_body)
-        structured_ok = True
-        print("  ACCEPTED. Response parsed as JSON without prose stripping.")
-        print(f"    {structured_body}")
-    except Exception as exc:                      # noqa: BLE001 - probe
-        print(f"  REJECTED: {type(exc).__name__}: {str(exc)[:400]}")
-        print("  Keep the plain-JSON parser. Do not wire structured outputs.")
+    structured_ok, accepted_variant = False, None
+    for name, nullable in SCHEMA_VARIANTS.items():
+        try:
+            response = api.messages.create(
+                model=classify.MODEL, max_tokens=classify.MAX_TOKENS,
+                system=classify.SYSTEM, messages=message,
+                output_config={"format": {"type": "json_schema",
+                                          "schema": schema(nullable)}})
+            body = "".join(b.text for b in response.content if b.type == "text")
+            json.loads(body)
+            structured_ok, accepted_variant = True, name
+            print(f"  ACCEPTED with the {name} spelling.")
+            print(f"    {body}")
+            break
+        except Exception as exc:                  # noqa: BLE001 - probe
+            print(f"  {name}: REJECTED, {type(exc).__name__}: {str(exc)[:300]}")
+
+    if not structured_ok:
+        print("\n  No spelling of a nullable enum was accepted. Keep the")
+        print("  plain-JSON parser; the strict parser already covers this.")
 
     print()
     print("=" * 72)
@@ -122,7 +148,8 @@ def main() -> None:
           f"  cost ${attempt.cost_usd():.5f}")
     print()
     print("  Ground truth for this page: g1 / face / up.")
-    print(f"  structured outputs usable: {structured_ok}")
+    print(f"  structured outputs usable: {structured_ok}"
+          + (f" (via {accepted_variant})" if structured_ok else ""))
 
 
 if __name__ == "__main__":
