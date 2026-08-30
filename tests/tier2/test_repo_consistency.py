@@ -109,3 +109,35 @@ def test_docs_state_the_corpus_the_manifest_actually_holds():
         "number to NOT_CORPUS_COUNTS if it describes something else:\n  "
         + "\n  ".join(wrong)
     )
+
+
+# ------------------------------------------------------------------- page ids
+
+def test_every_page_in_the_corpus_gets_a_unique_batch_id():
+    """The tier-1 test freezes 20 rows; this sweeps all of them. Batch results
+    come back in arbitrary order keyed only by custom_id, so a collision would
+    silently attach one page's label to another page.
+    """
+    manifest = ROOT / "data" / "manifest.jsonl"
+    if not manifest.exists():
+        import pytest
+
+        pytest.skip("data/manifest.jsonl absent; corpus is git-ignored")
+
+    import json
+
+    from pipeline import pageclass as pc
+
+    ids = []
+    for line in manifest.open():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        for index, entry in enumerate(record["files"]):
+            for page in range(1, (entry.get("pages") or 0) + 1):
+                ids.append(pc.page_id(record["record_id"], index, page))
+
+    assert ids, "manifest present but yielded no pages"
+    assert len(set(ids)) == len(ids), "page id collision"
+    assert max(len(i) for i in ids) <= 64
+    assert all(pc.parse_page_id(i) for i in ids)
