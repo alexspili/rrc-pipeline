@@ -1,0 +1,196 @@
+"""Tier 2: request construction, caching and cost arithmetic.
+
+No network. The model call is stubbed; what is checked here is everything
+around it, which is where the money and the silent errors are. The one thing
+that cannot be checked offline, whether output_config.format binds on this
+model, is exactly what scripts/probe_haiku.py exists to answer.
+"""
+
+from __future__ import annotations
+
+import base64
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+import pytest
+
+from pipeline import classify
+from pipeline import pageclass as pc
+
+FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "pages.pdf"
+
+GOOD = ('{"form_class":"g1","part":"face","orientation":"up",'
+        '"confidence":"high","alt_class":null}')
+
+
+# ------------------------------------------------------------------ stub client
+
+@dataclass
+class _Block:
+    text: str
+    type: str = "text"
+
+
+@dataclass
+class _Usage:
+    input_tokens: int
+    output_tokens: int
+
+
+@dataclass
+class _Response:
+    content: list
+    usage: _Usage
+
+
+class StubMessages:
+    def __init__(self, body: str):
+        self.body = body
+        self.calls = 0
+
+    def create(self, **kwargs):
+        self.calls += 1
+        self.last = kwargs
+        return _Response([_Block(self.body)], _Usage(2540, 32))
+
+
+class StubClient:
+    def __init__(self, body: str = GOOD):
+        self.messages = StubMessages(body)
+
+
+# --------------------------------------------------------------------- prompt
+
+def test_prompt_names_every_class_in_the_vocabulary():
+    """A class the prompt never mentions cannot be predicted, but the parser
+    would still accept it. The two vocabularies must not drift apart.
+    """
+    for page_class in pc.PageClass:
+        assert page_class.value in classify.SYSTEM, page_class.value
+    for part in pc.Part:
+        assert part.value in classify.SYSTEM, part.value
+    for orientation in pc.Orientation:
+        assert orientation.value in classify.SYSTEM, orientation.value
+
+
+def test_prompt_hash_tracks_the_prompt():
+    assert classify.PROMPT_HASH == pc.prompt_hash(classify.SYSTEM)
+
+
+def test_prompt_is_too_short_for_anthropic_prompt_caching():
+    """HANDOFF records that our (doc_hash, prompt_hash) result cache is not
+    Anthropic prompt caching. The minimum cacheable prefix is thousands of
+    tokens; this prompt is nowhere near it, so no prompt-cache discount may be
+    claimed for it.
+    """
+    assert len(classify.SYSTEM) < 8000
+
+
+# ------------------------------------------------------------- request content
+
+def test_image_arm_sends_a_base64_png_capped_at_the_arm_size():
+    content, sent = classify.build_content("vision_1000", FIXTURE, 1)
+    assert max(sent) == 1000
+    image = next(b for b in content if b["type"] == "image")
+    assert image["source"]["media_type"] == "image/png"
+    assert base64.standard_b64decode(image["source"]["data"])[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_the_two_vision_arms_differ_only_in_resolution():
+    _, small = classify.build_content("vision_1000", FIXTURE, 1)
+    _, large = classify.build_content("vision_1568", FIXTURE, 1)
+    assert max(small) == 1000 and max(large) == 1568
+    assert small[0] / small[1] == pytest.approx(large[0] / large[1], abs=0.01)
+
+
+def test_text_arm_sends_no_image_and_survives_a_page_with_no_text_layer():
+    """Two of 249 files have no OCR layer. The arm must still produce a
+    request for those pages, or it cannot be scored on them.
+    """
+    content, sent = classify.build_content("text", FIXTURE, 1)
+    assert sent is None
+    assert all(block["type"] == "text" for block in content)
+    assert "no embedded text layer" in content[0]["text"]
+
+
+# ---------------------------------------------------------------------- cache
+
+def test_cache_returns_the_stored_label_without_calling_the_model(tmp_path):
+    """CLAUDE.md rule 7. A second run over an unchanged corpus should cost
+    nothing, which only holds if the cache is consulted before the request is
+    built.
+    """
+    cache = classify.ResultCache(tmp_path / "cache.jsonl")
+    api = StubClient()
+
+    first = classify.classify_page(api, "vision_1000", FIXTURE, 1,
+                                   record_id="1501720", file_index=0,
+                                   cache=cache, doc_hash="abc123")
+    second = classify.classify_page(api, "vision_1000", FIXTURE, 1,
+                                    record_id="1501720", file_index=0,
+                                    cache=cache, doc_hash="abc123")
+
+    assert api.messages.calls == 1
+    assert first.cached is False and second.cached is True
+    assert first.label == second.label
+
+
+def test_cache_key_separates_arms_and_pages_and_prompts():
+    key = classify.ResultCache.key
+    assert key("abc", 1, "vision_1000") != key("abc", 2, "vision_1000")
+    assert key("abc", 1, "vision_1000") != key("abc", 1, "vision_1568")
+    assert key("abc", 1, "vision_1000") != key("xyz", 1, "vision_1000")
+    assert classify.PROMPT_HASH in key("abc", 1, "vision_1000")
+
+
+def test_cache_survives_a_reopen(tmp_path):
+    path = tmp_path / "cache.jsonl"
+    api = StubClient()
+    classify.classify_page(api, "text", FIXTURE, 1, record_id="1", file_index=0,
+                           cache=classify.ResultCache(path), doc_hash="abc")
+    again = classify.classify_page(api, "text", FIXTURE, 1, record_id="1",
+                                   file_index=0,
+                                   cache=classify.ResultCache(path),
+                                   doc_hash="abc")
+    assert again.cached is True
+    assert api.messages.calls == 1
+
+
+# ------------------------------------------------------------- result handling
+
+def test_a_malformed_response_is_recorded_not_raised():
+    """One unparseable page must not abort a 3,689-page run. It comes back as
+    an Attempt carrying the error, and the census reports how many.
+    """
+    attempt = classify.classify_page(
+        StubClient("I think this is a G-1?"), "vision_1000", FIXTURE, 1,
+        record_id="1501720", file_index=0)
+    assert attempt.label is None
+    assert "no JSON object" in attempt.error
+
+
+def test_the_oversize_flag_comes_from_geometry_not_from_the_model():
+    """Origin: DEFECTS #1. The guard is arithmetic on the page dimensions. A
+    model that failed to notice a fold-out must not be able to clear the flag.
+    """
+    attempt = classify.classify_page(
+        StubClient(), "vision_1000", FIXTURE, 3,     # page 3 is AR 3.33
+        record_id="1495350", file_index=0)
+    assert attempt.label.oversize is True
+    assert attempt.label.extraction_eligible is False
+
+
+def test_cost_is_computed_from_list_prices_and_halved_by_batch():
+    attempt = classify.Attempt(label=None, arm="vision_1568", sent_px=(1215, 1568),
+                               input_tokens=1_000_000, output_tokens=1_000_000,
+                               cached=False)
+    assert attempt.cost_usd() == pytest.approx(6.00)
+    assert attempt.cost_usd(batched=True) == pytest.approx(3.00)
+
+
+def test_client_refuses_to_run_without_a_key(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with pytest.raises(RuntimeError) as exc:
+        classify.client()
+    assert ".env" in str(exc.value)
