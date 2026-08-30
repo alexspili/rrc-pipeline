@@ -247,3 +247,72 @@ surface. The decision for the census run is deferred to the measured
 parse-failure rate from the smoke run.
 **Pin:** the probe itself, scripts/probe_haiku.py, which now distinguishes a
 rejected schema from a rejected feature.
+
+---
+
+## #10 — 2026-08-30 — The taxonomy was written from eight documents and missed a sixth of the corpus
+
+**What happened:** The page-class list was drawn from the handful of records
+read during recon, agreed in chat, implemented, tested, and committed. Alex
+then asked three questions about how to label a page whose form is not named on
+it. Answering them meant scanning the OCR text of all 3,689 pages, which showed
+five form families occurring as page headers with no class to put them in:
+
+| Form | Pages | Records |
+|---|---|---|
+| W-1 drilling permit | 154 | 61 |
+| P-5 organization report | 147 | 65 |
+| L-1 | 46 | 36 |
+| GT-1 | 35 | 30 |
+| W-12 | 27 | 25 |
+
+Roughly 400 pages across more than 100 of 202 records would have been labelled
+`other_form`. That class exists to reveal a gap of a few pages, not to absorb a
+sixth of the corpus, and it would have absorbed them silently: every label
+valid, every test green, the classifier scored against a taxonomy known to be
+incomplete only after the fact.
+
+**Why it was wrong:** A vocabulary was derived from a sample of eight documents
+and never checked against the population, although the population was sitting
+on disk in a form that could be scanned in thirty seconds without a model. The
+recon documents were selected for being interesting, which is the opposite of
+representative.
+
+**Caught by:** a question about labelling, not by any test. Nothing in the repo
+could have failed, because nothing compared the class list to the corpus.
+
+**Two things found while fixing it, both worth their own note:**
+
+1. The first scan under-reported every count. Its cross-reference filter listed
+   a bare `on` without a word boundary, so it also matched the tail of
+   "DIVISION", and "OIL AND GAS DIVISION" is the standard header block printed
+   immediately before the form number. Legitimate headers were discarded
+   wholesale. Found by a tier-1 test written before the corpus scan was
+   trusted; the numbers reported to Alex from the first scan (68 records with a
+   completion report, G-5 on 29 pages) were wrong and are corrected below.
+   Same lesson as #9: the instrument gets tested before its readings are
+   believed.
+2. `back_instructions` guidance in docs/labeling-protocol.md was wrong in both
+   directions. The pointer phrases ("READ INSTRUCTIONS ON BACK", "- OVER -",
+   "REVERSE SIDE HEREOF") are printed on the *face*, and real backs
+   self-identify ("Side 2", "Instructions Form G-5:", "Continued from reverse
+   side"). Further, a reverse carrying a data table is a `continuation`, not
+   `back_instructions`; conflating them would have discarded real data. 251
+   pages carry a self-identifying back marker, and only 107 of 486 pages that
+   point to a reverse side are followed by one, so a sheet is not reliably two
+   pages either.
+
+**Corrected measurements (cross-references excluded, header region only):**
+72 of 202 records carry a legible G-1 or W-2 header, 36% of the corpus, against
+a sufficiency threshold of roughly 80 records. A floor, not a census: OCR reads
+the one known G-1 face as "F(R)lC7lbP G(o)IL" and does not count it.
+
+**Resolution:** W-1, P-5, L-1, GT-1 and W-12 added as identity-bearing classes;
+they carry operator, lease and well identity and so feed the cross-form
+disagreement detector, not just the census. A tier-2 test now scans the corpus
+and fails if any form appearing as a header on more than 20 pages has no class,
+so the next hole is a build failure rather than a conversation. The labelling
+protocol is corrected and the label set regenerated before any page was
+labelled.
+**Pin:** tests/tier2/test_taxonomy_coverage.py::test_every_common_form_has_a_class
+and tests/tier1/test_formscan.py for the cross-reference filter.
