@@ -58,3 +58,36 @@ def test_does_not_match_dates_or_measurements():
     """
     assert header_tokens("Rev. 4/1/83  API No. 42-039-31674") == set()
     assert header_tokens("setting depth 8276 ft, 9 7/8 bit") == set()
+
+
+# ------------------------------------------------- survey abstract numbers
+
+def test_survey_abstract_numbers_are_not_forms():
+    """Origin: DEFECTS #11. In a Texas land description "A-38" is the abstract
+    number of an original survey, not an RRC form. Plats are covered in them,
+    so the scanner invented a dozen phantom form families: A-1, A-5, A-6, A-11,
+    A-12, A-13, A-15, A-18, A-22, A-30, A-38, A-55, A-69, A-74, A-92.
+
+    Real text from corpus plats.
+    """
+    for line in [
+        "L. McLaughlin A-38 C Robertson County, Texas Scale 1 = 2000",
+        "WM. ROBINSON - A-55 /07J Ac.",
+        "ELIZA PEAKS A-92 WILLIAM H NEINAST and wife",
+        "BURLESON COUNTY, TEXAS JOHN COX A-15 J.W.GIESENSCHLAG",
+        "LEE JOHN Y. WALLACE A-22 UNIT",
+    ]:
+        assert header_tokens(line) == set(), line
+
+
+def test_a_prefixed_token_is_rejected_even_beside_the_word_form():
+    """No RRC form number begins with A. Being adjacent to "Form" does not
+    make an abstract number one.
+    """
+    assert header_tokens("SURVEY Form A-38 tract") == set()
+
+
+def test_real_forms_beginning_with_other_letters_still_parse():
+    assert header_tokens("CERTIFICATE OF POOLING AUTHORITY P-12 Revised 05/2001") == {"P-12"}
+    assert header_tokens("Form P-15 (5-5-71) STATEMENT OF PRODUCTIVITY") == {"P-15"}
+    assert header_tokens("Form G-6 Rev. 7/5/64 APPLICATION FOR EXCEPTION") == {"G-6"}

@@ -316,3 +316,50 @@ protocol is corrected and the label set regenerated before any page was
 labelled.
 **Pin:** tests/tier2/test_taxonomy_coverage.py::test_every_common_form_has_a_class
 and tests/tier1/test_formscan.py for the cross-reference filter.
+
+---
+
+## #11 — 2026-08-30 — The form scanner invented fifteen forms out of survey abstract numbers
+
+**What happened:** Alex asked whether Form P-12, Certificate of Pooling
+Authority, exists in the corpus. It does, on 15 pages across 8 records. Looking
+at the band of tokens below the taxonomy-coverage threshold to answer him
+showed that band was mostly not forms at all:
+
+    A-38   "L. McLaughlin A-38 C Robertson County, Texas"
+    A-92   "ELIZA PEAKS A-92 WILLIAM H NEINAST and wife"
+    A-55   "WM. ROBINSON - A-55 /07J Ac."
+    A-15   "BURLESON COUNTY, TEXAS JOHN COX A-15"
+
+In a Texas land description `A-nn` is the **abstract number** of an original
+land survey. Plats are covered in them. `FORM_TOKEN` matches
+`[A-Z]{1,2}-\d{1,2}[A-Z]?`, so every plat contributed phantom form families:
+A-1, A-5, A-6, A-11, A-12, A-13, A-15, A-18, A-22, A-30, A-38, A-55, A-69,
+A-74, A-92. Others in the band were OCR misreads of real forms: the `F-4`
+sample is a W-15, `I-1` is a W-1, `F-17` is a P-15, `A-13` is a W-2.
+
+**Why it was wrong:** The regex encoded the shape of a form number without any
+notion of which prefixes the RRC actually uses, on a corpus whose defining
+feature is that it is full of land descriptions.
+
+**The part that matters more than the bug.** The tier-2 coverage threshold was
+set at 20 pages and justified in the test as "the largest legitimately
+unclassed token sits at 15". That number was P-12, a real form, and nothing had
+established it was legitimately unclassed. The threshold was drawn just above
+the largest thing it needed to exclude, and the noise it was really suppressing
+was this bug. A threshold chosen to make the current data pass is not a
+threshold; it is a fitted constant. It survived review because the test around
+it was green.
+
+**Caught by:** a question about one form, again, rather than by any test.
+
+**Resolution:** `A-` is excluded outright, documented as a survey abstract
+prefix and pinned with real plat text from the corpus. P-12 (certificate of
+pooling authority), P-15 (statement of productivity of acreage assigned to
+proration units) and G-6 (application for exception to statewide rules 28
+and/or 32) are added as identity-bearing classes; all three are genuine RRC
+forms carrying operator, lease and field identity. The coverage threshold drops
+to 10 now that it is filtering forms rather than noise, and its docstring
+states what it is for instead of restating the current data.
+**Pin:** tests/tier1/test_formscan.py::test_survey_abstract_numbers_are_not_forms
+and ::test_a_prefixed_token_is_rejected_even_beside_the_word_form
