@@ -19,7 +19,9 @@ Facts the design leans on (all observed, none guessed):
   * Server declares x-ratelimit-limit: 60/min. We run well under it and
     back off when x-ratelimit-remaining gets low.
   * All dates in metadata are IMAGING time, not filing time.
-  * strict:"true" is exact-match on text fields; we default to non-strict.
+  * strict:"true" is exact-match on text fields, and is the ONLY value ever
+    observed from a working client. We default to it; see DEFECTS #3 and
+    the comment at search() for what "false" actually does.
   * profile_type distinguishes POTENTIAL (well files) from WELL LOG etc.
     Server-side filtering on it is unverified, so we filter client-side.
 

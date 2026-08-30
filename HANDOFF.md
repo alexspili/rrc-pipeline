@@ -126,20 +126,26 @@ loaded via `set -a; source .env; set +a` (no dotenv dep).
 
 ## Corpus status — CLOSED, do not pull more
 
-data/raw/ on Alex's machine (~/Projects/RRC/data/raw). Final: **198 records,
-242 files, 3,640 pages, 0 dupes.** Upload years: 2007:33 2008:27 2009:17
-2010:2 **2014:119** (a second imaging wave — 60% of corpus; paper vintage of
-that wave unknown until classification). Files/record: 162×1, 31×2, 5 more.
-Pages/record: median 14, p90 41, max 115 (stress fixture). Old operators
-present: Exxon 8, Amoco 6, ARCO 5, Sage 6, Maverick 6.
+data/raw/ on Alex's machine (~/Projects/RRC/data/raw). Final: **202 records,
+249 files, 3,689 pages, 0 dupes.** Upload years: 2007:34 2008:27 2009:17
+2010:2 2012:1 2013:1 **2014:120** (a second imaging wave — 59% of corpus;
+paper vintage of that wave unknown until classification). Files/record:
+164×1, 32×2, 4×3, 1×4, 1×5. Pages/record: median 14, p90 40, max 115
+(stress fixture). Old operators present, by exact operator_name: Exxon 8,
+Amoco 6, ATLANTIC RICHFIELD 5, Sage 6, Maverick 6.
 
 DEAD HEURISTICS (measured on full manifest, do not chase):
-- api_number is empty on ALL 198 records — an unpopulated index field, NOT a
+- api_number is empty on ALL 202 records — an unpopulated index field, NOT a
   pre-1967 signal. Era bucketing must come from classifying the paper.
-- files[].document_type is "SUPPORTING DOCUMENT" on all 242 — no classifier
+- files[].document_type is "SUPPORTING DOCUMENT" on all 249 — no classifier
   prior exists in metadata.
-- Metadata thinness is itself a README number: 198/198 blank API, 20 blank
-  county, 14 blank operator.
+- Metadata thinness is itself a README number: 202/202 blank API, 20 blank
+  county, 14 blank operator, 29 blank lease_name.
+- NOT dead: api_ft carries the API number on 176/202 records as a tsvector
+  (e.g. record 1501720 -> '03931674' = 42-039-31674). Every county name in
+  the manifest maps to exactly one 3-digit prefix, all matching real RRC
+  county codes. It is not a classifier prior, but it is a free cross-check
+  for extraction and the disagreement detector.
 
 Full-census classify cost: ~9.1M Haiku input tokens ≈ $9 ($4.50 batched).
 Run it on everything; only reopen fetch.py if G-1-bearing records < ~80.
@@ -196,7 +202,10 @@ itself a headline README table.
 - Real cost center is eval iteration (~$50/full 300-doc run): tiered eval
   (20-doc smoke set per iteration, full set on merge), cache by (doc hash,
   prompt hash), Haiku-first with confidence escalation (escalation rate is
-  a publishable metric).
+  a publishable metric). That cache is our own result cache, keyed on those
+  two hashes. It is not Anthropic prompt caching: the classifier system
+  prompt is ~400 tokens, below Haiku's minimum cacheable prefix, so no
+  prompt-cache discount applies and none should be claimed.
 - Every value carries a source span; deterministic validation post-extract;
   confidence routing → review queue = the TS viewer.
 - Preprocessing guards: aspect-ratio check (log strips would be destroyed by
@@ -234,7 +243,7 @@ itself a headline README table.
 
 ## Immediate next steps
 
-1. ~~Corpus pulls~~ DONE (198 records; see Corpus status).
+1. ~~Corpus pulls~~ DONE (202 records; see Corpus status).
 2. Repo skeleton + first commits (fetch.py, docs/recon, CONTEXT.md,
    DEFECTS.md with entries above, .gitignore/.env.example/requirements.txt).
    Real commit history matters — the history IS the workflow evidence.

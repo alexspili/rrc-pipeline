@@ -26,8 +26,8 @@ must be defensible line by line in an interview.
 
 ## Current state
 
-- fetch.py works end to end; corpus is CLOSED: 198 records, 242 files,
-  3,640 pages in data/raw (git-ignored), manifest at data/manifest.jsonl.
+- fetch.py works end to end; corpus is CLOSED: 202 records, 249 files,
+  3,689 pages in data/raw (git-ignored), manifest at data/manifest.jsonl.
 - Next milestone: page classifier + census table (what fraction of records
   actually contains a G-1/W-2 — unknown; no metadata prior exists).
 - Then, per the cut order in HANDOFF.md: extraction (G-1 Sections I & III)

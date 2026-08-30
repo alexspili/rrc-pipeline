@@ -81,6 +81,11 @@ applied. `--no-strict` survives in fetch.py as an explicitly labeled
 experimental flag documenting the broken path.
 **Pin:** behavioral, fetch.py defaults `strict="true"` with an inline
 comment citing this entry; tripwire in #4 catches the symptom class.
+**Amended 2026-08-30:** fetch.py's module docstring had said "we default to
+non-strict", the inverse of what the code does and of this entry, for the
+life of the file. Corrected; the docstring now cites this entry too. The
+inline comment 150 lines below had been right the whole time, which is why
+reading the code did not surface it.
 
 ---
 
@@ -139,7 +144,7 @@ enforcement. Doc-recorded facts about mutable data drift by default.
 CLAUDE.md and HANDOFF.md against data/manifest.jsonl, so corpus changes
 break the build until the docs are updated in the same change. Docs
 corrected to 202/249/3,689 in the same commit that adds the test.
-**Pin:** pending, tests/tier2 docs-vs-manifest consistency test.
+**Pin:** tests/tier2/test_repo_consistency.py::test_docs_state_the_corpus_the_manifest_actually_holds
 
 ---
 
