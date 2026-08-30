@@ -169,3 +169,32 @@ backwards. CLAUDE.md rule 3 says do not work around the hook, and an exception
 list is a workaround.
 **Pin:** the hook itself, `.githooks/pre-commit` rule 1. It is red on the
 unfixed file by construction; this entry's commit is the demonstration.
+
+---
+
+## #8 — 2026-08-30 — Every make target has been broken since the skeleton commit
+
+**What happened:** `make test` fails with `Makefile:7: *** missing separator.
+Stop.` So do `make fetch` and `make eval`. The recipe lines carry no leading
+tab; they begin at column 0. This has been true since 8902643, the skeleton
+commit that created the file. Found while trying to run the first test.
+
+**Why it was wrong:** SETUP.md step 3 writes the Makefile from a heredoc that
+is itself indented four spaces inside the document. A plain `<<'EOF'` heredoc
+does not strip leading whitespace (only `<<-` does, and only tabs), so the
+written file inherited the document's indentation instead of make's required
+tab. The generated file looked right in the document and was wrong on disk.
+
+Nothing caught it because nothing ran make. `python3 -m pytest` was typed
+directly during setup, and no test existed to run. A build entry point that is
+never exercised is not a build entry point.
+
+**Related:** commit f759f63 edited this same Makefile to fix the interpreter
+path and did not notice the file was unparseable. Reading a file is not
+running it.
+
+**Resolution:** Recipe lines rewritten with literal tabs. SETUP.md step 3
+gains a warning at the heredoc. Pinned by a tier-2 test that parses the
+Makefile and asserts every recipe line begins with a tab, so the next
+regeneration from a document cannot reintroduce it silently.
+**Pin:** tests/tier2/test_repo_consistency.py::test_makefile_recipe_lines_begin_with_tab
