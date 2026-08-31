@@ -1,4 +1,4 @@
-﻿seq,page_id,record_id,file_index,page,native_w,native_h,oversize,form_class,part,orientation,note,check
+seq,page_id,record_id,file_index,page,native_w,native_h,oversize,form_class,part,orientation,note,check
 1,1493418-0-12,1493418,0,12,3040,4608,no,ws1_sw1,face,up,,ok
 2,1493495-0-19,1493495,0,19,2976,3616,no,plat_map,,up,,ok
 3,1493498-0-41,1493498,0,41,2880,3616,no,other_form,,up,,ok
@@ -15,7 +15,7 @@
 14,1494258-0-7,1494258,0,7,2816,3680,no,g5,face,up,,ok
 15,1494274-0-4,1494274,0,4,3040,4608,no,p4,back_instructions,up,,ok
 16,1494314-0-19,1494314,0,19,3040,3680,no,w1,back_instructions,up,,ok
-17,1494316-0-15,1494316,0,15,3072,3648,no,other_form,,up,back_instructions,ok
+17,1494316-0-15,1494316,0,15,3072,3648,no,other_form,back_instructions,up,,ok
 18,1494316-0-16,1494316,0,16,2848,3680,no,w15,face,up,,ok
 19,1494483-0-4,1494483,0,4,3040,3712,no,letter_memo,,up,,ok
 20,1494483-0-19,1494483,0,19,3072,4640,no,other_form,,up,,ok
@@ -23,7 +23,7 @@
 22,1494879-0-36,1494879,0,36,3648,2784,no,w1,face,up,,ok
 23,1495009-0-10,1495009,0,10,2571,3295,no,p4,face,up,,ok
 24,1495021-0-15,1495021,0,15,2551,3295,no,other_nonform,,up,,ok
-25,1495193-0-12,1495193,0,12,2976,3680,no,other_form,,up,back_instructions,ok
+25,1495193-0-12,1495193,0,12,2976,3680,no,other_form,back_instructions,up,,ok
 26,1495193-0-18,1495193,0,18,3648,3040,no,blank_or_artifact,,up,,ok
 27,1495195-0-5,1495195,0,5,2816,3648,no,w2,face,up,,ok
 28,1495195-0-85,1495195,0,85,2976,3680,no,w1,back_instructions,up,,ok
