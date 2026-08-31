@@ -110,7 +110,12 @@ GLOSS = {
 FORM_TOKENS = {
     "G-1": PageClass.G1,
     "W-2": PageClass.W2,
-    "W-1": PageClass.W1, "W-1A": PageClass.W1, "W-1C": PageClass.W1,
+    # W-1 and its supplemental sheets. W-1H is "Supplemental Horizontal Well
+    # Information", page 2 of a drilling permit application; found by eye on
+    # record 1906597, never by the OCR scan, whose reading of that header was
+    # too mangled to match.
+    "W-1": PageClass.W1, "W-1A": PageClass.W1,
+    "W-1C": PageClass.W1, "W-1H": PageClass.W1,
     "W-3": PageClass.W3,
     "P-4": PageClass.P4,
     "P-5": PageClass.P5,

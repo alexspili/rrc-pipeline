@@ -102,7 +102,7 @@ disagreement checker as well as the census.
 
 | Value | What it is | How you know |
 |---|---|---|
-| `w1` | Application for permit to drill | `FORM W-1`, `W-1A`, `W-1C` |
+| `w1` | Application for permit to drill, and its supplemental sheets | `FORM W-1`, `W-1A`, `W-1C`, `W-1H`. See below |
 | `w3` | Plugging record | `FORM W-3`. Plugging, perforation intervals |
 | `p4` | Producer's transportation authority | `FORM P-4`. Gatherer / purchaser / nominator table |
 | `p5` | Operator organization report | `FORM P-5`. **See the P-4 trap below** |
@@ -228,6 +228,16 @@ frame number printed small down one edge. They are almost always **sideways**,
 so set `orientation` to `cw90` or `ccw90` rather than `up`. Leave `part` blank,
 since this is a census-only class. The class was named `card_handwritten` until
 one of these turned out to be stencilled.
+
+**W-1 supplemental sheets file as `w1`, with `part: continuation`.** `W-1H`,
+"Supplemental Horizontal Well Information", is page 2 of a drilling permit
+application and says "Page 2 of 2" at the foot. It carries its own header and
+its own permit number, which makes it look like a face; the page-count line is
+what settles it. Same for `W-1A` and `W-1C`.
+
+Do not confuse the form number with the well number. That page has "Well No.
+1H" in field 4, where H marks a horizontal well. `W-1H` in the top-right
+corner is the form; `1H` in a numbered field is the well.
 
 **"A-38" on a plat is not a form.** In a Texas land description `A-nn` is the
 abstract number of an original survey: "L. McLaughlin A-38", "ELIZA PEAKS
