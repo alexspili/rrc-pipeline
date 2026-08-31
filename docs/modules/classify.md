@@ -200,7 +200,8 @@ where the census claimed both a G-1 and a W-2. Two mechanisms:
    records.
 
 **Do not report a G-1 versus W-2 split until stage-2 labels make it
-measurable.**
+measurable.** Those labels now exist; the numbers are below, and the split is
+still not reportable as a count. See "Stage 2 results".
 
 ### Why it is not fixed yet
 
@@ -235,6 +236,93 @@ The scan is trusted only that far. DEFECTS #15 and #16 are both cases of it
 reading a mention as a header, so: of those 75 corroborated faces, 0 carry
 "status report", "when to file", "where to file" or "instructions" in their
 header region, which is the shape the leak takes.
+
+## Stage 2 results, 2026-08-31
+
+143 pages hand-labelled by Alex, 0 noted unsure. Scored by
+`scripts/score_stage2.py` against metrics fixed in the protocol before the
+labels existed.
+
+### The headline
+
+| Predicted | Precision | Drawn | Frame |
+|---|---|---|---|
+| `g1` face | **64.7% +/- 4.5pp** | 17 of 30 | 72 pages |
+| `w2` face | **44.0% +/- 5.2pp** | 14 of 40 | 166 pages |
+
+Stratified, with the finite-population correction, weighted by frame size.
+Part never disagreed with class on these strata, so class-only and
+class-and-part precision are the same number.
+
+Applied to the census: of 72 predicted G-1 faces about 47 are one, and of 166
+predicted W-2 faces about 73 are. Those are corrected counts of *true positives
+among predictions*, not corrected totals. Recall is bounded, not measured, so
+neither number is a count of the G-1 faces in this corpus and must not be
+presented as one.
+
+### The finding that explains the rest
+
+**Every page whose printed form number is illegible was misclassified. 20 of
+20, no exceptions.** Of the 50 drawn completion faces whose number is legible,
+31 are right.
+
+The two signals agree completely. Where OCR reads the form number the model
+chose, the model is right: stratum B 8 of 8, stratum E 8 of 8. Where OCR reads
+a *different* number, the model is wrong: stratum D, 7 of 7 predicted W-2 faces
+are W-15s. Where OCR reads nothing, the model is right 15 of 47 times.
+
+So the classifier is not confusing G-1 with W-2 by misreading a form's layout.
+On a page whose number it can read it is essentially never wrong; on a page
+whose number it cannot read it is guessing, and the near-identical G-1 and W-2
+layouts give it nothing to guess with. This is a legibility problem wearing a
+classification problem's clothes, and no prompt change addresses it.
+
+Confidence does not help. All 72 predicted G-1 faces are `high` with no
+alternative class offered, and the drawn sample scored 61 of 119 on `high`.
+
+### Mechanism 1 confirmed
+
+Of the predicted completion pages that are not faces, **86.7% +/- 8.6pp carry
+no form number at all** (13 of 15 drawn from a 137-page frame): 8 continuations
+and 5 printed backs, none of which names a form. The census gave every one of
+them a form number and a part. The attribution is invented, at the rate the
+census section above suspected.
+
+### Recall
+
+0 completion faces among 20 pages drawn from the 361-page confusable frame. A
+bound, as pre-registered, not an estimate. Nothing in the labels suggests
+completion faces are hiding in `w15`, `g5`, `l1`, `ws1_sw1` or `other_form`.
+
+### R1 measured for the first time
+
+23 of 23 oversize pages labelled: 17 plats, 5 letters, 1 separator card, class
+correct on 17. Stage 1 contained no oversize page at all, so this is the first
+evidence that classifying a squashed thumbnail is adequate for "this is a
+plat". It is adequate. R1 keeps its wording.
+
+### The parse failures earned their place
+
+All 15 labelled. Record 1500694 page 23 is a **Form P-6**, which is exactly
+what the model answered before the parser rejected it as out of vocabulary.
+R4 worked: the refusal to coerce an unknown class surfaced a real form family
+rather than burying it in `other_nonform`.
+
+### What this does not settle
+
+DEFECTS #17: about 19 of the 238 predicted completion faces are a completion
+report older than the G-1 and W-2 numbering, filed as `FORM 3`, `FORM 2` or
+`FORM GWT-1`. They have no class, and `formscan` cannot see them either. They
+count as errors in the precision figures above, correctly, and they are the
+reason a corrected per-form count needs a taxonomy decision before it needs a
+prompt.
+
+DEFECTS #18: no `low`-confidence page was drawn, so R6's table still has no
+`low` row and R6 stays unretired.
+
+The census headline is unaffected. "115 of 202 records contain a completion
+report" is a record-level claim, hand-verified 15 of 15, and a Form 3 gas well
+record is a completion report.
 
 ### How to quote the accuracy number
 

@@ -32,10 +32,13 @@ only, referenced by record id.
    pages containing 0 G-1. See docs/modules/classify.md.
    2b. Stage-2 labels, stratified over census predictions, to make G-1 vs
    W-2 measurable. Labelling only; the prompt fix is a separate gated step.
-   INSTRUMENT BUILT 2026-08-31, awaiting Alex's labels: 143 pages in nine
-   strata, blinded, seeds and metrics pre-registered before the draw in
-   docs/labeling-protocol-stage2.md. Design worth 4.85pp standard error on
-   each face precision. `make label2`.
+   DONE 2026-08-31. 143 pages in nine strata, blinded, seeds and metrics
+   pre-registered before the draw in docs/labeling-protocol-stage2.md.
+   Result: G-1 face precision 64.7% +/-4.5pp, W-2 face 44.0% +/-5.2pp, and
+   the cause is legibility rather than layout confusion: 20 of 20 drawn
+   faces with an illegible form number were wrong, and where OCR reads the
+   number the model chose it is right 16 of 16. Full results and the two
+   defects it surfaced: docs/modules/classify.md → Stage 2 results.
 3. G-1 **and W-2** Sections I & III extraction (identity, dates, depths, casing). Skip
    Section II initially.
 4. Deterministic validation (API check structure + county prefix, date order,
@@ -280,7 +283,11 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    nine of them found during the classifier milestone. The pre-commit hook now
    runs tiers 1 and 2, so CLAUDE.md rule 6 is enforced rather than stated.
 3. ~~Classifier + corpus census~~ DONE 2026-08-31. See Cut order 2.
-4. Stage-2 labelling, in Alex's hands. The sheet, the thumbnails and the
-   validator exist; nothing downstream of it should be built until the
-   labels are in, because the prompt fix is gated on them.
-5. Then extraction per cut order.
+4. ~~Stage-2 labelling~~ DONE 2026-08-31. See Cut order 2b.
+5. Decide what the fix is, before writing one. The measurement says the
+   failure is an unreadable form number, not a confused layout, so a prompt
+   change is unlikely to be the answer; and DEFECTS #17 says a per-form
+   count needs a taxonomy decision first (a class for the pre-numbering
+   completion family, or a `completion_report` class carrying the form
+   number as a field). That is a schema question for extraction.
+6. Then extraction per cut order.

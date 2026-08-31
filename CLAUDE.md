@@ -37,14 +37,16 @@ must be defensible line by line in an interview.
   83.6% arm accuracy is a uniform-sample number on 60 pages containing 0
   G-1 pages; never quote it as accuracy on the target classes. Both caveats
   in full: docs/modules/classify.md.
-- Stage-2 sample is DRAWN and waiting on hand labels: 143 pages stratified
-  over census predictions, blinded, seeds and metrics pre-registered in
-  docs/labeling-protocol-stage2.md. `make label2`, workbook via
-  `make workbook ARGS="--stage 2"`. Labelling only; the prompt fix is a
-  separate gated step with its own before-and-after on these labels.
-- Next: those labels, then extraction per the cut order in HANDOFF.md →
-  validation → cross-form disagreement → eval (`make eval`) → TypeScript
-  span viewer → optional Postgres projection.
+- Stage-2 labels DONE 2026-08-31, 143 pages. **G-1 face precision 64.7%
+  +/-4.5pp, W-2 face 44.0% +/-5.2pp.** All 20 drawn faces whose printed form
+  number is illegible were misclassified; where the number is legible the
+  model is essentially never wrong. The split is measurable and still not
+  reportable as a count. docs/modules/classify.md → Stage 2 results.
+- Next, and NOT started: decide what the fix is. It is not a prompt tweak;
+  see DEFECTS #17 (a completion report older than the G-1/W-2 numbering, no
+  class for it) and the legibility finding. Then extraction per the cut
+  order in HANDOFF.md → validation → cross-form disagreement → eval
+  (`make eval`) → TypeScript span viewer → optional Postgres projection.
 - Open finding, no implementation: page grouping. 157 pages / 83 records are
   form pages carrying no form number, plus 137 non-face completion pages.
   See docs/modules/classify.md.
