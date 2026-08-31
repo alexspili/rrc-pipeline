@@ -1,6 +1,6 @@
-# [repo-name]
+# rrc-pipeline
 
-An extraction pipeline over public [EDGAR filings / municipal permit records], and a record of
+An extraction pipeline over the Texas Railroad Commission's imaged well records, and a record of
 the workflow used to build it with an AI coding agent.
 
 Two things are on offer here. The pipeline is real software with a measured accuracy number and
@@ -18,6 +18,36 @@ record type. Keep it to five sentences.]
 Current accuracy on the held-out set: **[N]%** per-field exact match across [N] labeled
 documents. The number comes from `bench/`, is reproducible with `make eval`, and is printed on
 every pull request.
+
+## Findings so far
+
+Two findings, at two different confidence levels. They are not quoted as if they carried the same
+weight, and the weaker one is not quoted as a number at all.
+
+**Verified, record level.** **115 of 202 records (57%) contain a completion report.** Measured by
+classifying all 3,689 pages, above an independent OCR floor of 68 records, and hand-checked on a
+seeded random sample of 15 of the 115: 15 of 15 confirmed, no over-counting. This is the number
+the corpus decision rested on and it is reportable as it stands.
+
+**Provisional, per form.** The split of those records into G-1 (gas) and W-2 (oil) completion
+reports is **not reportable as a count**, and the mechanism is identified rather than guessed at.
+A stratified sample of 143 hand-labelled pages puts precision at 64.7% +/- 4.5pp on predicted G-1
+faces and 44.0% +/- 5.2pp on predicted W-2 faces. The cause is legibility, not reasoning: all 20
+drawn faces whose printed form number could not be read were misclassified, while on pages whose
+number the OCR text layer also recovers the classifier was right 16 out of 16. The decided fix is
+to abstain on an unreadable page rather than guess, which leaves the verified record-level number
+above unchanged. Full working: `docs/modules/classify.md`.
+
+The distance between those two paragraphs is most of what this repository is for.
+
+## Roads not taken
+
+- **Reading the form number instead of abstaining on it.** A targeted OCR or vision read of the
+  top-right corner would recover the illegible slice rather than abstaining on it. Deferred: it
+  reopens an AWS Textract dependency the pipeline does not currently need, for a gain bounded by
+  the illegible share of completion faces, and abstention already handles that slice honestly.
+- **A hosted backend for the viewer.** Rejected on cost, prompt-injection surface and uptime; the
+  viewer is static and does no inference.
 
 ## How it was built
 
