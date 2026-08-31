@@ -111,7 +111,19 @@ def verification_sample(labels, size=VERIFY_SAMPLE, seed=VERIFY_SEED):
 
 
 def write_verification(sample, pages_by_id) -> Path:
-    """Render the pages a human has to look at, plus a CSV to record verdicts."""
+    """Render the pages a human has to look at, plus a sheet to record verdicts.
+
+    One row per RECORD, not per page. The census claim being checked is
+    "this record contains a completion report", and a single unambiguous face
+    settles it; the other pages are corroboration. Asking per page conflates
+    that with per-page classification accuracy, which is what the labelled set
+    is for, and multiplies the work for no gain.
+
+    It also asks a question that can be answered. A Section II page carries
+    "SECTION II" and a casing record but no form number, and both G-1 and W-2
+    have one, so "is this page a W-2" is not decidable from the page. "Does
+    this record contain a completion report" is.
+    """
     import csv
 
     VERIFY.mkdir(parents=True, exist_ok=True)
@@ -120,19 +132,23 @@ def write_verification(sample, pages_by_id) -> Path:
 
     rows = []
     for record_id, labels in sample:
-        for label in sorted(labels, key=lambda l: (l.file_index, l.page)):
+        ordered = sorted(labels, key=lambda l: (l.file_index, l.page))
+        for label in ordered:
             pdf = pages_by_id.get(label.id)
-            if pdf is None:
-                continue
-            png, _ = render.render_page_png(pdf, label.page, cap=1400)
-            (VERIFY / f"{label.id}.png").write_bytes(png)
-            rows.append({
-                "record_id": record_id, "page_id": label.id,
-                "page": label.page, "predicted": label.form_class.value,
-                "part": label.part.value if label.part else "",
-                "confidence": label.confidence.value,
-                "is_it_really": "",
-            })
+            if pdf is not None:
+                png, _ = render.render_page_png(pdf, label.page, cap=1400)
+                (VERIFY / f"{label.id}.png").write_bytes(png)
+        rows.append({
+            "record_id": record_id,
+            "pages_to_look_at": " ".join(l.id for l in ordered),
+            "predicted": ",".join(sorted({l.form_class.value for l in ordered})),
+            "n_pages": len(ordered),
+            "best_confidence": min(
+                (l.confidence.value for l in ordered),
+                key=lambda c: {"high": 0, "medium": 1, "low": 2}[c]),
+            "contains_a_completion_report": "",
+            "note": "",
+        })
 
     path = OUT / "verify.csv"
     with path.open("w", newline="") as fh:

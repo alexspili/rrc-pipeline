@@ -105,3 +105,32 @@ def test_the_sample_does_not_exceed_what_exists():
 def test_no_completion_reports_means_nothing_to_verify():
     labels = [_label("1", 1, pc.PageClass.PLAT_MAP)]
     assert census.verification_sample(labels, size=15) == []
+
+
+# ------------------------------------------------- the question actually asked
+
+def test_the_sheet_asks_one_question_per_record_not_per_page(tmp_path):
+    """The census claim is per record: this record contains a completion
+    report. One unambiguous face settles it. Asking per page conflates that
+    with per-page accuracy, which the labelled set already measures, and asks
+    a question a Section II page cannot answer: it carries "SECTION II" and a
+    casing record but no form number, and both G-1 and W-2 have one.
+    """
+    import csv
+
+    labels = [_label("1", 9, pc.PageClass.W2), _label("1", 10, pc.PageClass.W2),
+              _label("2", 3, pc.PageClass.G1)]
+    monkey = census.VERIFY, census.OUT
+    census.VERIFY, census.OUT = tmp_path / "v", tmp_path
+    try:
+        path = census.write_verification(
+            census.verification_sample(labels, size=10), pages_by_id={})
+        rows = list(csv.DictReader(path.open()))
+    finally:
+        census.VERIFY, census.OUT = monkey
+
+    assert len(rows) == 2, "one row per record, not per page"
+    assert "contains_a_completion_report" in rows[0]
+    by_record = {r["record_id"]: r for r in rows}
+    assert by_record["1"]["n_pages"] == "2"
+    assert by_record["1"]["pages_to_look_at"] == "1-0-9 1-0-10"
