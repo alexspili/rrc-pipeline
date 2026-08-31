@@ -474,6 +474,28 @@ alongside a contested arm, cheapest winning when nothing is distinguishable,
 a sub-5pp gap not being flagged, and the best distinguishable arm winning
 rather than the first.
 
+**Where the fix actually landed.** Not in a commit of its own. `git add -A`
+swept the `decide()` implementation into 463b41e, whose message describes only
+the failing test for DEFECTS #14. So a commit labelled "failing test" contains
+a substantive fix for a different defect, and `git log --oneline` misdescribes
+it. Recorded here rather than corrected, because the history had already been
+rewritten twice this session and a third pass to tidy a message is exactly the
+cleanup temptation SETUP.md warns about.
+
+`git add -A` has now muddled two commits in one session: this one, and the
+earlier one that swept in a stray second copy of the label set. SETUP.md's
+commit-mistake list already says to prefer `git add -p` or explicit paths and
+to glance at `git status` before every add. The rule was there; following it
+was the missing part.
+
+**Measured outcome of the fix.** The corrected run scores every arm on the 55
+pages all three labelled, rather than on the 58, 59 and 57 each managed
+separately, and reports parse-failure rates as their own number. vision_1000
+wins at 83.6% against text at 67.3%, +16.4pp, p=0.004. vision_1568 reaches
+78.2% and remains unsettled against text at this sample size (p=0.109). The
+pre-registered rule therefore selects vision_1000, and the earlier run's
+"WINNER: text" was wrong.
+
 ---
 
 ## #14 — 2026-08-30 — A cached result did not behave like a fresh one
