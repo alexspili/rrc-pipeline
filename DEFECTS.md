@@ -421,3 +421,55 @@ The record of the failure is not thereby lost. It lives in this entry and in
 the following commit's own message, "The previous commit went in red", which
 is where it belongs. A commit message narrating its own editing would have
 been a fourth copy and a strange thing to read in a log.
+
+---
+
+## #13 — 2026-08-30 — The arm competition reported the losing arm as the winner
+
+**What happened:** The first real run of scripts/run_arms.py printed, in this
+order:
+
+    vision_1000 vs text: +16.1%
+      5pp rule:  clears
+      paired:    9 pages disagree (0 only text right, 9 only vision_1000
+                 right), p=0.004
+      distinguishable at n=60
+
+    vision_1568 vs text: +13.0%
+      ...  p=0.109   NOT distinguishable at n=60
+
+    WINNER: text
+    Cheapest by rule: no gap survived the paired test.
+
+A gap had survived. vision_1000 beat the cheapest arm by 16 points at p=0.004,
+which is exactly the case the rule was written to admit.
+
+**Why it was wrong:** The contested loop ran after the winner had been chosen
+and reset `winner = cheapest` for *any* costlier arm that failed the paired
+test, without checking whether that arm was the one that had won. One
+inconclusive comparison discarded a decisive result from a different arm.
+
+The summary line then asserted "no gap survived the paired test" four lines
+under a printed p of 0.004. Same failure as #12: a claim in the output that
+the output itself contradicts.
+
+**What it would have cost:** the census, roughly $4, is gated on this verdict
+and runs once. It would have run on the arm that was 16 points worse, and the
+verdict would have been quoted in the README as a measured decision.
+
+**Why the flag existed at all.** The paired test and the loud flag were added
+on Alex's instruction that a gap inside the n=60 error bar must not be
+overridable on a hunch. The instruction was right and the implementation
+inverted it: instead of stopping an unproven arm from winning, it stopped a
+proven one.
+
+**Resolution:** decision logic extracted from the reporting code into
+`decide()`, a pure function taking ranked arms, scores and paired results and
+returning the winner plus the contested list. Contested now means "clears 5pp
+but is not distinguishable", which is a flag on that arm alone and never a
+veto over another arm's proven win. A gap under 5pp is not contested, merely
+unremarkable, or the flag would fire on every run.
+**Pin:** tests/tier2/test_arms.py, four cases covering a distinguishable win
+alongside a contested arm, cheapest winning when nothing is distinguishable,
+a sub-5pp gap not being flagged, and the best distinguishable arm winning
+rather than the first.

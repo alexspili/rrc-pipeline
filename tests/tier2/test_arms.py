@@ -105,3 +105,56 @@ def test_pages_without_ground_truth_are_not_scored():
     rows_a = [_row("1-0-1", "g1", 1000), _row("9-0-9", "plat_map", 1000)]
     rows_b = [_row("1-0-1", "g1", 2000), _row("9-0-9", "schematic", 2000)]
     assert run_arms.mcnemar(rows_a, rows_b, truth)["n"] == 1
+
+
+# ------------------------------------------------------ winner selection
+
+def _scores(**pairs):
+    return {arm: {"class_accuracy": acc, "n": 58} for arm, acc in pairs.items()}
+
+
+def test_a_distinguishable_win_is_not_discarded_because_another_arm_is_contested():
+    """Origin: DEFECTS #13. On the first real run vision_1000 beat text by
+    16.1pp at p=0.004, and vision_1568 beat it by 13.0pp at p=0.109. The
+    contested loop reset the winner to cheapest for any contested arm, so the
+    decisive win was thrown away and the run reported "WINNER: text, no gap
+    survived the paired test" while printing p=0.004 four lines above.
+    """
+    decision = run_arms.decide(
+        ranked=["text", "vision_1000", "vision_1568"],
+        scores=_scores(text=0.667, vision_1000=0.828, vision_1568=0.797),
+        paired={"vision_1000": {"p_value": 0.004, "discordant": 9},
+                "vision_1568": {"p_value": 0.109, "discordant": 10}})
+    assert decision["winner"] == "vision_1000"
+    assert "vision_1568" in decision["contested"]
+    assert "vision_1000" not in decision["contested"]
+
+
+def test_the_cheapest_arm_wins_when_no_gap_is_distinguishable():
+    decision = run_arms.decide(
+        ranked=["text", "vision_1000"],
+        scores=_scores(text=0.70, vision_1000=0.78),
+        paired={"vision_1000": {"p_value": 0.20, "discordant": 6}})
+    assert decision["winner"] == "text"
+    assert decision["contested"] == ["vision_1000"]
+
+
+def test_a_gap_inside_five_points_is_not_contested_merely_unproven():
+    """Under 5pp the rule already says cheapest wins, so there is nothing to
+    flag. A contested flag there would cry wolf on every run.
+    """
+    decision = run_arms.decide(
+        ranked=["text", "vision_1000"],
+        scores=_scores(text=0.70, vision_1000=0.73),
+        paired={"vision_1000": {"p_value": 0.40, "discordant": 4}})
+    assert decision["winner"] == "text"
+    assert decision["contested"] == []
+
+
+def test_the_best_distinguishable_arm_wins_not_merely_the_first():
+    decision = run_arms.decide(
+        ranked=["text", "vision_1000", "vision_1568"],
+        scores=_scores(text=0.60, vision_1000=0.70, vision_1568=0.85),
+        paired={"vision_1000": {"p_value": 0.01, "discordant": 12},
+                "vision_1568": {"p_value": 0.001, "discordant": 20}})
+    assert decision["winner"] == "vision_1568"
