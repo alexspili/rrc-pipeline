@@ -201,18 +201,33 @@ def classify_page(api, arm: str, pdf: Path, page: int, *,
     width, height = dims[page - 1]
     oversize = pc.is_oversize(width, height) if width and height else False
 
+    def build(payload: dict, cached: bool) -> Attempt:
+        """One parse and one guard, shared by the cached and live paths.
+
+        DEFECTS #14: these were two call sites, and only the live one caught a
+        parse failure, so a run that tolerated bad pages on the way out died on
+        the first one on the way back.
+        """
+        try:
+            label = pc.parse_response(
+                payload["body"], record_id=record_id, file_index=file_index,
+                page=page, oversize=oversize)
+            error = None
+        except ValueError as exc:
+            label, error = None, str(exc)
+        sent = payload.get("sent_px")
+        return Attempt(
+            label=label, arm=arm, sent_px=tuple(sent) if sent else None,
+            input_tokens=payload["input_tokens"],
+            output_tokens=payload["output_tokens"],
+            cached=cached, error=error)
+
     key = None
     if cache is not None:
         key = cache.key(doc_hash or render.doc_hash(pdf), page, arm)
         hit = cache.get(key)
         if hit is not None:
-            return Attempt(
-                label=pc.parse_response(hit["body"], record_id=record_id,
-                                        file_index=file_index, page=page,
-                                        oversize=oversize),
-                arm=arm, sent_px=tuple(hit["sent_px"]) if hit["sent_px"] else None,
-                input_tokens=hit["input_tokens"],
-                output_tokens=hit["output_tokens"], cached=True)
+            return build(hit, cached=True)
 
     content, sent = build_content(arm, pdf, page)
     response = api.messages.create(
@@ -226,15 +241,4 @@ def classify_page(api, arm: str, pdf: Path, page: int, *,
     if cache is not None and key is not None:
         cache.put(key, payload)
 
-    try:
-        label = pc.parse_response(body, record_id=record_id,
-                                  file_index=file_index, page=page,
-                                  oversize=oversize)
-        error = None
-    except ValueError as exc:
-        label, error = None, str(exc)
-
-    return Attempt(label=label, arm=arm, sent_px=sent,
-                   input_tokens=response.usage.input_tokens,
-                   output_tokens=response.usage.output_tokens,
-                   cached=False, error=error)
+    return build(payload, cached=False)
