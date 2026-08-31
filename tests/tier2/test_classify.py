@@ -21,7 +21,7 @@ from pipeline import pageclass as pc
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "pages.pdf"
 
 GOOD = ('{"form_class":"g1","part":"face","orientation":"up",'
-        '"confidence":"high","alt_class":null}')
+        '"confidence":"high","alt_class":null,"form_number_legible":true}')
 
 
 # ------------------------------------------------------------------ stub client
@@ -226,7 +226,8 @@ def test_a_cached_out_of_vocabulary_class_does_not_raise(tmp_path):
     """
     cache = classify.ResultCache(tmp_path / "cache.jsonl")
     body = ('{"form_class":"back_instructions","part":"face",'
-            '"orientation":"up","confidence":"high","alt_class":null}')
+            '"orientation":"up","confidence":"high","alt_class":null,'
+            '"form_number_legible":true}')
     api = StubClient(body)
     classify.classify_page(api, "text", FIXTURE, 1, record_id="1",
                            file_index=0, cache=cache, doc_hash="abc")

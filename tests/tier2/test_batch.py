@@ -23,7 +23,7 @@ from pipeline import pageclass as pc
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "pages.pdf"
 
 GOOD = ('{"form_class":"g1","part":"face","orientation":"up",'
-        '"confidence":"high","alt_class":null}')
+        '"confidence":"high","alt_class":null,"form_number_legible":true}')
 
 
 # ------------------------------------------------------------- stub batches API

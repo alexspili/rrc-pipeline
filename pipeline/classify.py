@@ -50,7 +50,7 @@ def _vocabulary() -> str:
     """
     lines = []
     for title, classes in (
-        ("completion reports, the extraction targets", pc.EXTRACTION_TARGETS),
+        ("completion reports, the extraction targets", pc.COMPLETION_FACES),
         ("other RRC forms that carry well identity", pc.IDENTITY_BEARING),
         ("everything else", pc.CENSUS_ONLY),
     ):
@@ -68,7 +68,7 @@ correspondence, plats, and cards, in no particular order within a file.
 Return one JSON object and nothing else:
 
   {{"form_class": ..., "part": ..., "orientation": ...,
-    "confidence": ..., "alt_class": ...}}
+    "confidence": ..., "alt_class": ..., "form_number_legible": ...}}
 
 form_class is one of:
 {_vocabulary()}
@@ -103,6 +103,25 @@ confidence is high, medium or low. Say low when the page is too degraded,
 too generic, or too unfamiliar to place. Low is useful; a wrong high is not.
 
 alt_class is your second choice, or null if nothing else is plausible.
+
+form_number_legible is true or false: can you actually read a printed form
+number on this page, whatever it says. Not whether you can guess the form from
+its layout. A number you can see is there but cannot make out is false.
+
+THE COMPLETION REPORT RULE. G-1 and W-2 are near-identical in layout and differ
+in their printed number. So you may answer g1 or w2 ONLY when
+form_number_legible is true and the number you read is that one. On a page that
+is plainly the face of a completion report but whose number you cannot read,
+answer completion_face_unknown_form, with form_number_legible false. Do not
+guess between G-1 and W-2 from the layout; the layout does not carry the
+answer, and a guess here was wrong every single time it was measured.
+
+Some completion reports predate the numbering and are printed "Form 2",
+"Form 3" or "GWT-1". Those are completion_face_legacy, with
+form_number_legible true.
+
+Both of those classes are faces: part is always face for them. A later page or
+a printed back of such a form is other_form.
 
 If the page is a form you cannot identify, use other_form. If it is not a form
 at all, use other_nonform. Do not force a page into a class it does not fit.

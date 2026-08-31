@@ -36,6 +36,12 @@ class PageClass(str, Enum):
     G1 = "g1"                                # gas well completion report
     W2 = "w2"                                # oil well completion report
 
+    # A completion report face we decline to name, and one whose name is
+    # older than the numbering. Both are abstentions rather than guesses.
+    # Origin: the stage-2 measurement and DEFECTS #17.
+    COMPLETION_FACE_UNKNOWN_FORM = "completion_face_unknown_form"
+    COMPLETION_FACE_LEGACY = "completion_face_legacy"
+
     # Tier B. Identity-bearing: identity fields only, cross-form disagreement.
     W1 = "w1"                                # drilling permit application
     W3 = "w3"                                # plugging record
@@ -63,7 +69,20 @@ class PageClass(str, Enum):
     OTHER_NONFORM = "other_nonform"          # not a form at all
 
 
+#: The two completion reports we can name from a printed form number.
 EXTRACTION_TARGETS = frozenset({PageClass.G1, PageClass.W2})
+
+#: Every class meaning "this page is the face of a completion report".
+#:
+#: The census headline is a union over this set, which is why abstaining costs
+#: nothing at the record level: a page moves between members of the union and
+#: never out of it. 115 of 202 records was measured over G1 and W2 alone, and
+#: the two abstention classes only take pages that were already being counted
+#: as one of those, wrongly.
+COMPLETION_FACES = EXTRACTION_TARGETS | frozenset({
+    PageClass.COMPLETION_FACE_UNKNOWN_FORM,
+    PageClass.COMPLETION_FACE_LEGACY,
+})
 
 IDENTITY_BEARING = frozenset({
     PageClass.W1, PageClass.W3, PageClass.P4, PageClass.P5, PageClass.P12,
@@ -77,6 +96,12 @@ IDENTITY_BEARING = frozenset({
 GLOSS = {
     PageClass.G1: "Form G-1, gas well completion or recompletion report",
     PageClass.W2: "Form W-2, oil well completion or recompletion report",
+    PageClass.COMPLETION_FACE_UNKNOWN_FORM:
+        "the face of a completion report whose printed form number you cannot "
+        "read. Use this instead of guessing between G-1 and W-2",
+    PageClass.COMPLETION_FACE_LEGACY:
+        "the face of a completion report printed before the G-1 and W-2 "
+        "numbering: Form 2, Form 3, GWT-1",
     PageClass.W1: "Form W-1, application for permit to drill",
     PageClass.W3: "Form W-3, plugging record",
     PageClass.P4: "Form P-4, producer's transportation authority",
@@ -131,6 +156,12 @@ FORM_TOKENS = {
     "W-4": PageClass.W4_FAMILY, "W-4A": PageClass.W4_FAMILY,
     "W-5": PageClass.W4_FAMILY, "W-6": PageClass.W4_FAMILY,
     "WS-1": PageClass.WS1_SW1, "SW-1": PageClass.WS1_SW1,
+    # Older than the numbering. Origin: DEFECTS #17, found by hand labelling
+    # and confirmed on the page by Alex, not by the scanner, which could not
+    # see these spellings at all until the same day.
+    "FORM 2": PageClass.COMPLETION_FACE_LEGACY,
+    "FORM 3": PageClass.COMPLETION_FACE_LEGACY,
+    "GWT-1": PageClass.COMPLETION_FACE_LEGACY,
 }
 
 
@@ -146,7 +177,7 @@ def form_token_class(token: str) -> "PageClass | None":
 
 
 # Classes where `part` is meaningful. A plat has no Section III.
-FORM_CLASSES = EXTRACTION_TARGETS | IDENTITY_BEARING
+FORM_CLASSES = COMPLETION_FACES | IDENTITY_BEARING
 
 CENSUS_ONLY = frozenset(PageClass) - FORM_CLASSES
 
@@ -297,6 +328,13 @@ class PageLabel:
     alt_class: PageClass | None = None
     oversize: bool = False
 
+    #: Whether a printed form number can be read on the page.
+    #:
+    #: None means the question was never asked. Stage-1 labels and every census
+    #: row written before 2026-08-31 predate it, and those stay constructible.
+    #: Any answer a model gives must carry it: parse_response requires it.
+    form_number_legible: bool | None = None
+
     def __post_init__(self) -> None:
         if self.form_class in PART_REQUIRED and self.part is None:
             raise ValueError(
@@ -305,6 +343,39 @@ class PageLabel:
             raise ValueError(
                 f"{self.form_class.value} has no sections; part must be None, "
                 f"got {self.part.value}")
+
+        # The stage-2 invariant. Of 70 hand-labelled pages the census called a
+        # G-1 or W-2 face, all 20 whose printed number could not be read were
+        # misclassified, without exception. The classifier was not confusing
+        # two layouts; it was guessing where it had nothing to read. So the
+        # guess stops being expressible rather than being discouraged in a
+        # prompt (CLAUDE.md rule 6).
+        if (self.form_class in EXTRACTION_TARGETS
+                and self.form_number_legible is False):
+            raise ValueError(
+                f"{self.form_class.value} claims a specific form number on a "
+                "page where no form number can be read. Use "
+                f"{PageClass.COMPLETION_FACE_UNKNOWN_FORM.value} instead.")
+
+        # The two abstention classes are faces by definition, and they are not
+        # interchangeable: legacy means the number is readable and older than
+        # the numbering, unknown_form means it cannot be read at all.
+        if self.form_class in COMPLETION_FACES - EXTRACTION_TARGETS:
+            if self.part is not Part.FACE:
+                raise ValueError(
+                    f"{self.form_class.value} is a face; part must be face, "
+                    f"got {self.part.value if self.part else None}")
+        if (self.form_class is PageClass.COMPLETION_FACE_LEGACY
+                and self.form_number_legible is False):
+            raise ValueError(
+                "completion_face_legacy is identified by its printed number "
+                "(Form 2, Form 3, GWT-1); it cannot be illegible. Use "
+                f"{PageClass.COMPLETION_FACE_UNKNOWN_FORM.value}.")
+        if (self.form_class is PageClass.COMPLETION_FACE_UNKNOWN_FORM
+                and self.form_number_legible is True):
+            raise ValueError(
+                "completion_face_unknown_form is for a page whose form number "
+                "cannot be read. If it can be read, name the form.")
 
     @property
     def identity_bearing(self) -> bool:
@@ -316,7 +387,7 @@ class PageLabel:
         the downscale is refused until tiling exists. A printed form back is
         refused because it holds no values to extract.
         """
-        return (self.form_class in EXTRACTION_TARGETS
+        return (self.form_class in COMPLETION_FACES
                 and not self.oversize
                 and self.part in DATA_BEARING_PARTS)
 
@@ -327,7 +398,8 @@ class PageLabel:
 
 # -------------------------------------------------------------- model response
 
-_REQUIRED = ("form_class", "part", "orientation", "confidence", "alt_class")
+_REQUIRED = ("form_class", "part", "orientation", "confidence", "alt_class",
+             "form_number_legible")
 
 
 def _enum(cls, value, field_name: str):
@@ -339,6 +411,16 @@ def _enum(cls, value, field_name: str):
         allowed = ", ".join(m.value for m in cls)
         raise ValueError(
             f"{field_name}={value!r} is not one of: {allowed}") from None
+
+
+def _boolean(value, field_name: str) -> bool:
+    """Strict, for the same reason _enum is: a model that answers "unknown"
+    to a yes/no question has told us something, and coercing it to False would
+    turn that into a silent abstention nobody chose.
+    """
+    if isinstance(value, bool):
+        return value
+    raise ValueError(f"{field_name}={value!r} is not true or false")
 
 
 def _json_object(body: str) -> dict:
@@ -379,7 +461,9 @@ def parse_response(body: str, *, record_id: str, file_index: int,
         orientation=_enum(Orientation, obj["orientation"], "orientation"),
         confidence=_enum(Confidence, obj["confidence"], "confidence"),
         alt_class=_enum(PageClass, obj["alt_class"], "alt_class"),
-        oversize=oversize)
+        oversize=oversize,
+        form_number_legible=_boolean(obj["form_number_legible"],
+                                     "form_number_legible"))
 
 
 # ----------------------------------------------------------------- census
@@ -423,9 +507,12 @@ def aggregate(labels) -> Census:
         for cls in classes:
             records_by_class[cls] += 1
 
+    # Union over every class meaning "a completion report face", not over the
+    # two named ones. Abstaining on a page moves it within this set and never
+    # out of it, which is what keeps the verified 115 stable under the change.
     with_report = sum(
         1 for classes in classes_per_record.values()
-        if classes & EXTRACTION_TARGETS)
+        if classes & COMPLETION_FACES)
 
     return Census(
         total_pages=total,

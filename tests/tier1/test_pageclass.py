@@ -162,7 +162,7 @@ def test_cache_key_is_stable_and_prompt_sensitive():
 def test_parses_a_clean_response():
     label = pc.parse_response(
         '{"form_class":"g1","part":"face","orientation":"up",'
-        '"confidence":"high","alt_class":"w2"}',
+        '"confidence":"high","alt_class":"w2","form_number_legible":true}',
         record_id="1501720", file_index=0, page=2, oversize=False)
     assert label.form_class is pc.PageClass.G1
     assert label.alt_class is pc.PageClass.W2
@@ -175,7 +175,7 @@ def test_parses_json_wrapped_in_prose():
     label = pc.parse_response(
         'Here is the classification:\n```json\n'
         '{"form_class":"plat_map","part":null,"orientation":"cw90",'
-        '"confidence":"medium","alt_class":null}\n```',
+        '"confidence":"medium","alt_class":null,"form_number_legible":false}\n```',
         record_id="1501720", file_index=0, page=9, oversize=False)
     assert label.form_class is pc.PageClass.PLAT_MAP
     assert label.orientation is pc.Orientation.CW90
@@ -185,10 +185,11 @@ def test_parses_json_wrapped_in_prose():
     "not json at all",
     '{"form_class":"g1"',
     '{"form_class":"G-1 completion report","part":"face","orientation":"up",'
-    '"confidence":"high","alt_class":null}',
-    '{"part":"face","orientation":"up","confidence":"high","alt_class":null}',
+    '"confidence":"high","alt_class":null,"form_number_legible":true}',
+    '{"part":"face","orientation":"up","confidence":"high",'
+    '"alt_class":null,"form_number_legible":true}',
     '{"form_class":"g1","part":"face","orientation":"sideways",'
-    '"confidence":"high","alt_class":null}',
+    '"confidence":"high","alt_class":null,"form_number_legible":true}',
 ])
 def test_parse_response_refuses_to_guess(body):
     """No silent coercion. An out-of-enum class is a prompt or model problem

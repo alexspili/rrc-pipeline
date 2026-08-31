@@ -77,7 +77,10 @@ def main() -> None:
     vocab = book.create_sheet("vocabulary")
     vocab["A1"], vocab["B1"] = "form_class", "meaning"
     vocab["A1"].font = vocab["B1"].font = Font(bold=True)
-    ordered = ([c for c in pc.PageClass if c in pc.EXTRACTION_TARGETS]
+    # COMPLETION_FACES, not EXTRACTION_TARGETS. The two abstention classes are
+    # completion faces without being named forms, so grouping by the narrower
+    # set drops them from the workbook entirely and they become unselectable.
+    ordered = ([c for c in pc.PageClass if c in pc.COMPLETION_FACES]
                + [c for c in pc.PageClass if c in pc.IDENTITY_BEARING]
                + [c for c in pc.PageClass if c in pc.CENSUS_ONLY])
     for i, cls in enumerate(ordered, start=2):
