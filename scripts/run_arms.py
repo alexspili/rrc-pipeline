@@ -127,8 +127,24 @@ def run_arm(api, arm, pages, cache) -> list[dict]:
     return results
 
 
-def score(rows, truth):
-    scored = [r for r in rows if r["page_id"] in truth and r.get("form_class")]
+def comparable_pages(all_rows, truth) -> set:
+    """Pages every arm labelled, and that carry ground truth.
+
+    Arms fail to parse on different pages, so scoring each on whatever it
+    managed leaves the headline percentages sitting on different denominators
+    and not comparable. The first run had 58, 59 and 57. Parse failures are
+    reported separately, as their own number.
+    """
+    common = set(truth)
+    for rows in all_rows.values():
+        common &= {r["page_id"] for r in rows if r.get("form_class")}
+    return common
+
+
+def score(rows, truth, pages=None):
+    scored = [r for r in rows
+              if r["page_id"] in truth and r.get("form_class")
+              and (pages is None or r["page_id"] in pages)]
     if not scored:
         return None
     correct = sum(1 for r in scored
@@ -182,7 +198,7 @@ def arm_cost(rows) -> tuple[float, int]:
     return spend / len(priced), len(priced)
 
 
-def mcnemar(rows_a, rows_b, truth) -> dict:
+def mcnemar(rows_a, rows_b, truth, pages=None) -> dict:
     """Paired comparison of two arms scored on the same pages.
 
     An unpaired +/-6pp error bar is the wrong instrument here: both arms see
@@ -194,6 +210,8 @@ def mcnemar(rows_a, rows_b, truth) -> dict:
     by_id_b = {r["page_id"]: r for r in rows_b}
     b = c = n = 0
     for page_id, row in truth.items():
+        if pages is not None and page_id not in pages:
+            continue
         ra, rb = by_id_a.get(page_id), by_id_b.get(page_id)
         if not ra or not rb or not ra.get("form_class") or not rb.get("form_class"):
             continue
@@ -213,6 +231,39 @@ def mcnemar(rows_a, rows_b, truth) -> dict:
                       / 2 ** discordant)
     return {"n": n, "b": b, "c": c, "discordant": discordant,
             "difference": (c - b) / n if n else 0.0, "p_value": p_value}
+
+
+#: A costlier arm must beat the cheapest by more than this to be preferred.
+#: Recorded in docs/modules/classify.md before any arm ran.
+MARGIN = 0.05
+
+#: Below this the paired test separates two arms; above it, it does not.
+ALPHA = 0.05
+
+
+def decide(ranked, scores, paired) -> dict:
+    """Who wins, and which comparisons could not be settled at this sample size.
+
+    Origin: DEFECTS #13. The first version reset the winner to the cheapest arm
+    for any contested comparison, which discarded a different arm's proven win.
+    Contested is a statement about one arm and never a veto over another.
+    """
+    cheapest = ranked[0]
+    base = scores[cheapest]["class_accuracy"]
+
+    contested, eligible = [], []
+    for arm in ranked[1:]:
+        gain = scores[arm]["class_accuracy"] - base
+        if gain <= MARGIN:
+            continue                       # rule already answers this: cheapest
+        if paired[arm]["p_value"] < ALPHA:
+            eligible.append((gain, arm))
+        else:
+            contested.append(arm)
+
+    winner = max(eligible)[1] if eligible else cheapest
+    return {"winner": winner, "cheapest": cheapest,
+            "contested": contested, "eligible": [a for _, a in eligible]}
 
 
 def rank_by_cost(all_rows) -> list[str]:
@@ -286,49 +337,55 @@ def report(all_rows, scores, truth):
     print("=" * 72)
 
     ranked = [a for a in rank_by_cost(all_rows) if a in scores]
-    cheapest = ranked[0]
-    base = scores[cheapest]["class_accuracy"]
+    pages = comparable_pages(all_rows, truth)
+    paired = {arm: mcnemar(all_rows[ranked[0]], all_rows[arm], truth, pages)
+              for arm in ranked[1:]}
+    verdict = decide(ranked, scores, paired)
+    cheapest = verdict["cheapest"]
+
     print(f"  cheapest arm, measured: {cheapest} "
           f"({arm_cost(all_rows[cheapest])[0]:.5f}/page, "
-          f"{base:.1%} on {scores[cheapest]['n']} labelled pages)\n")
+          f"{scores[cheapest]['class_accuracy']:.1%} on "
+          f"{scores[cheapest]['n']} labelled pages)\n")
 
-    winner, margin, contested = cheapest, 0.0, []
     for arm in ranked[1:]:
-        gain = scores[arm]["class_accuracy"] - base
-        paired = mcnemar(all_rows[cheapest], all_rows[arm], truth)
-        clears = gain > 0.05
-        distinguishable = paired["p_value"] < 0.05
-
+        gain = scores[arm]["class_accuracy"] - scores[cheapest]["class_accuracy"]
+        pair = paired[arm]
         print(f"  {arm} vs {cheapest}: {gain:+.1%}")
-        print(f"    5pp rule:  {'clears' if clears else 'inside 5pp, a tie'}")
-        print(f"    paired:    {paired['discordant']} pages disagree "
-              f"({paired['b']} only {cheapest} right, "
-              f"{paired['c']} only {arm} right), p={paired['p_value']:.3f}")
-        print(f"    {'distinguishable at n=60' if distinguishable else 'NOT distinguishable at n=60'}")
-
-        if clears and not distinguishable:
-            contested.append((arm, gain, paired))
-        if clears and gain > margin:
-            winner, margin = arm, gain
+        print(f"    5pp rule:  {'clears' if gain > MARGIN else 'inside 5pp, a tie'}")
+        print(f"    paired:    {pair['discordant']} pages disagree "
+              f"({pair['b']} only {cheapest} right, "
+              f"{pair['c']} only {arm} right), p={pair['p_value']:.3f}")
+        print("    " + ("distinguishable at this sample size"
+                        if pair["p_value"] < ALPHA
+                        else "NOT distinguishable at this sample size"))
         print()
 
-    for arm, gain, paired in contested:
+    for arm in verdict["contested"]:
+        pair = paired[arm]
+        gain = scores[arm]["class_accuracy"] - scores[cheapest]["class_accuracy"]
         print("  " + "!" * 60)
         print(f"  FLAG: {arm} clears the 5pp threshold at {gain:+.1%}, but the")
         print(f"  paired test cannot separate it from {cheapest} at this sample")
-        print(f"  size (p={paired['p_value']:.3f}, only {paired['discordant']} "
-              "pages disagree). The gap is inside the")
-        print("  error bar that n=60 can resolve. Per the standing instruction,")
-        print("  the cheapest arm wins and this is not overridable on a hunch.")
+        print(f"  size (p={pair['p_value']:.3f}, only {pair['discordant']} "
+              "pages disagree). That gap is")
+        print("  inside what this sample can resolve, so it does not win on it.")
         print("  To settle it, enlarge the labelled set; do not eyeball it.")
         print("  " + "!" * 60)
-        winner = cheapest
+        print()
 
-    print(f"\n  WINNER: {winner}")
-    if winner == cheapest and not contested:
-        print("  No costlier arm cleared 5pp, so cost decides.")
-    elif winner == cheapest and contested:
-        print("  Cheapest by rule: no gap survived the paired test.")
+    print(f"  WINNER: {verdict['winner']}")
+    if verdict["winner"] == cheapest:
+        print("  Cheapest arm. No costlier arm both cleared 5pp and survived")
+        print("  the paired test.")
+    else:
+        pair = paired[verdict["winner"]]
+        print(f"  Beat {cheapest} by "
+              f"{scores[verdict['winner']]['class_accuracy'] - scores[cheapest]['class_accuracy']:+.1%} "
+              f"at p={pair['p_value']:.3f}, which clears both the 5pp rule and")
+        print("  the paired test. The margin is real at this sample size.")
+    if verdict["contested"]:
+        print(f"  Unsettled at this n: {', '.join(verdict['contested'])}.")
 
 
 def spot_checks(all_rows):
@@ -374,9 +431,18 @@ def main() -> None:
         all_rows[arm] = rows
         (OUT / f"{arm}.jsonl").write_text(
             "".join(json.dumps(r) + "\n" for r in rows))
-        result = score(rows, truth)
+    shared = comparable_pages(all_rows, truth)
+    for arm, rows in all_rows.items():
+        result = score(rows, truth, shared)
         if result:
             scores[arm] = result
+
+    print(f"\nscored on {len(shared)} pages every arm labelled, of "
+          f"{len(truth)} labelled")
+    for arm, rows in all_rows.items():
+        errs = sum(1 for r in rows if r.get("error"))
+        print(f"  {arm:<14}{errs:>3} parse failures of {len(rows)} pages "
+              f"({errs / len(rows):.1%})")
 
     report(all_rows, scores, truth)
     spot_checks(all_rows)

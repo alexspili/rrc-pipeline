@@ -473,3 +473,33 @@ unremarkable, or the flag would fire on every run.
 alongside a contested arm, cheapest winning when nothing is distinguishable,
 a sub-5pp gap not being flagged, and the best distinguishable arm winning
 rather than the first.
+
+---
+
+## #14 — 2026-08-30 — A cached result did not behave like a fresh one
+
+**What happened:** The first arm run tolerated 9 unparseable model responses
+out of 280 pages, recording each on its Attempt and carrying on, which is what
+a 280-page run should do. Re-running to regenerate the report from cache, with
+no new API calls, crashed on the first of them:
+
+    ValueError: form_class='back_instructions' is not one of: g1, w2, ...
+
+**Why it was wrong:** `classify_page` has two paths. The live path wraps
+`parse_response` in try/except and puts the failure on the Attempt. The
+cache-hit path, added at the same time and three lines above, called the same
+parser bare. The cache therefore changed behaviour rather than only saving
+time, and the change only appeared on the second run.
+
+The point of the cache (CLAUDE.md rule 7) is that an unchanged pair is never
+re-inferred. That is worth nothing if reading the cache is riskier than
+calling the API. It also made the run unrepeatable: fixing a reporting bug and
+re-printing the results was impossible without re-spending, which is exactly
+when a cache should pay off.
+
+**Resolution:** one parse, one guard, shared by both paths. Pinned by tests
+asserting that a malformed cached response yields the same Attempt as a
+malformed fresh one, and that the commonest real failure, the model answering
+with a `part` value in the `form_class` field, does not raise on replay.
+**Pin:** tests/tier2/test_classify.py::test_a_cached_malformed_response_behaves_like_a_fresh_one
+and ::test_a_cached_out_of_vocabulary_class_does_not_raise

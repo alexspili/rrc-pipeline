@@ -194,3 +194,43 @@ def test_client_refuses_to_run_without_a_key(monkeypatch):
     with pytest.raises(RuntimeError) as exc:
         classify.client()
     assert ".env" in str(exc.value)
+
+
+def test_a_cached_malformed_response_behaves_like_a_fresh_one(tmp_path):
+    """Origin: DEFECTS #14. The live path catches a parse failure and records
+    it on the Attempt; the cache-hit path called the same parser with no
+    guard. So a run that tolerated 9 bad pages on the way out died on the
+    first one on the way back, and re-reporting from cache was impossible
+    without re-spending.
+
+    A cached result must be indistinguishable from a fresh one.
+    """
+    cache = classify.ResultCache(tmp_path / "cache.jsonl")
+    api = StubClient("I think this is a G-1?")
+
+    fresh = classify.classify_page(api, "text", FIXTURE, 1, record_id="1",
+                                   file_index=0, cache=cache, doc_hash="abc")
+    cached = classify.classify_page(api, "text", FIXTURE, 1, record_id="1",
+                                    file_index=0, cache=cache, doc_hash="abc")
+
+    assert api.messages.calls == 1
+    assert cached.cached is True
+    assert fresh.label is None and cached.label is None
+    assert fresh.error == cached.error
+    assert cached.input_tokens == fresh.input_tokens
+
+
+def test_a_cached_out_of_vocabulary_class_does_not_raise(tmp_path):
+    """The commonest real failure: the model answers with a `part` value in
+    the form_class field.
+    """
+    cache = classify.ResultCache(tmp_path / "cache.jsonl")
+    body = ('{"form_class":"back_instructions","part":"face",'
+            '"orientation":"up","confidence":"high","alt_class":null}')
+    api = StubClient(body)
+    classify.classify_page(api, "text", FIXTURE, 1, record_id="1",
+                           file_index=0, cache=cache, doc_hash="abc")
+    again = classify.classify_page(api, "text", FIXTURE, 1, record_id="1",
+                                   file_index=0, cache=cache, doc_hash="abc")
+    assert again.label is None
+    assert "back_instructions" in again.error
