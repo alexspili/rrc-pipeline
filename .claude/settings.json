@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make test)",
+      "Bash(make eval)",
+      "Bash(pdftotext *)",
+      "Bash(pdfinfo *)",
+      "Bash(pdfimages -list *)",
+      "Bash(pnpm check)",
+      "Bash(pnpm test)",
+      "Bash(pnpm lint)",
+      "Bash(git worktree list)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)"
+    ]
+  }
+}
