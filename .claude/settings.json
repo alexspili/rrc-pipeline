@@ -1,8 +1,18 @@
 {
   "permissions": {
     "allow": [
+      "Bash(.venv/bin/python *)",
+      "Bash(python3 *)",
+      "Bash(psql *)",
+      "Bash(npx vitest *)",
+      "Bash(npx tsx *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
       "Bash(make test)",
       "Bash(make eval)",
+      "Bash(make label)",
+      "Bash(make workbook)",
       "Bash(pdftotext *)",
       "Bash(pdfinfo *)",
       "Bash(pdfimages -list *)",
