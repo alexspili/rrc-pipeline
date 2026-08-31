@@ -23,9 +23,16 @@ only, referenced by record id.
 
 ## Cut order (each line is a shippable stopping point)
 
-1. fetch + cached corpus (DONE except final pulls)
-2. page classifier w/ measured number on small labeled page set
-3. G-1 Sections I & III extraction (identity, dates, depths, casing). Skip
+1. ~~fetch + cached corpus~~ DONE. Corpus closed at 202/249/3,689.
+2. ~~page classifier w/ measured number on small labeled page set~~ DONE
+   2026-08-31. Census: 115 of 202 records (57%) hold a completion report,
+   hand-verified 15/15. Corpus sufficient; fetch.py stays closed.
+   Caveat that travels with it: the per-form G-1 vs W-2 split is NOT
+   reportable, and the 83.6% arm accuracy is a uniform-sample number on 60
+   pages containing 0 G-1. See docs/modules/classify.md.
+   2b. Stage-2 labels, stratified over census predictions, to make G-1 vs
+   W-2 measurable. Labelling only; the prompt fix is a separate gated step.
+3. G-1 **and W-2** Sections I & III extraction (identity, dates, depths, casing). Skip
    Section II initially.
 4. Deterministic validation (API check structure + county prefix, date order,
    depth order)
@@ -147,10 +154,20 @@ DEAD HEURISTICS (measured on full manifest, do not chase):
   county codes. It is not a classifier prior, but it is a free cross-check
   for extraction and the disagreement detector.
 
-Full-census classify cost: ~9.1M Haiku input tokens ≈ $9 ($4.50 batched).
-Run it on everything; only reopen fetch.py if G-1-bearing records < ~80.
+Full-census classify cost: estimated ~9.1M Haiku input tokens ≈ $9 ($4.50
+batched). MEASURED 2026-08-31: **$4.25 batched**, 3,689 pages on vision_1000
+at ~2,045 input tokens each, 0.4% parse failures. The reopen-fetch condition
+(G-1-bearing records < ~80) was not met: 115.
 
 ## Ground truth / eval design (post-pivot)
+
+Status 2026-08-31. Stage-1 page labels DONE: 60 pages, uniform, seed 20260830,
+at tests/fixtures/labels_stage1.csv. Uniform was right for an unbiased class
+prior and overall accuracy, and is exactly why it contains 0 G-1 pages: a
+corpus with 112 G-1 pages in 3,689 will not put one in 60 draws reliably.
+Stage 2 is stratified over census predictions and is the instrument for
+per-class precision. Never blend the two: stage 1 owns the prior and overall
+accuracy, stage 2 owns per-class numbers.
 
 - Hand-label 12–15 docs (G-1 Sections I & III), stratified across form
   eras/buckets AFTER classification. Honest small-n error bars in README.
@@ -218,6 +235,12 @@ itself a headline README table.
 
 ## DEFECTS.md — banked entries (write these in before coding)
 
+Superseded by the real DEFECTS.md, which now carries 14 entries. Kept because
+1, 2 and 5 predate any code and that is the point of them. Entries 6-14 came
+out of the classifier milestone; nine of the fourteen were found by measuring
+rather than by reading, and three by Alex asking a question the tests could
+not answer.
+
 1. Log-strip aspect ratio would silently destroy pages via downscale
    (found pre-code from a real file).
 2. Amended P-17 filings double-count a permit within one record.
@@ -235,18 +258,21 @@ itself a headline README table.
 - .env.example committed; requirements.txt (requests now; later anthropic,
   pypdf, pillow, boto3)
 - docs/recon/ holds raw cURL captures (redact tokens)
-- CONTEXT.md with stated line budget; per-module rules with defect origins +
-  pinning test + RETIRED section; README numbers all [N]-placeholder until
-  measured (draft exists in earlier thread outputs)
+- CLAUDE.md (not CONTEXT.md) with stated line budget: 120, currently 95. The
+  number came from SETUP.md's "e.g. 120" template line and is arbitrary; the
+  discipline is not, and the rule on hitting it is move content out, not raise
+  the ceiling. per-module rules with defect origins + pinning test + RETIRED
+  section; README numbers all [N]-placeholder until measured
 - Alex's style: plain declarative, no em dashes, no marketing adjectives, no
   "turns X into Y", no absolutes. Only defensible claims.
 
 ## Immediate next steps
 
 1. ~~Corpus pulls~~ DONE (202 records; see Corpus status).
-2. Repo skeleton + first commits (fetch.py, docs/recon, CONTEXT.md,
-   DEFECTS.md with entries above, .gitignore/.env.example/requirements.txt).
-   Real commit history matters — the history IS the workflow evidence.
+2. ~~Repo skeleton + first commits~~ DONE. 40+ commits, pushed to
+   github.com/alexspili/rrc-pipeline (private). DEFECTS.md carries 14 entries,
+   nine of them found during the classifier milestone. The pre-commit hook now
+   runs tiers 1 and 2, so CLAUDE.md rule 6 is enforced rather than stated.
 3. Classifier (Haiku, page images, classes: G-1/W-2 face, G-1 Section III,
    P-4, W-3, WS-1/SW-1 old family, plat/schematic, letter/memo, separator
    card, log strip [by geometry], other) → corpus census table.
