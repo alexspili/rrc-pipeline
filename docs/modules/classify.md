@@ -218,6 +218,24 @@ page, plus oversize pages a uniform sample never reaches.
 prompt fix is a separate step, gated on stage 2 existing, with its own
 before-and-after on those labels.
 
+### Stage 2 as drawn, 2026-08-31
+
+143 pages in nine strata over the census predictions, blinded, both seeds and
+all five metrics recorded in `docs/labeling-protocol-stage2.md` before the
+draw. 105 scored, plus all 23 oversize pages and all 15 parse failures.
+
+The design variable that made it affordable: the OCR header scan agrees with
+the model on all 75 completion faces where it resolves a form number at all,
+and contradicts it on none, so those pages take 16 labels between them and the
+163 where the printed number did not survive imaging take 47. Worth 4.85
+percentage points of standard error on each face precision, computed by
+`pipeline/estimate.py` from the allocation before any page was labelled.
+
+The scan is trusted only that far. DEFECTS #15 and #16 are both cases of it
+reading a mention as a header, so: of those 75 corroborated faces, 0 carry
+"status report", "when to file", "where to file" or "instructions" in their
+header region, which is the shape the leak takes.
+
 ### How to quote the accuracy number
 
 The arm competition measured **83.6%** class accuracy for `vision_1000`. That

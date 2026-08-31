@@ -32,6 +32,10 @@ only, referenced by record id.
    pages containing 0 G-1. See docs/modules/classify.md.
    2b. Stage-2 labels, stratified over census predictions, to make G-1 vs
    W-2 measurable. Labelling only; the prompt fix is a separate gated step.
+   INSTRUMENT BUILT 2026-08-31, awaiting Alex's labels: 143 pages in nine
+   strata, blinded, seeds and metrics pre-registered before the draw in
+   docs/labeling-protocol-stage2.md. Design worth 4.85pp standard error on
+   each face precision. `make label2`.
 3. G-1 **and W-2** Sections I & III extraction (identity, dates, depths, casing). Skip
    Section II initially.
 4. Deterministic validation (API check structure + county prefix, date order,
@@ -235,11 +239,13 @@ itself a headline README table.
 
 ## DEFECTS.md — banked entries (write these in before coding)
 
-Superseded by the real DEFECTS.md, which now carries 14 entries. Kept because
+Superseded by the real DEFECTS.md, which now carries 16 entries. Kept because
 1, 2 and 5 predate any code and that is the point of them. Entries 6-14 came
 out of the classifier milestone; nine of the fourteen were found by measuring
 rather than by reading, and three by Alex asking a question the tests could
-not answer.
+not answer. 15 and 16 came out of sizing the stage-2 strata: the header
+scanner counted a form's mention of other forms as their headers, and the
+first fix for it was defeated by one space in the OCR. 16 is open.
 
 1. Log-strip aspect ratio would silently destroy pages via downscale
    (found pre-code from a real file).
@@ -273,7 +279,8 @@ not answer.
    github.com/alexspili/rrc-pipeline (private). DEFECTS.md carries 14 entries,
    nine of them found during the classifier milestone. The pre-commit hook now
    runs tiers 1 and 2, so CLAUDE.md rule 6 is enforced rather than stated.
-3. Classifier (Haiku, page images, classes: G-1/W-2 face, G-1 Section III,
-   P-4, W-3, WS-1/SW-1 old family, plat/schematic, letter/memo, separator
-   card, log strip [by geometry], other) → corpus census table.
-4. Then extraction per cut order.
+3. ~~Classifier + corpus census~~ DONE 2026-08-31. See Cut order 2.
+4. Stage-2 labelling, in Alex's hands. The sheet, the thumbnails and the
+   validator exist; nothing downstream of it should be built until the
+   labels are in, because the prompt fix is gated on them.
+5. Then extraction per cut order.

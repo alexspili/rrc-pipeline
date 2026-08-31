@@ -62,6 +62,7 @@ NOT_CORPUS_COUNTS = {
     "pages": {
         "60",          # the stage-1 hand-labelled sample
         "157",         # other_form pages in the 2026-08-31 census
+        "143",         # the stage-2 stratified sample, drawn 2026-08-31
     },
 }
 
