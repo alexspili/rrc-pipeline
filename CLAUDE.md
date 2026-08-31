@@ -42,11 +42,16 @@ must be defensible line by line in an interview.
   number is illegible were misclassified; where the number is legible the
   model is essentially never wrong. The split is measurable and still not
   reportable as a count. docs/modules/classify.md → Stage 2 results.
-- Next, and NOT started: decide what the fix is. It is not a prompt tweak;
-  see DEFECTS #17 (a completion report older than the G-1/W-2 numbering, no
-  class for it) and the legibility finding. Then extraction per the cut
-  order in HANDOFF.md → validation → cross-form disagreement → eval
-  (`make eval`) → TypeScript span viewer → optional Postgres projection.
+- Fix DECIDED 2026-08-31, NOT implemented, gated: abstain rather than guess.
+  A completion face with no legible form number gets
+  `completion_face_unknown_form`; the pre-numbering family (Form 2/3, GWT-1)
+  gets `completion_face_legacy`. The 115 headline is a union over all four
+  completion classes, so it does not move. Needs a rule-5 proposal for the
+  PageLabel invariant, then a before/after on the stage-2 labels. Design and
+  test plan: docs/modules/classify.md → The decided fix.
+- Then extraction per the cut order in HANDOFF.md → validation →
+  cross-form disagreement → eval (`make eval`) → TypeScript span viewer →
+  optional Postgres projection.
 - Open finding, no implementation: page grouping. 157 pages / 83 records are
   form pages carrying no form number, plus 137 non-face completion pages.
   See docs/modules/classify.md.

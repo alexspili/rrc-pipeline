@@ -284,10 +284,12 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    runs tiers 1 and 2, so CLAUDE.md rule 6 is enforced rather than stated.
 3. ~~Classifier + corpus census~~ DONE 2026-08-31. See Cut order 2.
 4. ~~Stage-2 labelling~~ DONE 2026-08-31. See Cut order 2b.
-5. Decide what the fix is, before writing one. The measurement says the
-   failure is an unreadable form number, not a confused layout, so a prompt
-   change is unlikely to be the answer; and DEFECTS #17 says a per-form
-   count needs a taxonomy decision first (a class for the pre-numbering
-   completion family, or a `completion_report` class carrying the form
-   number as a field). That is a schema question for extraction.
+5. ~~Decide what the fix is~~ DECIDED 2026-08-31: abstain rather than
+   guess. Two new classes, `completion_face_unknown_form` and
+   `completion_face_legacy`; the record-level union covers all four, so the
+   115 headline is stable by construction. Not implemented, gated on a
+   rule-5 proposal for the PageLabel invariant plus a before/after run on
+   the stage-2 labels. Deferred on purpose: a targeted OCR/vision read of
+   the form-number region, which would reopen Textract. See
+   docs/modules/classify.md → The decided fix, and Era drift.
 6. Then extraction per cut order.
