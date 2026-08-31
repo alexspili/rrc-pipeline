@@ -404,3 +404,20 @@ stay. Rewriting it would remove the evidence that this happened.
 commit if they fail, making rule 6 true rather than aspirational. Test-gating
 via a pipe is not a habit to fix by resolving to be careful.
 **Pin:** .githooks/pre-commit, rule 5.
+
+**Amended 2026-08-30, later the same day.** The paragraph above says the
+commit was not corrected in place. It since was, at Alex's request. The false
+"100 tests green" line is gone and the message now says nothing about the
+suite at all, which is what an honest author would have written that evening
+having not noticed the failure. Only the message changed: the trees before and
+after are byte-identical, verified by comparing tree hashes across the
+rewrite, and `git filter-branch` renumbered the commits from that point.
+
+Rewriting was permitted here and is nowhere near a habit: the commits were
+unpushed and private, SETUP.md allows rewording an unpushed span, and what was
+removed was a false factual claim rather than an inconvenient true one.
+
+The record of the failure is not thereby lost. It lives in this entry and in
+the following commit's own message, "The previous commit went in red", which
+is where it belongs. A commit message narrating its own editing would have
+been a fourth copy and a strange thing to read in a log.
