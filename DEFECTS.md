@@ -363,3 +363,44 @@ to 10 now that it is filtering forms rather than noise, and its docstring
 states what it is for instead of restating the current data.
 **Pin:** tests/tier1/test_formscan.py::test_survey_abstract_numbers_are_not_forms
 and ::test_a_prefixed_token_is_rejected_even_beside_the_word_form
+
+---
+
+## #12 — 2026-08-30 — A commit claimed "100 tests green" while the suite was red
+
+**What happened:** Commit f809730 ends with the line "100 tests green." The
+suite at that commit was 99 passed, 1 failed. The commit was made by:
+
+    make test 2>&1 | tail -2 && git add -A && git commit ...
+
+A pipeline's exit status is that of its **last** command. `tail` succeeds
+whether or not `make` did, so `&&` proceeded over a failing suite, and the
+summary line was copied from the previous run's habit rather than from the
+output on screen.
+
+**Why it was wrong:** Two failures compounding. The mechanical one is that
+`cmd | tail` cannot gate anything. The one that matters is that a commit
+message asserted a measured number nobody measured, in a repository whose
+entire argument is that every claim is backed by something. A false green is
+worse than a red build: red is visible.
+
+**Related:** the same shape as #5 (an echo of input read as evidence of
+binding) and #9 (an error about our own schema read as evidence about the
+vendor). A signal was trusted to mean something it did not mean.
+
+**The gap underneath it.** CLAUDE.md rule 6 says tier-2 tests run "on commit".
+Nothing made that true. `.githooks/pre-commit` checked for secrets, `data/`
+and oversized files, and never ran a test. The rule was a description of
+intent that no mechanism enforced, which is how a red commit was possible at
+all.
+
+**Not corrected in place.** f809730 is unpushed, and SETUP.md permits
+rewording an unpushed message, but the following commit a1adaa2 already states
+"The previous commit went in red" in its own message. The history is
+self-correcting and honest as it stands, and CLAUDE.md rule 4 says dead ends
+stay. Rewriting it would remove the evidence that this happened.
+
+**Resolution:** the pre-commit hook now runs tiers 1 and 2 and refuses the
+commit if they fail, making rule 6 true rather than aspirational. Test-gating
+via a pipe is not a habit to fix by resolving to be careful.
+**Pin:** .githooks/pre-commit, rule 5.

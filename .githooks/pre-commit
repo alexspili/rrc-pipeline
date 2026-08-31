@@ -18,4 +18,16 @@ for f in $(git diff --cached --name-only); do
   [ -f "$f" ] && [ "$(wc -c < "$f")" -gt 5000000 ] && {
     echo "BLOCKED: $f is >5MB."; fail=1; }
 done
+# 5. Tiers 1 and 2 must pass. CLAUDE.md rule 6 says they run on commit; until
+#    this existed, nothing made that true and a red commit went in (DEFECTS
+#    #12). Skipped when the venv is absent, so a fresh clone can still commit.
+if [ "$fail" -eq 0 ] && [ -x .venv/bin/python ]; then
+  if ! .venv/bin/python -m pytest tests/tier1 tests/tier2 -q > /tmp/rrc-pretest.log 2>&1; then
+    echo "BLOCKED: tier 1/2 tests are failing."
+    tail -15 /tmp/rrc-pretest.log
+    echo "(SKIP_TESTS=1 git commit ... to override, and say why in the message.)"
+    [ -z "$SKIP_TESTS" ] && fail=1
+  fi
+fi
+
 exit $fail
