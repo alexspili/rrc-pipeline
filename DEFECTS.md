@@ -659,3 +659,93 @@ bounded.
 **Pin:** pending. The case is real OCR from page 1506991-0-7: header_tokens on
 "When to file the L-1 • with Forms G- 1, W-2, and GT- 1 for new an" must
 return {"L-1"} and currently returns {"L-1", "W-2"}.
+
+---
+
+## #17 — 2026-08-31 — Completion reports that predate the form numbering
+
+**What happened:** stage-2 labelling put 7 of 105 scored pages in `other_form`
+with a note rather than a class. Alex's wording, verbatim from the sheet:
+
+    Form 3, a precursor of the named forms.
+    Form 2, a precursor of the named forms.
+    Form GWT-1, a precursor of the G-1 form.
+
+All 7 are pages the census called a G-1 or W-2 face. All 7 carry a **legible**
+printed form number. The model read a number that has no class, and mapped it
+to the nearest one that does.
+
+**Why it was wrong:** the taxonomy was built from forms that carry a modern
+RRC number. This corpus reaches back far enough to contain the completion
+report before it was called G-1 or W-2, and nothing in the class list can
+express that. Third time in this project: DEFECTS #10 missed five families
+because the list came from recon documents, #11 missed three more under a
+threshold fitted to the data, and this one misses a whole era.
+
+R4 exists to make an unknown class surface rather than hide, and it did not
+fire, because the model never emitted an unknown class. It emitted `g1`, which
+is in the vocabulary and wrong. **A guard on the parser cannot catch a
+taxonomy gap the model papers over on its own.**
+
+`pipeline/formscan.py` cannot see these pages either, and not by accident:
+`FORM_TOKEN` is `[A-Z]{1,2}-\d{1,2}[A-Z]?`, so `FORM 3` has no hyphen and
+`GWT-1` has three letters. Both return the empty set. The header scan that
+exists to check the taxonomy against the corpus is structurally blind to the
+family it most needed to report. Verified directly against `header_tokens`.
+
+**Measured footprint:** 5 of 22 in stratum A and 2 of 25 in stratum C, which
+weights to **7.9% +/- 2.6pp of the 238 predicted completion faces, about 19
+pages**. None in the OCR-corroborated strata B and E, where the printed number
+is one the scanner recognises, which is consistent with the mechanism rather
+than a separate result.
+
+**What it does and does not change.** It does not damage the census headline.
+"115 of 202 records contain a completion report" is a claim about records
+holding a completion report, and a Form 3 gas well record is one; the 15-of-15
+hand verification already accepted such a page, on record 1494409, where Alex
+wrote "it seems this is before the time where these forms had their current
+names". It does damage the per-form split further, and in a way the stage-2
+precision numbers already absorb: these pages count as errors there, correctly,
+because the page is not a G-1.
+
+**Resolution:** none yet. Deliberately: the prompt correction is a gated step
+and this changes what that correction has to do. The choice is a new class for
+the pre-numbering completion family against a broader `completion_report`
+class with the form number as a field, and that is a schema decision for the
+extraction milestone, not a patch.
+**Pin:** pending. Two cases, both real: `header_tokens("FORM 3 GAS WELL
+RECORD")` and `header_tokens("FORM GWT-1")` must not silently return nothing
+once the family has a name, and record 1493455 page 16 is the fixture.
+
+---
+
+## #18 — 2026-08-31 — A protocol promised a number its own allocation cannot produce
+
+**What happened:** docs/labeling-protocol-stage2.md lists five things stage 2
+would compute. The fifth is "accuracy per self-reported confidence bucket,
+which R6 requires before any threshold is put on that value". The draw returned
+119 `high` pages, 9 `medium`, and **0 `low`**, out of 66 low-confidence pages
+in the corpus.
+
+**Why it was wrong:** the metric was written into the protocol, and the
+allocation that had to feed it was designed separately. A low-confidence
+stratum was considered while sizing the strata and dropped, on the correct
+ground that it buys nothing for the G-1 versus W-2 question: the 53
+low-confidence pages outside the completion strata are mostly `other_nonform`.
+What was not done was to go back and strike the metric it fed. The two halves
+of the same document were allowed to disagree.
+
+Every predicted G-1 face in the corpus is `high` confidence with no alternative
+class offered, so the confidence signal was never going to explain these
+errors. That is worth knowing and is not what the protocol claimed to deliver.
+
+**Measured footprint:** the R6 table gains `high` 61/119 and `medium` 0/9 from
+this sample and no `low` row at all. R6 stays unretired, and no threshold may
+be put on a self-reported confidence, which is what it says anyway.
+
+**Resolution:** recorded, not patched. Filling the low bucket needs pages drawn
+for that purpose; that is a stratum in a future sheet, not a reinterpretation
+of this one. The protocol's metric 5 is answered "partly, and here is the part
+that is missing" rather than quietly reported as if complete.
+**Pin:** none possible. This is a claim in a document, and the tier-2 test that
+would catch it does not exist; the honest pin is this entry.
