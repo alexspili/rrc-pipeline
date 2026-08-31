@@ -55,9 +55,14 @@ NOT_CORPUS_COUNTS = {
         "1,907,311",   # every record in profile 17, from the DEFECTS #3 run
         "0",           # the empty 01/2005-01/2007 backfile window
         "2015",        # a year, in "2015 records return well logs/P-17s only"
+        "83",          # records holding a form page with no form number,
+                       # from the 2026-08-31 census page-grouping finding
     },
     "files": set(),
-    "pages": set(),
+    "pages": {
+        "60",          # the stage-1 hand-labelled sample
+        "157",         # other_form pages in the 2026-08-31 census
+    },
 }
 
 CLAIM = re.compile(r"(?<![\w-])([\d,]+)\s+(records|files|pages)")

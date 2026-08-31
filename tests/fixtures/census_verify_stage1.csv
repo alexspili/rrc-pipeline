@@ -1,0 +1,16 @@
+record_id,pages_to_look_at,predicted,n_pages,best_confidence,contains_a_completion_report,note
+1493495,1493495-0-9 1493495-0-10,w2,2,high,yes,
+1493521,1493521-0-6 1493521-0-7 1493521-0-8 1493521-0-9,"g1,w2",4,high,yes,"the second page of w2 is cw90, of the g1 form is ccw90"
+1493622,1493622-1-1 1493622-1-2,w2,2,high,yes,
+1494058,1494058-0-7 1494058-0-8 1494058-0-12,g1,3,high,yes,
+1494409,1494409-0-2 1494409-0-3,"g1,w2",2,high,yes,"Contains a completion report, but it seems this is before the time where these forms had their current names (w2 or g1)"
+1494690,1494690-0-5 1494690-0-6 1494690-0-7 1494690-0-8 1494690-0-9 1494690-0-10 1494690-0-17 1494690-0-18 1494690-0-20,"g1,w2",9,high,yes,Only w2 forms. I did not see a g1
+1495428,1495428-0-6 1495428-0-7,w2,2,high,yes,
+1504121,1504121-0-1 1504121-0-5 1504121-0-18,"g1,w2",3,high,yes,It's a g1 form. I donÕt think that the third page in the sample (1504121-0-18) is part of the form.
+1506419,1506419-0-10 1506419-0-11 1506419-0-22 1506419-0-23,w2,4,high,yes,
+1513275,1513275-0-5 1513275-0-6,"g1,w2",2,high,yes,It's a g1 form. 
+1760703,1760703-0-1 1760703-0-4 1760703-0-6 1760703-0-8 1760703-0-10 1760703-0-11,"g1,w2",6,high,yes,Three g1 forms
+1865952,1865952-0-1 1865952-0-2,w2,2,high,yes,
+1901881,1901881-0-3 1901881-0-5,"g1,w2",2,high,yes,It's a g1 form. 
+1995379,1995379-0-4 1995379-0-10 1995379-0-13 1995379-0-15,"g1,w2",4,high,yes,The first two pages are a g1 form. The last two (1995379-0-4 and 1995379-0-10) are a W15 form
+2396691,2396691-0-1 2396691-0-8 2396691-0-16,"g1,w2",3,high,yes,The first two pages are a g1 form. The last page (2396691-0-16) is a W15 form

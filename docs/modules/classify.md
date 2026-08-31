@@ -64,7 +64,8 @@ R12. `back_instructions` is for prose, `continuation` is for data.
     Real backs self-identify; the pointer phrases ("READ INSTRUCTIONS ON
     BACK", "- OVER -") are printed on the face, and only 107 of 486 pages
     carrying such a pointer are followed by an imaged reverse.
-    Pinned by: pending, the labelled set's part distribution.
+    Pinned by: the labelled set's part distribution, 8 back_instructions
+    of 60, and the census, 20 completion-report backs of 375.
 
 R4. Never coerce an out-of-vocabulary class into `other_nonform`.
     An unknown value is a prompt or model problem and must surface as one.
@@ -83,7 +84,8 @@ R6. Confidence is a measured bucket, not a probability.
     accuracy-per-bucket table on the labelled set gives it one. Never report a
     self-reported confidence as a probability, and never threshold on it before
     the table exists.
-    Pinned by: pending, the calibration table produced by the smoke run.
+    Pinned by: the accuracy-per-confidence table in the arm run and the
+    census confidence distribution (3,321 high / 287 medium / 66 low).
 
 R7. Document counts, record counts and entity counts are different numbers.
     Origin: DEFECTS #2. `Census` has no permits field because nothing in a page
@@ -102,10 +104,10 @@ R9. Structured outputs stay off for the arm competition.
     They are verified working (see Probe results). Constrained decoding cannot
     emit an out-of-vocabulary class, so it removes exactly the signal R4 exists
     to surface, on the one run where the taxonomy is still being tested. The
-    decision for the census is deferred to the measured parse-failure rate from
-    the smoke run: near zero and the plain path keeps the diagnostic, material
-    and structured outputs get wired.
-    Pinned by: pending, parse-failure rate from the smoke run.
+    RESOLVED 2026-08-31: census parse failures are 0.4% after the prompt
+    correction, below any threshold justifying constrained decoding, so they
+    stay off and R4 keeps its signal.
+    Pinned by: the census parse-failure rate, 15 of 3,689.
 
 R10. Rank arms by measured cost, never by assumed cost.
     The text arm is cheapest across the corpus and was more expensive than
@@ -150,6 +152,105 @@ Three things the measurement changed:
    OCR characters across 249 files, mean 2,274 per page. On this page the text
    arm cost more than vision_1568, because a dense G-1 face carries more text
    than a plat. Cost ordering must be measured per run, never assumed.
+
+## Census, 2026-08-31
+
+Run on `vision_1000`, the winning arm. 3,689 pages, ~10 batches, **$4.25**
+batched. Reconciled: 3,674 labelled, 15 parse failures (0.4%), none missing,
+202 records. Oversize came back as exactly 23, matching the geometry
+measurement taken independently before any model ran.
+
+This produced **two findings at two different confidence levels**. They must
+not be quoted as if they carried the same weight.
+
+### Finding 1 — completion detection. VERIFIED. Load-bearing.
+
+**115 of 202 records (57%) contain a completion report.**
+
+Above the OCR floor (71) and above HANDOFF's sufficiency threshold (80). A
+seeded random sample of 15 of those 115 records was rendered and hand-checked
+by Alex: **15 of 15 confirmed**, zero over-counting. Verdicts in
+`data/census/verify.csv`.
+
+This is the decision the milestone existed to produce. The corpus is
+sufficient; `fetch.py` stays closed; extraction is the next milestone.
+
+The check was per record, not per page, and deliberately so: the claim is "this
+record contains a completion report", one unambiguous face settles it, and a
+Section II page carries no form number so "is this page a W-2" is not
+answerable from it.
+
+### Finding 2 — per-form composition. PROVISIONAL. Not reportable.
+
+| Basis | g1 records | w2 records | both | union |
+|---|---|---|---|---|
+| all completion pages | 67 | 105 | 57 | 115 |
+| **face pages only** | **53** | **80** | **25** | **108** |
+
+The hand-check contradicted the composition on **6 of the 9** sampled records
+where the census claimed both a G-1 and a W-2. Two mechanisms:
+
+1. **Sectionless pages are attributed by guess.** 137 of 375 completion-report
+   pages (37%) are not faces: 52 continuation, 34 Section II, 31 Section III,
+   20 backs. None carries a form number, and G-1 and W-2 share a near-identical
+   layout, so the model picks one. Restricting to faces drops records-claimed-
+   both from 57 to 25.
+2. **Face-level confusion.** Four sampled records have conflicting faces, and
+   W-15 faces were read as completion reports on three pages across two
+   records.
+
+**Do not report a G-1 versus W-2 split until stage-2 labels make it
+measurable.**
+
+### Why it is not fixed yet
+
+The stage-1 labelled set contains **0 G-1 pages and 2 W-2 pages** out of 60.
+That is what a uniform sample of a corpus with 112 G-1 pages in 3,689 looks
+like, not a labelling failure. But it means there is currently no instrument
+capable of telling whether a fix worked.
+
+Changing the prompt now would spend the one iteration the labelled set can
+absorb on a blind change. Measure first: stage-2 labels stratified over the 238
+predicted completion-report faces, plus W-15 faces, plus every `low`-confidence
+page, plus oversize pages a uniform sample never reaches.
+
+**Stage 2's job is to make the distinction measurable, not to fix it.** The
+prompt fix is a separate step, gated on stage 2 existing, with its own
+before-and-after on those labels.
+
+### How to quote the accuracy number
+
+The arm competition measured **83.6%** class accuracy for `vision_1000`. That
+is accuracy on a **uniform sample of 60 pages containing 0 G-1 pages and 2 W-2
+pages**. It is not accuracy on the target classes and must never be presented
+as such. Whenever the number appears, that sentence appears with it.
+
+### R9 resolved
+
+Parse failures after the prompt correction are 15 of 3,689, **0.4%**, down from
+2.9%. That is below any threshold that would justify structured outputs, so
+they stay off and R4 keeps the out-of-vocabulary signal. R9's deferred decision
+is closed.
+
+## Open finding: page grouping
+
+`other_form` is **157 pages across 83 records, 4.3%** of the census, against
+13% in the uniform labelled sample. The gap is most likely the prompt
+correction, which told the model how to handle an unidentifiable form back.
+
+These are form pages carrying no form number: W-2/W-3 back text, numbered
+continuation fields, third-party affidavits from Halliburton and Sperry-Sun.
+Add the 137 non-face completion-report pages and the shape is clear: **a
+substantial minority of form pages cannot be identified in isolation, and a
+single-page classifier cannot fix that by getting better.**
+
+Recommendation for extraction, not implemented here: pair a section to its face
+within a file by proximity and by agreement on the identity fields both carry
+(operator, lease, well number, completion date), rather than by classifying the
+section page harder. Record 1493495 is the worked example: page 9 is a W-2 face
+and page 10 its Section II, and they agree on operator, completion date and
+total depth. The cut order has no step for this; it belongs before or inside
+extraction.
 
 ## RETIRED
 

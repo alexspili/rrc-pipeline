@@ -28,11 +28,22 @@ must be defensible line by line in an interview.
 
 - fetch.py works end to end; corpus is CLOSED: 202 records, 249 files,
   3,689 pages in data/raw (git-ignored), manifest at data/manifest.jsonl.
-- Next milestone: page classifier + census table (what fraction of records
-  actually contains a G-1/W-2 — unknown; no metadata prior exists).
-- Then, per the cut order in HANDOFF.md: extraction (G-1 Sections I & III)
-  → deterministic validation → cross-form disagreement detection → eval
-  (`make eval`) → TypeScript span viewer → optional Postgres projection.
+- Page classifier done and measured. Census run 2026-08-31 on 3,689 pages,
+  $4.25 batched, 0.4% parse failures, reconciled with none missing.
+- **115 of 202 records (57%) contain a completion report.** Hand-verified
+  15/15 on a seeded sample. Corpus is sufficient; fetch.py stays closed.
+- The G-1 vs W-2 split is NOT yet reliable: sectionless pages carry no form
+  number and get attributed by guess. Do not quote a per-form split. The
+  83.6% arm accuracy is a uniform-sample number on 60 pages containing 0
+  G-1 pages; never quote it as accuracy on the target classes. Both caveats
+  in full: docs/modules/classify.md.
+- Next: stage-2 labels to make G-1 vs W-2 measurable (labelling only, the
+  fix is a separate gated step), then extraction per the cut order in
+  HANDOFF.md → validation → cross-form disagreement → eval (`make eval`)
+  → TypeScript span viewer → optional Postgres projection.
+- Open finding, no implementation: page grouping. 157 pages / 83 records are
+  form pages carrying no form number, plus 137 non-face completion pages.
+  See docs/modules/classify.md.
 
 ## Standing rules
 
