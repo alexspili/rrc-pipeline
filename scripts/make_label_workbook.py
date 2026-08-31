@@ -21,6 +21,7 @@ everything downstream, so leaving it in the exported CSV is harmless.
 
 from __future__ import annotations
 
+import argparse
 import csv
 import sys
 from pathlib import Path
@@ -36,8 +37,16 @@ from openpyxl.worksheet.datavalidation import DataValidation  # noqa: E402
 
 from pipeline import pageclass as pc                       # noqa: E402
 
-CSV = ROOT / "tests" / "fixtures" / "labels_stage1.csv"
-OUT = ROOT / "data" / "labelset" / "labels_stage1.xlsx"
+#: Stage 1 is the uniform 60-page set, stage 2 the stratified 143-page one.
+#: One builder rather than two: the dropdowns are a second copy of the
+#: vocabulary, and the point of tests/tier2/test_label_workbook.py is that a
+#: second copy drifts. A third would drift twice.
+STAGES = {
+    1: (ROOT / "tests" / "fixtures" / "labels_stage1.csv",
+        ROOT / "data" / "labelset" / "labels_stage1.xlsx"),
+    2: (ROOT / "tests" / "fixtures" / "labels_stage2.csv",
+        ROOT / "data" / "labelset" / "labels_stage2.xlsx"),
+}
 
 HEADER_FILL = PatternFill("solid", fgColor="DDDDDD")
 LOCKED_FILL = PatternFill("solid", fgColor="F4F4F4")
@@ -49,8 +58,14 @@ PREFILLED = ("seq", "page_id", "record_id", "file_index", "page",
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--stage", type=int, choices=sorted(STAGES), default=1)
+    stage = parser.parse_args().stage
+    CSV, OUT = STAGES[stage]
+
     if not CSV.exists():
-        sys.exit(f"missing {CSV}; run `make label` first")
+        sys.exit(f"missing {CSV}; run `make label` first"
+                 if stage == 1 else f"missing {CSV}; run `make label2` first")
     rows = list(csv.DictReader(CSV.open(encoding='utf-8-sig')))
     columns = list(rows[0].keys()) + ["check"]
 
@@ -77,13 +92,16 @@ def main() -> None:
     # Classes that must NOT carry a part. Not the same as census-only:
     # other_form is census-only but may carry one, because a page can plainly
     # be a form back while its form number is unreadable.
+    vocab.cell(1, 6, "form_number_legible").font = Font(bold=True)
+    vocab.cell(2, 6, "y")
+    vocab.cell(3, 6, "n")
     vocab.cell(1, 7, "part_forbidden").font = Font(bold=True)
     census = [c for c in pc.PageClass if c in pc.PART_FORBIDDEN]
     for i, cls in enumerate(census, start=2):
         vocab.cell(i, 7, cls.value)
     vocab.column_dimensions["A"].width = 20
     vocab.column_dimensions["B"].width = 58
-    for col in "DEG":
+    for col in "DEFG":
         vocab.column_dimensions[col].width = 20
 
     n_class, n_part = len(ordered) + 1, len(pc.Part) + 1
@@ -119,7 +137,10 @@ def main() -> None:
         ("form_class", f"vocabulary!$A$2:$A${n_class}"),
         ("part", f"vocabulary!$D$2:$D${n_part}"),
         ("orientation", f"vocabulary!$E$2:$E${n_orient}"),
+        ("form_number_legible", "vocabulary!$F$2:$F$3"),
     ):
+        if name not in col:
+            continue          # stage 1 has no legibility column
         validation = DataValidation(
             type="list", formula1=f"={source}", allow_blank=True,
             showDropDown=False, errorStyle="stop")
@@ -131,13 +152,18 @@ def main() -> None:
 
     # --- live check column, so a mistake shows now rather than at `make test`
     for r in range(2, last + 1):
+        # The last thing checked, so that "ok" means every column is filled.
+        done = '"ok"'
+        if "form_number_legible" in col:
+            done = (f'IF({col["form_number_legible"]}{r}="",'
+                    f'"form_number_legible missing","ok")')
         formula = (
             f'=IF({col["form_class"]}{r}="","",'
             f'IF(COUNTIF(vocabulary!$G$2:$G${n_census},{col["form_class"]}{r})>0,'
-            f'  IF({col["part"]}{r}="","ok","part must be blank for this class"),'
+            f'  IF({col["part"]}{r}="",{done},"part must be blank for this class"),'
             f'  IF(AND({col["part"]}{r}="",{col["form_class"]}{r}<>"other_form"),'
             f'    "part is required for a named form",'
-            f'    IF({col["orientation"]}{r}="","orientation missing","ok"))))')
+            f'    IF({col["orientation"]}{r}="","orientation missing",{done}))))')
         sheet.cell(r, len(columns), formula)
 
     check = f"{col['check']}2:{col['check']}{last}"
@@ -152,7 +178,7 @@ def main() -> None:
     widths = {"seq": 6, "page_id": 16, "record_id": 11, "file_index": 10,
               "page": 7, "native_w": 10, "native_h": 10, "oversize": 10,
               "form_class": 20, "part": 20, "orientation": 14,
-              "note": 34, "check": 32}
+              "form_number_legible": 20, "note": 34, "check": 32}
     for name, width in widths.items():
         if name in col:
             sheet.column_dimensions[col[name]].width = width

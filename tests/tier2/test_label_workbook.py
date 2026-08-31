@@ -23,38 +23,53 @@ import pytest
 from pipeline import pageclass as pc
 
 ROOT = Path(__file__).resolve().parents[2]
-CSV = ROOT / "tests" / "fixtures" / "labels_stage1.csv"
 SCRIPT = ROOT / "scripts" / "make_label_workbook.py"
 
 openpyxl = pytest.importorskip("openpyxl")
 
+#: Both stages are built by one script, so both are checked by one test file.
+#: Stage 2 adds a column and 83 rows; everything else about the sheet has to
+#: stay identical, or an export from one of them lands on the wrong columns.
+STAGES = {1: 60, 2: 143}
+
+
+@pytest.fixture(scope="module", params=sorted(STAGES))
+def stage(request):
+    return request.param
+
 
 @pytest.fixture(scope="module")
-def workbook():
-    if not CSV.exists():
-        pytest.skip("label template absent; run `make label`")
-    subprocess.run([sys.executable, str(SCRIPT)], check=True,
-                   capture_output=True, cwd=ROOT)
-    out = ROOT / "data" / "labelset" / "labels_stage1.xlsx"
+def template(stage):
+    return ROOT / "tests" / "fixtures" / f"labels_stage{stage}.csv"
+
+
+@pytest.fixture(scope="module")
+def workbook(stage, template):
+    if not template.exists():
+        pytest.skip(f"stage-{stage} template absent; run `make label`")
+    subprocess.run([sys.executable, str(SCRIPT), "--stage", str(stage)],
+                   check=True, capture_output=True, cwd=ROOT)
+    out = ROOT / "data" / "labelset" / f"labels_stage{stage}.xlsx"
     if not out.exists():
         pytest.skip("workbook not produced")
     return openpyxl.load_workbook(out)
 
 
-def test_columns_match_the_csv_so_an_export_drops_straight_in(workbook):
+def test_columns_match_the_csv_so_an_export_drops_straight_in(workbook, template):
     """The CSV is the source of truth. An export from this workbook has to
     land on it without a column shuffle.
     """
     sheet = workbook["labels"]
     header = [cell.value for cell in sheet[1]]
-    expected = next(csv.reader(CSV.open(encoding='utf-8-sig')))
+    expected = next(csv.reader(template.open(encoding='utf-8-sig')))
     assert header[:-1] == expected
     assert header[-1] == "check", "the only extra column may be the formula one"
 
 
-def test_every_row_of_the_sample_is_present(workbook):
+def test_every_row_of_the_sample_is_present(workbook, template, stage):
     sheet = workbook["labels"]
-    assert sheet.max_row - 1 == len(list(csv.DictReader(CSV.open(encoding='utf-8-sig')))) == 60
+    rows = len(list(csv.DictReader(template.open(encoding='utf-8-sig'))))
+    assert sheet.max_row - 1 == rows == STAGES[stage]
 
 
 def test_dropdowns_offer_exactly_the_vocabulary(workbook):
@@ -89,16 +104,40 @@ def test_every_class_carries_its_gloss(workbook):
         assert seen.get(cls.value), f"no gloss for {cls.value}"
 
 
-def test_the_three_label_columns_are_validated(workbook):
+def test_every_label_column_is_validated(workbook, stage):
+    """Including `form_number_legible` on stage 2. A free-text y/n column
+    collects "Y", "yes", "1" and a blank that means no, and the tier-2
+    validator then rejects the sheet after the labelling is done rather than
+    while it is being typed.
+    """
     sheet = workbook["labels"]
     header = [cell.value for cell in sheet[1]]
     validated = set()
     for validation in sheet.data_validations.dataValidation:
         for rng in str(validation.sqref).split():
             validated.add(rng[0])
-    for name in ("form_class", "part", "orientation"):
+    expected = ["form_class", "part", "orientation"]
+    if stage == 2:
+        expected.append("form_number_legible")
+    for name in expected:
         letter = openpyxl.utils.get_column_letter(header.index(name) + 1)
         assert letter in validated, f"{name} has no dropdown"
+
+
+def test_only_stage_two_carries_the_legibility_column(workbook, stage):
+    header = [cell.value for cell in workbook["labels"][1]]
+    assert ("form_number_legible" in header) == (stage == 2)
+
+
+def test_the_check_column_waits_for_the_legibility_answer(workbook, stage):
+    """"ok" has to mean every column is filled. If the check goes green while
+    `form_number_legible` is blank, the column will be blank on half the sheet.
+    """
+    if stage != 2:
+        pytest.skip("stage 1 has no legibility column")
+    sheet = workbook["labels"]
+    formula = sheet.cell(2, sheet.max_column).value
+    assert "form_number_legible missing" in formula
 
 
 def test_identifiers_are_text_so_a_spreadsheet_cannot_reinterpret_them(workbook):
