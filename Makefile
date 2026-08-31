@@ -2,7 +2,7 @@
 # requirements.txt are installed there (see SETUP.md step 5).
 PY := .venv/bin/python
 
-.PHONY: fetch test eval label workbook arms probe census
+.PHONY: fetch test eval label label2 workbook arms probe census
 fetch:
 	@set -a; . ./.env; set +a; $(PY) fetch.py $(ARGS)
 test:
@@ -13,8 +13,11 @@ eval:
 label:
 	$(PY) scripts/sample_labelset.py $(ARGS)
 
+label2:
+	$(PY) scripts/sample_stage2.py $(ARGS)
+
 workbook:
-	$(PY) scripts/make_label_workbook.py
+	$(PY) scripts/make_label_workbook.py $(ARGS)
 
 probe:
 	@set -a; . ./.env; set +a; $(PY) scripts/probe_haiku.py
