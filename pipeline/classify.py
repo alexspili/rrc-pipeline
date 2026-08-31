@@ -73,16 +73,24 @@ Return one JSON object and nothing else:
 form_class is one of:
 {_vocabulary()}
 
-part says which page of a multi-page form this is. Use it only for a form
-class; use null for everything else.
+part is a SEPARATE field from form_class. Never put a part value such as
+back_instructions into form_class. Use null for anything that is not a form.
   face               the first page, carrying the form number and identity
   sec_ii             Section II
   sec_iii            Section III
-  continuation       a later page of the same form
-  back_instructions  the pre-printed reverse of a form: same header and form
-                     number as the face, but printed instructions and no
-                     filled-in values. Say back_instructions, not face.
+  continuation       a later page of the same form, including a reverse that
+                     carries a filled-in data table
+  back_instructions  a reverse carrying pre-printed filing instructions and no
+                     filled-in values. Real backs announce themselves: "Side
+                     2", "Instructions Form G-5", "Continued from reverse
+                     side". Beware: "READ INSTRUCTIONS ON BACK", "- OVER -"
+                     and "REVERSE SIDE HEREOF" are printed on the FACE, so a
+                     page carrying one of those is a face.
   unknown            plainly part of a form, but which page is not decidable
+
+If a page is plainly a form but you cannot tell which one, use
+form_class: other_form. If it is plainly a form BACK whose form you cannot
+name, that is form_class: other_form with part: back_instructions.
 
 Sections of a form are often not adjacent in the file. A Section III can sit
 several pages away from its face with unrelated forms in between. Judge the

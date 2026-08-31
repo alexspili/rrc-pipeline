@@ -407,6 +407,10 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--arms", default=",".join(classify.ARMS))
     ap.add_argument("--limit", type=int, help="first N pages, for a dry run")
+    ap.add_argument("--labelled-only", action="store_true",
+                    help="run only the hand-labelled pages. Validating a "
+                         "prompt change needs the scored pages, not the "
+                         "smoke slice, and costs 60 pages instead of 280.")
     args = ap.parse_args()
 
     render.preflight()
@@ -414,6 +418,8 @@ def main() -> None:
     index = manifest_index()
     truth = ground_truth()
     pages = pages_to_run(index, truth)
+    if args.labelled_only:
+        pages = [p for p in pages if pc.page_id(p[0], p[1], p[2]) in truth]
     if args.limit:
         pages = pages[:args.limit]
 
