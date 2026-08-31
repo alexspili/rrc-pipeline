@@ -713,9 +713,14 @@ and this changes what that correction has to do. The choice is a new class for
 the pre-numbering completion family against a broader `completion_report`
 class with the form number as a field, and that is a schema decision for the
 extraction milestone, not a patch.
-**Pin:** pending. Two cases, both real: `header_tokens("FORM 3 GAS WELL
-RECORD")` and `header_tokens("FORM GWT-1")` must not silently return nothing
-once the family has a name, and record 1493455 page 16 is the fixture.
+**Pin:** the scanner half is pinned, 2026-08-31:
+tests/tier1/test_formscan.py::test_a_bare_numbered_form_is_a_form,
+::test_a_lowercased_form_word_still_carries_its_number,
+::test_a_three_letter_form_prefix_is_a_form, with
+::test_a_three_letter_prefix_standing_alone_is_not_a_form and
+::test_a_bare_number_does_not_swallow_a_hyphenated_one as the guards. The
+taxonomy half stays pending until the family has a class; record 1493455
+page 16 is the fixture, and its text layer cannot be used.
 
 ---
 

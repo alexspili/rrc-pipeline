@@ -23,9 +23,33 @@ import re
 from collections import Counter
 from pathlib import Path
 
-#: A form number: one or two letters, a hyphen, one or two digits, maybe a
-#: trailing letter. W-2, P-17, W-4A, GT-1.
-FORM_TOKEN = re.compile(r"\b(?:FORM\s+)?([A-Z]{1,2}-\d{1,2}[A-Z]?)\b")
+#: A form number, in two spellings.
+#:
+#: Lettered: one to three letters, a hyphen, one or two digits, maybe a
+#: trailing letter. W-2, P-17, W-4A, GT-1, GWT-1. Three letters rather than
+#: two is DEFECTS #17: two was never a rule, only the longest prefix anybody
+#: had looked at, and GWT-1 is the gas well test sheet that precedes the G-1.
+#:
+#: Bare: the word "Form" and a number, no hyphen and no letter. The RRC
+#: completion report predates the G-1 and W-2 numbering and the older sheets
+#: are simply "Form 2" and "Form 3". The word is required here and the match
+#: is case-insensitive only for it, because these scans render it as "fORM"
+#: and because a loose digit would match half a corpus made of depths, dates
+#: and file numbers (DEFECTS #11).
+#: A three-letter prefix and a bare number are both introduced by the word
+#: itself; one and two letter prefixes stand alone, because G-1, W-2 and P-4
+#: are printed bare in these headers.
+#:
+#: Measured, not assumed. Allowing a bare three-letter prefix invented six
+#: families in one pass: WWW-1 from the print code under www.rrc.state.tx.us
+#: on 14 pages, NAQ-27 from the NAD-27 geodetic datum, APR-23 from a fax
+#: timestamp, CFB-2 and HR-4 from cement additive codes in a W-15, and NCT-1
+#: and NCT-6 from lease names. Same shape as DEFECTS #11, where survey
+#: abstract numbers invented fifteen.
+FORM_TOKEN = re.compile(
+    r"\b(?:FORM\s+)?([A-Z]{1,2}-\d{1,2}[A-Z]?)\b"
+    r"|\b(?i:FORMS?)\s+([A-Z]{3}-\d{1,2}[A-Z]?)\b"
+    r"|\b(?i:FORMS?)\s+(\d{1,2})(?!\s*-\s*\d)\b")
 
 #: Prefixes that are never RRC form numbers, however form-shaped they look.
 #:
@@ -79,7 +103,11 @@ def header_tokens(text: str, header_chars: int = HEADER_CHARS) -> set[str]:
     previous_end: int | None = None
     previous_was_reference = False
     for match in FORM_TOKEN.finditer(head):
-        token = match.group(1).upper()
+        # Group 1 is a lettered number, group 2 a bare one. A bare number is
+        # spelled with the word it cannot be read without, so that "FORM 3"
+        # can never be confused with a stray 3 in a counter or a class map.
+        lettered = match.group(1) or match.group(2)
+        token = lettered.upper() if lettered else f"FORM {match.group(3)}"
         if token.split("-", 1)[0] in NOT_FORM_PREFIXES:
             continue
         preceding = head[max(0, match.start() - LOOKBACK_CHARS):match.start()]

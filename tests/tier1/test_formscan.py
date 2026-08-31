@@ -178,3 +178,32 @@ def test_a_bare_number_without_the_word_form_is_not_a_form():
 
 def test_a_referenced_bare_form_is_still_a_reference():
     assert header_tokens("HEADER TEXT see Form 3 for the older wells") == set()
+
+
+def test_a_three_letter_prefix_standing_alone_is_not_a_form():
+    """The guard on the three-letter branch, all real text from this corpus.
+    Allowing a bare three-letter prefix invented six families in one pass.
+
+    HR-4, a Halliburton cement retarder in that same additive list, is not
+    covered here. It is a two-letter prefix, so it has always been matched and
+    has always been in the counts at 2 pages, which is what the coverage
+    threshold exists to tolerate. Fixing it is not this change.
+    """
+    for line in [
+        "PO Box 12967 Austin TX 78711-2967 www.rrc.state.tx.us $/02-WWW-1",
+        "Texas Lambert for South Central Zone, NAQ-27.",
+        "FAMCOR OIL APR-23-2009 13:01 P.05 Schlumberger",
+        "13. (a) C. H. .75x CFB-2, b. 2x",
+        "WHEELER & PICKENS FEE NCT-6 (10539) HUMBLE FIELD",
+        "4. Lease Name and Lease Identification No. Chambers Barbers Hill SWD-1",
+    ]:
+        assert header_tokens(line) == set(), line
+
+
+def test_a_bare_number_does_not_swallow_a_hyphenated_one():
+    """"a Form 11-5 (Organization Report)" is a reference to Form 11-5, and
+    the bare branch would report a Form 11 that does not exist.
+    """
+    assert "FORM 11" not in header_tokens(
+        "Before this application can be processed, a Form 11-5 "
+        "(Organization Report) showing the exact operator name")
