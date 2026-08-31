@@ -115,6 +115,17 @@ R10. Rank arms by measured cost, never by assumed cost.
     "cheapest", and cheapest is whatever the run measured.
     Pinned by: tests/tier2/test_arms.py::test_arms_are_ranked_by_measured_cost
 
+R13. A page may not claim a form number it could not read.
+    `PageLabel` refuses `g1` or `w2` when `form_number_legible` is false, and
+    routes the page to `completion_face_unknown_form`. Origin: the stage-2
+    measurement, where 20 of 20 drawn completion faces with an illegible form
+    number were misclassified, and 16 of 16 whose number the OCR text layer
+    also recovered were correct. This is a rule 6 retirement in advance: the
+    guess is not discouraged in the prompt, it is unrepresentable in the type.
+    Pinned by: tests/tier1/test_abstention.py, all of it, in particular
+    ::test_a_named_completion_report_needs_a_readable_number and
+    ::test_a_guess_on_an_unreadable_page_is_refused_at_the_parser
+
 ## Probe results
 
 Run 2026-08-30 against record 1501720 page 2, the G-1 face of the demo
@@ -326,8 +337,8 @@ record is a completion report.
 
 ## The decided fix: abstain, do not guess
 
-**Decided 2026-08-31 on the stage-2 evidence. Not implemented: it is its own
-gated step, with a before-and-after on these same labels.**
+**Decided and implemented 2026-08-31. The re-run and its before-and-after on
+the stage-2 labels are still pending, and no number below has moved yet.**
 
 The measurement says the classifier fails when it cannot read the form number,
 not when it cannot tell two layouts apart. So the fix is not to help it guess
@@ -366,9 +377,16 @@ model's output rather than staying a property of the ground truth. Then
 `EXTRACTION_TARGETS` while `form_number_legible` is false, and the confusion
 this milestone measured cannot be expressed anywhere in the pipeline.
 
-That is a schema change to the one type everything else is built on, so it
-needs its own proposal under rule 5 before it is written, and R3, R1 and R2
-move to RETIRED by the same mechanism when they get there.
+Approved and built the same day as R13. `form_number_legible` is now a required
+field of every model response and an optional field of `PageLabel`, defaulting
+to None so that stage-1 labels and every census row written before the change
+stay constructible. The constructor refuses the guess; the parser refuses a
+response that does not answer the question at all, which is the hole that would
+otherwise let a model omit the field and slip past the constructor.
+
+Verified non-destructive before anything was re-run: replaying the existing
+census through the widened union still gives 115 records with a completion
+report and 355 extraction-eligible pages.
 
 ### The tier-1 test plan, before the code
 

@@ -719,8 +719,10 @@ tests/tier1/test_formscan.py::test_a_bare_numbered_form_is_a_form,
 ::test_a_three_letter_form_prefix_is_a_form, with
 ::test_a_three_letter_prefix_standing_alone_is_not_a_form and
 ::test_a_bare_number_does_not_swallow_a_hyphenated_one as the guards. The
-taxonomy half stays pending until the family has a class; record 1493455
-page 16 is the fixture, and its text layer cannot be used.
+taxonomy half closed the same day: `completion_face_legacy` owns FORM 2,
+FORM 3 and GWT-1, pinned by
+tests/tier1/test_abstention.py::test_the_pre_numbering_forms_now_have_a_class.
+Record 1493455 page 16 remains the fixture, and its text layer cannot be used.
 
 ---
 
