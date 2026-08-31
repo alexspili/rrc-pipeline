@@ -66,7 +66,7 @@ def manifest_index() -> dict[str, list[dict]]:
 def ground_truth() -> dict[str, dict]:
     if not LABELS.exists():
         return {}
-    rows = [r for r in csv.DictReader(LABELS.open()) if r["form_class"].strip()]
+    rows = [r for r in csv.DictReader(LABELS.open(encoding='utf-8-sig')) if r["form_class"].strip()]
     return {r["page_id"]: r for r in rows}
 
 

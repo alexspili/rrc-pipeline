@@ -47,14 +47,14 @@ def test_columns_match_the_csv_so_an_export_drops_straight_in(workbook):
     """
     sheet = workbook["labels"]
     header = [cell.value for cell in sheet[1]]
-    expected = next(csv.reader(CSV.open()))
+    expected = next(csv.reader(CSV.open(encoding='utf-8-sig')))
     assert header[:-1] == expected
     assert header[-1] == "check", "the only extra column may be the formula one"
 
 
 def test_every_row_of_the_sample_is_present(workbook):
     sheet = workbook["labels"]
-    assert sheet.max_row - 1 == len(list(csv.DictReader(CSV.open()))) == 60
+    assert sheet.max_row - 1 == len(list(csv.DictReader(CSV.open(encoding='utf-8-sig')))) == 60
 
 
 def test_dropdowns_offer_exactly_the_vocabulary(workbook):

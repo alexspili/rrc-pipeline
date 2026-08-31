@@ -51,7 +51,7 @@ PREFILLED = ("seq", "page_id", "record_id", "file_index", "page",
 def main() -> None:
     if not CSV.exists():
         sys.exit(f"missing {CSV}; run `make label` first")
-    rows = list(csv.DictReader(CSV.open()))
+    rows = list(csv.DictReader(CSV.open(encoding='utf-8-sig')))
     columns = list(rows[0].keys()) + ["check"]
 
     book = Workbook()
@@ -74,10 +74,11 @@ def main() -> None:
     vocab.cell(1, 5, "orientation").font = Font(bold=True)
     for i, orient in enumerate(pc.Orientation, start=2):
         vocab.cell(i, 5, orient.value)
-    # Census-only classes get their own list: the check formula tests against
-    # it, since those are exactly the classes that must NOT carry a part.
-    vocab.cell(1, 7, "census_only").font = Font(bold=True)
-    census = [c for c in pc.PageClass if c in pc.CENSUS_ONLY]
+    # Classes that must NOT carry a part. Not the same as census-only:
+    # other_form is census-only but may carry one, because a page can plainly
+    # be a form back while its form number is unreadable.
+    vocab.cell(1, 7, "part_forbidden").font = Font(bold=True)
+    census = [c for c in pc.PageClass if c in pc.PART_FORBIDDEN]
     for i, cls in enumerate(census, start=2):
         vocab.cell(i, 7, cls.value)
     vocab.column_dimensions["A"].width = 20
@@ -134,7 +135,8 @@ def main() -> None:
             f'=IF({col["form_class"]}{r}="","",'
             f'IF(COUNTIF(vocabulary!$G$2:$G${n_census},{col["form_class"]}{r})>0,'
             f'  IF({col["part"]}{r}="","ok","part must be blank for this class"),'
-            f'  IF({col["part"]}{r}="","part is required for a form class",'
+            f'  IF(AND({col["part"]}{r}="",{col["form_class"]}{r}<>"other_form"),'
+            f'    "part is required for a named form",'
             f'    IF({col["orientation"]}{r}="","orientation missing","ok"))))')
         sheet.cell(r, len(columns), formula)
 

@@ -197,3 +197,27 @@ def test_parse_response_refuses_to_guess(body):
     with pytest.raises(ValueError):
         pc.parse_response(body, record_id="1501720", file_index=0,
                           page=2, oversize=False)
+
+
+def test_an_unidentifiable_form_page_may_still_say_which_page_it_is():
+    """A page that is plainly a form back, but whose form number is unreadable,
+    is `other_form` with part `back_instructions`. Forbidding a part here sent
+    that fact into a free-text note where nothing could score it: 8 of the
+    first 60 labelled pages were other_form and at least two were backs.
+    """
+    label = _label(form_class=pc.PageClass.OTHER_FORM,
+                   part=pc.Part.BACK_INSTRUCTIONS)
+    assert label.part is pc.Part.BACK_INSTRUCTIONS
+    assert label.extraction_eligible is False
+
+
+def test_an_unidentifiable_form_page_need_not_say_which_page_it_is():
+    assert _label(form_class=pc.PageClass.OTHER_FORM, part=None).part is None
+
+
+def test_part_is_still_forbidden_on_things_that_have_no_pages():
+    for census_class in (pc.PageClass.PLAT_MAP, pc.PageClass.SEPARATOR_CARD,
+                         pc.PageClass.BLANK_OR_ARTIFACT,
+                         pc.PageClass.OTHER_NONFORM):
+        with pytest.raises(ValueError):
+            _label(form_class=census_class, part=pc.Part.FACE)

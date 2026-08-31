@@ -21,7 +21,7 @@ LABELS = Path(__file__).resolve().parents[1] / "fixtures" / "labels_stage1.csv"
 def _rows():
     if not LABELS.exists():
         pytest.skip("stage-1 label set not generated yet: make label")
-    rows = list(csv.DictReader(LABELS.open()))
+    rows = list(csv.DictReader(LABELS.open(encoding='utf-8-sig')))
     if not any(r["form_class"].strip() for r in rows):
         pytest.skip("stage-1 label set not filled in yet")
     return rows
@@ -75,3 +75,15 @@ def test_page_ids_match_their_coordinates():
     for row in _rows():
         assert pc.parse_page_id(row["page_id"]) == (
             row["record_id"], int(row["file_index"]), int(row["page"]))
+
+
+def test_a_utf8_bom_does_not_rename_the_first_column():
+    """Excel writes CSV as UTF-8 with a BOM, which turns the header `seq` into
+    `﻿seq`. Nothing downstream reads `seq`, so this stayed invisible until
+    it was looked for. Every reader of this file opens it utf-8-sig.
+    """
+    raw = LABELS.open("rb").read(3)
+    rows = list(csv.DictReader(LABELS.open(encoding="utf-8-sig")))
+    assert "seq" in rows[0], (
+        f"first column is {list(rows[0])[0]!r}; the file starts with {raw!r} "
+        "and is not being read as utf-8-sig somewhere")

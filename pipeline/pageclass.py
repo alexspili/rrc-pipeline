@@ -150,6 +150,19 @@ FORM_CLASSES = EXTRACTION_TARGETS | IDENTITY_BEARING
 
 CENSUS_ONLY = frozenset(PageClass) - FORM_CLASSES
 
+#: A named form must say which of its pages this is.
+PART_REQUIRED = FORM_CLASSES
+
+#: `other_form` may carry a part but need not. It means "a form page I cannot
+#: put a number to", and such a page is still a face, a back or a continuation.
+#: Forbidding a part there forced the labeller to record "back_instructions" in
+#: a free-text note, where nothing can score it. 8 of the first 60 labelled
+#: pages were other_form and at least two were backs.
+PART_ALLOWED = PART_REQUIRED | {PageClass.OTHER_FORM}
+
+#: Everything else: a plat has no sections and never will.
+PART_FORBIDDEN = frozenset(PageClass) - PART_ALLOWED
+
 
 class Part(str, Enum):
     FACE = "face"
@@ -285,10 +298,10 @@ class PageLabel:
     oversize: bool = False
 
     def __post_init__(self) -> None:
-        if self.form_class in FORM_CLASSES and self.part is None:
+        if self.form_class in PART_REQUIRED and self.part is None:
             raise ValueError(
-                f"{self.form_class.value} is a form class; part is required")
-        if self.form_class not in FORM_CLASSES and self.part is not None:
+                f"{self.form_class.value} is a named form; part is required")
+        if self.form_class in PART_FORBIDDEN and self.part is not None:
             raise ValueError(
                 f"{self.form_class.value} has no sections; part must be None, "
                 f"got {self.part.value}")
