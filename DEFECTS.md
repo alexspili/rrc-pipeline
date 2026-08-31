@@ -601,3 +601,61 @@ figure corrected to the measured values.
 ::test_with_form_is_a_reference, ::test_the_rest_of_a_list_inherits_the_reference,
 and ::test_the_l_1_face_reports_only_its_own_number, which is the real OCR of
 the page the leak was found on.
+
+---
+
+## #16 — 2026-08-31 — The same leak, one OCR space wide. Open.
+
+**What happened:** #15's fix was measured and the measurement was reported as
+the truth: G-1 on 51 pages, W-2 on 84. Cross-tabulating the fixed scanner
+against the census immediately afterwards found 18 pages the census calls `l1`
+still carrying a G-1 or W-2 header. The counts in #15 labelled "Actual" are
+still over.
+
+**Why it was wrong:** the same L-1 instruction block, imaged a little worse:
+
+    When to file the L-1
+    • with Forms G- 1, W-2, and GT- 1 for new an
+
+`FORM_TOKEN` requires `G-1` with no space, so `G- 1` never matches. The list
+inheritance added in #15 chains a token to the *previous matched token*, and
+here the previous token is one the pattern could not see. `W-2` therefore looks
+like the head of its own list rather than the middle of someone else's, and the
+lookback window sees `• with Forms G- 1, `, which ends in a comma and matches
+no cross-reference wording. One space in a scan defeats the fix.
+
+The general lesson is the one worth keeping: a rule that reasons about the
+relationship between two tokens fails silently whenever the tokenizer misses
+one of them. #15's fix assumed the tokenizer was complete on a corpus whose
+own docstring says the OCR is bad enough to read "FORM G-1" as "F(R)lC7lbP
+G(o)IL".
+
+**Measured footprint:** 18 pages, all but one predicted `l1`. Records reaching
+the OCR floor: the scanner says 68, and 66 survive dropping every page the
+census calls `l1`, so the floor is over by at most two records.
+
+**Why it is not fixed here.** The obvious fix is to let the token pattern
+tolerate a space around the hyphen. Measured across all 3,689 pages, that is
+not a small change: P-12 goes 15 -> 39, W-3 51 -> 72, G-1 51 -> 69, W-15
+87 -> 93, and fifteen tokens appear that are not forms at all (E-0, X-0, I-3,
+J-11L). It moves counts in both directions and needs a validation of its own,
+which is a different piece of work from the milestone in hand. Recorded and
+left open rather than half-done under time pressure.
+
+**What it costs while open:** `OCR_FLOOR_RECORDS` is 68 where the true figure
+is 66 or 67. The guard fires when the census comes in *below* the floor, so an
+inflated floor is conservative in the safe direction: it can raise a false
+alarm, it cannot hide an under-count. The census headline of 115 is unaffected.
+
+For stage-2 labelling, the OCR header token is a design variable on the
+`g1`/`w2` face strata only, and the leak's mechanism is a page listing the
+forms it is filed alongside. Checked directly: of the 75 completion faces whose
+OCR header agrees with the model, **0** carry "status report", "when to file",
+"where to file" or "instructions" in their header region. The variable is safe
+where it is used, which is a measurement rather than an assumption.
+
+**Resolution:** none. Open, with its footprint measured and its blast radius
+bounded.
+**Pin:** pending. The case is real OCR from page 1506991-0-7: header_tokens on
+"When to file the L-1 • with Forms G- 1, W-2, and GT- 1 for new an" must
+return {"L-1"} and currently returns {"L-1", "W-2"}.
