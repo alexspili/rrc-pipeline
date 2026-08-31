@@ -41,10 +41,22 @@ NOT_FORM_PREFIXES = frozenset({"A"})
 #: matches the tail of "DIVISION", and "RAILROAD COMMISSION OF TEXAS / OIL AND
 #: GAS DIVISION" is the standard header block immediately before the form
 #: number on these forms, so every such header was silently discarded.
+#: Bare "with" and the plural "FORMS?" are both from DEFECTS #15. The list
+#: was written from a form that mentions one other form in one field, and the
+#: corpus contains a form whose instructions name the forms it is filed
+#: alongside: "with Forms W-2, G-1, and GT-1 filed for injection wells".
 CROSS_REFERENCE = re.compile(
     r"\b(shown on|as per|as shown|see|per|filed on|filed with|attached|"
-    r"copy of|copies of|accompanying|pursuant to|on)\s+(RRC\s+)?(FORM\s+)?$",
+    r"copy of|copies of|accompanying|pursuant to|with|on)\s+(RRC\s+)?"
+    r"(FORMS?\s+)?$",
     re.I)
+
+#: What can sit between two form numbers and still make them one list.
+#:
+#: Origin: DEFECTS #15. Only the first token in "Forms W-2, G-1, and GT-1"
+#: is preceded by cross-referencing wording. Judged on its own, "G-1" looks
+#: like it stands at the top of the page.
+LIST_SEPARATOR = re.compile(r"^[\s,;/]*(and|or)?[\s,;/]*$", re.I)
 
 #: How far back to look for that wording. "pursuant to Form " is 17
 #: characters, so a 16-character window silently let it through.
@@ -59,18 +71,25 @@ def header_tokens(text: str, header_chars: int = HEADER_CHARS) -> set[str]:
     """Form numbers that look like this page's own header.
 
     Pure. Excludes tokens introduced by cross-referencing wording, which is
-    what separates a P-4 from a P-4's mention of the P-5 it derives from.
+    what separates a P-4 from a P-4's mention of the P-5 it derives from, and
+    tokens that continue such a reference as a list.
     """
     head = text[:header_chars]
     found = set()
+    previous_end: int | None = None
+    previous_was_reference = False
     for match in FORM_TOKEN.finditer(head):
         token = match.group(1).upper()
         if token.split("-", 1)[0] in NOT_FORM_PREFIXES:
             continue
         preceding = head[max(0, match.start() - LOOKBACK_CHARS):match.start()]
-        if CROSS_REFERENCE.search(preceding):
-            continue
-        found.add(token)
+        reference = bool(CROSS_REFERENCE.search(preceding))
+        if not reference and previous_was_reference and previous_end is not None:
+            gap = head[previous_end:match.start()]
+            reference = bool(LIST_SEPARATOR.match(gap))
+        previous_end, previous_was_reference = match.end(), reference
+        if not reference:
+            found.add(token)
     return found
 
 
