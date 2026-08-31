@@ -324,6 +324,110 @@ The census headline is unaffected. "115 of 202 records contain a completion
 report" is a record-level claim, hand-verified 15 of 15, and a Form 3 gas well
 record is a completion report.
 
+## The decided fix: abstain, do not guess
+
+**Decided 2026-08-31 on the stage-2 evidence. Not implemented: it is its own
+gated step, with a before-and-after on these same labels.**
+
+The measurement says the classifier fails when it cannot read the form number,
+not when it cannot tell two layouts apart. So the fix is not to help it guess
+better. It is to stop it guessing.
+
+On a page that is plainly a completion report face but carries no legible form
+number, the classifier emits `completion_face_unknown_form` rather than picking
+`g1` or `w2`. The error becomes an abstention, which is honest, countable and
+reviewable, and the review queue in the viewer is where such pages belong
+anyway.
+
+### Why this does not cost the census headline
+
+The record-level claim is a union, and the union is taken over every class that
+means "this record holds a completion report":
+
+    g1, w2, completion_face_unknown_form, completion_face_legacy
+
+115 of 202 is computed over that set, so abstaining on a page moves it between
+members of the union and never out of it. The verified headline is stable under
+this change by construction, which is the property that made abstention the
+right answer rather than a retreat.
+
+What it does cost is the per-form split, and correctly: pages the census
+currently counts as G-1 or W-2 on no evidence stop being counted as either. The
+split gets smaller and becomes defensible, which is the trade being made.
+
+### Making it unrepresentable rather than merely instructed (rule 6)
+
+A prompt instruction not to guess is a rule. The stronger version is a type.
+
+The stage-2 labels added a `form_number_legible` column, and it turned out to
+be the variable that explains the errors, so it should become part of the
+model's output rather than staying a property of the ground truth. Then
+`PageLabel` can refuse to be constructed with `form_class` in
+`EXTRACTION_TARGETS` while `form_number_legible` is false, and the confusion
+this milestone measured cannot be expressed anywhere in the pipeline.
+
+That is a schema change to the one type everything else is built on, so it
+needs its own proposal under rule 5 before it is written, and R3, R1 and R2
+move to RETIRED by the same mechanism when they get there.
+
+### The tier-1 test plan, before the code
+
+1. A label with an illegible form number and `form_class=g1` raises.
+2. `completion_face_unknown_form` and `completion_face_legacy` are both
+   extraction-eligible and both `part`-required: they are faces, and a face
+   carries the identity fields the cross-form checker needs.
+3. The record-level union counts all four classes, pinned against the census
+   number 115 so that a change to the class list which moves that number
+   fails loudly.
+4. The classes are not interchangeable: `legacy` means the number is readable
+   and older than the numbering, `unknown_form` means it is not readable. A
+   page cannot be both.
+
+### Road not taken: read the number instead of abstaining
+
+The higher-ceiling alternative is to recover the illegible slice rather than
+abstain on it, with a targeted OCR or vision read of the form-number region
+alone: crop the top-right corner, upsample it, and ask only "what number is
+printed here".
+
+Deferred deliberately, and not a backlog item. It reopens the AWS Textract
+dependency that the pipeline currently does not need, for a gain bounded above
+by the illegible share of completion faces, and abstention already handles that
+slice honestly. Recorded here so that the choice is visible as a choice.
+
+## Era drift, as a measured classifier defect
+
+The project thesis is that this archive drifts across eras and that a pipeline
+which assumes one form vintage will fail quietly on the others. DEFECTS #17 is
+that thesis arriving as a number rather than an argument, and it failed in
+three layers at once.
+
+**1. The taxonomy had no class to be right with.** The completion report
+predates the G-1 and W-2 numbering; the older sheets are `Form 2`, `Form 3`
+and `GWT-1`. About 19 of the 238 predicted completion faces are one of these,
+7.9% +/- 2.6pp. Offered no correct answer, the model picked the nearest wrong
+one, confidently.
+
+**2. The guard could not fire.** R4 exists so that an out-of-vocabulary class
+surfaces instead of being coerced. It never triggered, because the model did
+not emit an unknown class. It emitted `g1`, which is in the vocabulary and
+wrong. A parser guard catches a model that admits it does not know; it cannot
+catch one that does not know that it does not know.
+
+**3. The instrument built to catch taxonomy gaps was blind to this one.** R11
+scans every page's OCR header and fails the build when a common form has no
+class. `FORM_TOKEN` required a hyphen and at most two letters, so `FORM 3` and
+`GWT-1` both returned the empty set. The check that exists to find missing
+families could not see the family it most needed to report. Fixed 2026-08-31,
+and the fix had to be measured rather than assumed: allowing a bare
+three-letter prefix invented six families in one pass.
+
+And the drift compounds. Even with the scanner fixed, the text layer finds 6
+legacy pages where the labels imply about 19, because 1950s microfilm OCRs
+worse than 1990s microfilm. The corpus's one GWT-1 reads `8ern GW':'.>>i`.
+Older paper is harder to read at every layer of the stack at once, which is
+precisely why an era-blind accuracy number is worth so little.
+
 ### How to quote the accuracy number
 
 The arm competition measured **83.6%** class accuracy for `vision_1000`. That
