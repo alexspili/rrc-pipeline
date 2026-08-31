@@ -525,3 +525,79 @@ malformed fresh one, and that the commonest real failure, the model answering
 with a `part` value in the `form_class` field, does not raise on replay.
 **Pin:** tests/tier2/test_classify.py::test_a_cached_malformed_response_behaves_like_a_fresh_one
 and ::test_a_cached_out_of_vocabulary_class_does_not_raise
+
+---
+
+## #15 — 2026-08-31 — A form that names other forms in its own instructions
+
+**What happened:** Sizing the stage-2 strata meant cross-tabulating the census
+predictions against the OCR header scan. The scan put a `G-1` header on 80
+pages. 35 of those are predicted `l1`, and the L-1 face carries this in its
+top block:
+
+    ELECTRIC LOG ... STATUS REPORT
+    When the L-1 is NOT required
+    • with Forms W-2, G-1, and GT-1 filed for injection wells,
+    ...
+    • with Form W-3 for plugging of other than a
+
+Every form number after the first bullet is a reference. All of them counted
+as headers.
+
+**Why it was wrong:** `CROSS_REFERENCE` was built from the P-4 trap in
+DEFECTS #11, where a form mentions one other form in one field, and it has two
+holes that pattern never exposed.
+
+1. The wording list has `filed with` but not bare `with`, and the trailing
+   group is `(FORM\s+)?`, which does not match `Forms `. A plural reference is
+   not a reference. Every phrase in the list leaks the moment a form names two.
+2. Nothing carries the reference status along a list. Only `W-2` follows the
+   cross-referencing words; `G-1` and `GT-1` are separated from it by a comma
+   and an `and`, and were judged on their own as if they stood at the top of
+   the page.
+
+The deeper mistake is the same one as DEFECTS #10: the rule was written from a
+document that mentions one other form, and the corpus contains a form whose
+purpose is to list the forms it is filed alongside. A single example decided
+the shape of the rule.
+
+**Measured footprint:** across all 3,689 pages, 116 tokens were references
+counted as headers.
+
+| Token | Reported | Actual |
+|---|---|---|
+| G-1 | 80 | 51 |
+| W-2 | 109 | 84 |
+| W-3 | 88 | 51 |
+| GT-1 | 35 | 10 |
+
+No other token changed. The OCR floor that guards the census headline is
+records carrying a legible G-1 or W-2 header: **72 reported, 68 actual**, over
+four records (1493639, 2086531, 2306415, 2396691) whose only completion-report
+evidence in OCR was an L-1 citing the forms.
+
+**What it did not change:** nothing downstream. The census headline is 115
+records with a completion report, verified 15 of 15 by hand; it clears 68 as
+comfortably as it cleared 72, and the sufficiency threshold of 80 is unmoved.
+`fetch.py` stays closed. This is a wrong number in a guard, found before the
+guard was ever the thing standing between a decision and a mistake.
+
+Two numbers in prose were wrong in a second, unrelated way: docs/modules/
+classify.md quotes the floor as 71 where pipeline/census.py has always said
+72. A transcription slip, corrected in the same commit as the real one.
+
+**A hazard left standing:** `scan_corpus` caches to `data/form_headers.json`
+keyed on nothing at all. A scanner change does not invalidate it, so the fixed
+scanner returns the broken counts until somebody deletes the file by hand.
+Deleted in the fix commit. Not solved: CLAUDE.md rule 7 keys the model cache on
+(document hash, prompt hash) and this cache has no equivalent, which is a real
+gap and not this defect.
+
+**Resolution:** bare `with` added to the wording, `FORMS?` for the plural, and
+a token separated from a cross-referenced token by nothing but list punctuation
+inherits its status. Header counts, `OCR_FLOOR_RECORDS` and the classify.md
+figure corrected to the measured values.
+**Pin:** tests/tier1/test_formscan.py::test_a_plural_reference_is_still_a_reference,
+::test_with_form_is_a_reference, ::test_the_rest_of_a_list_inherits_the_reference,
+and ::test_the_l_1_face_reports_only_its_own_number, which is the real OCR of
+the page the leak was found on.
