@@ -132,3 +132,49 @@ def test_the_l_1_face_reports_only_its_own_number():
             "geothermal wells\n"
             "• with Form W-3 for plugging of other than a ")
     assert header_tokens(text) == {"L-1"}
+
+
+# ------------------------------------------- forms older than the numbering
+
+def test_a_bare_numbered_form_is_a_form():
+    """Origin: DEFECTS #17. The RRC completion report predates the G-1 and W-2
+    numbering, and the older sheets are simply "Form 2" and "Form 3". The
+    pattern required a hyphen, so the scanner returned nothing at all on the
+    family it most needed to report.
+
+    Real OCR from records 1494483 page 2 and 1494905 page 8.
+    """
+    assert header_tokens("FORM 3\n\nOIL AND GAS DIVISION") == {"FORM 3"}
+    assert header_tokens("Form 2\nWell Record") == {"FORM 2"}
+
+
+def test_a_lowercased_form_word_still_carries_its_number():
+    """Real OCR from record 1494408 page 4: the scan renders the word itself
+    as "fORM". The token has to be found from the digit, not from a clean
+    spelling of the word in front of it.
+    """
+    assert header_tokens("fORM 3 . .\n\nRAILROAD CO^d'.IfISSFON OF TE^CAS") \
+        == {"FORM 3"}
+
+
+def test_a_three_letter_form_prefix_is_a_form():
+    """`GWT-1` is the gas well test sheet that precedes the G-1. Two letters
+    was not a rule, it was the longest prefix anybody had happened to look at.
+
+    Synthetic, and deliberately so: the one GWT-1 in this corpus, record
+    1493455 page 16, reads "8ern GW':'.>>i" in the text layer and no pattern
+    recovers it. The scanner stays a floor.
+    """
+    assert header_tokens("Form GWT-1 Back Pressure Test") == {"GWT-1"}
+
+
+def test_a_bare_number_without_the_word_form_is_not_a_form():
+    """The guard on the change above. A loose digit would match half the
+    corpus: these pages are covered in depths, dates and file numbers.
+    """
+    assert header_tokens("File No. 3 ... 2 copies ... within 10 days") == set()
+    assert header_tokens("RECEIVED 3 1965") == set()
+
+
+def test_a_referenced_bare_form_is_still_a_reference():
+    assert header_tokens("HEADER TEXT see Form 3 for the older wells") == set()
