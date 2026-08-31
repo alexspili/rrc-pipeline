@@ -250,3 +250,156 @@ def classify_page(api, arm: str, pdf: Path, page: int, *,
         cache.put(key, payload)
 
     return build(payload, cached=False)
+
+
+# ------------------------------------------------------------------ batch path
+
+#: Anthropic documents 256 MB and 100,000 requests per batch. Both are held
+#: well clear: one vision_1000 request serialises to ~331 KB, so the census at
+#: 3,689 pages is 1.22 GB and needs chunking regardless.
+BATCH_MAX_BYTES = 180_000_000
+BATCH_MAX_REQUESTS = 5_000
+
+#: How long to wait between polls of a submitted batch.
+BATCH_POLL_SECONDS = 30
+
+
+def chunk_requests(requests: list[dict], max_bytes: int = BATCH_MAX_BYTES,
+                   max_requests: int = BATCH_MAX_REQUESTS) -> list[list[dict]]:
+    """Split requests into batches under both ceilings.
+
+    A single request larger than max_bytes goes out alone rather than being
+    dropped: an over-limit batch fails loudly, a dropped page becomes a hole in
+    the census that nothing counts.
+    """
+    chunks: list[list[dict]] = []
+    current: list[dict] = []
+    size = 0
+    for request in requests:
+        weight = len(json.dumps(request))
+        too_big = current and (size + weight > max_bytes
+                               or len(current) >= max_requests)
+        if too_big:
+            chunks.append(current)
+            current, size = [], 0
+        current.append(request)
+        size += weight
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def build_request(arm: str, pdf: Path, page: int, page_id: str) -> dict:
+    content, _ = build_content(arm, pdf, page)
+    return {"custom_id": page_id,
+            "params": {"model": MODEL, "max_tokens": MAX_TOKENS,
+                       "system": SYSTEM,
+                       "messages": [{"role": "user", "content": content}]}}
+
+
+def run_batched(api, arm: str, pages, *, cache: ResultCache | None,
+                doc_hashes: dict, on_progress=None) -> dict:
+    """Classify many pages through the Batch API. Returns {page_id: Attempt}.
+
+    Results come back keyed by custom_id in arbitrary order, so nothing here
+    may rely on position. A page absent from the results comes back as an
+    Attempt carrying an error rather than vanishing.
+
+    Cached pages never become requests (CLAUDE.md rule 7), which is what makes
+    a died-at-page-3000 census resumable for nothing.
+    """
+    import time
+
+    attempts: dict[str, Attempt] = {}
+    requests: list[dict] = []
+    meta: dict[str, tuple] = {}
+
+    for record_id, file_index, page, pdf in pages:
+        page_id = pc.page_id(record_id, file_index, page)
+        dims = render.page_dimensions(pdf)
+        width, height = dims[page - 1]
+        oversize = pc.is_oversize(width, height) if width and height else False
+        meta[page_id] = (record_id, file_index, page, oversize)
+
+        key = None
+        if cache is not None:
+            key = cache.key(doc_hashes[pdf], page, arm)
+            hit = cache.get(key)
+            if hit is not None:
+                attempts[page_id] = _attempt_from(
+                    hit, arm, record_id, file_index, page, oversize, cached=True)
+                continue
+        requests.append(build_request(arm, pdf, page, page_id))
+
+    if not requests:
+        return attempts
+
+    chunks = chunk_requests(requests)
+    for n, chunk in enumerate(chunks, 1):
+        batch = api.messages.batches.create(requests=chunk)
+        if on_progress:
+            on_progress(f"batch {n}/{len(chunks)} submitted as {batch.id}, "
+                        f"{len(chunk)} pages")
+        while getattr(batch, "processing_status", "ended") != "ended":
+            time.sleep(BATCH_POLL_SECONDS)
+            batch = api.messages.batches.retrieve(batch.id)
+
+        seen = set()
+        for entry in api.messages.batches.results(batch.id):
+            page_id = entry.custom_id
+            seen.add(page_id)
+            record_id, file_index, page, oversize = meta[page_id]
+            if entry.result.type != "succeeded":
+                attempts[page_id] = Attempt(
+                    label=None, arm=arm, sent_px=None, input_tokens=0,
+                    output_tokens=0, cached=False,
+                    error=f"batch result {entry.result.type}")
+                continue
+            message = entry.result.message
+            body = "".join(b.text for b in message.content if b.type == "text")
+            payload = {"body": body, "sent_px": None,
+                       "input_tokens": message.usage.input_tokens,
+                       "output_tokens": message.usage.output_tokens}
+            if cache is not None:
+                cache.put(cache.key(doc_hashes[_pdf_of(pages, page_id)],
+                                    page, arm), payload)
+            attempts[page_id] = _attempt_from(
+                payload, arm, record_id, file_index, page, oversize,
+                cached=False)
+
+        for request in chunk:
+            page_id = request["custom_id"]
+            if page_id in seen:
+                continue
+            attempts[page_id] = Attempt(
+                label=None, arm=arm, sent_px=None, input_tokens=0,
+                output_tokens=0, cached=False,
+                error="no result returned for this page in the batch")
+
+    return attempts
+
+
+def _pdf_of(pages, page_id: str) -> Path:
+    record_id, file_index, page = pc.parse_page_id(page_id)
+    for r, f, p, pdf in pages:
+        if (r, f, p) == (record_id, file_index, page):
+            return pdf
+    raise KeyError(page_id)
+
+
+def _attempt_from(payload: dict, arm: str, record_id: str, file_index: int,
+                  page: int, oversize: bool, *, cached: bool) -> Attempt:
+    """Same parse and guard the single-page path uses (DEFECTS #14)."""
+    try:
+        label = pc.parse_response(payload["body"], record_id=record_id,
+                                  file_index=file_index, page=page,
+                                  oversize=oversize)
+        error = None
+    except ValueError as exc:
+        label, error = None, str(exc)
+    sent = payload.get("sent_px")
+    return Attempt(label=label, arm=arm,
+                   sent_px=tuple(sent) if sent else None,
+                   input_tokens=payload["input_tokens"],
+                   output_tokens=payload["output_tokens"],
+                   cached=cached, error=error)
