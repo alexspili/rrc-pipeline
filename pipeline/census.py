@@ -10,7 +10,7 @@ with roughly 80 records as the floor below which fetch.py reopens.
 Two guards on the headline number, because it is load-bearing and wrong in
 either direction is expensive:
 
-  Lower  an OCR floor. 72 of 202 records carry a legible G-1 or W-2 header in
+  Lower  an OCR floor. 68 of 202 records carry a legible G-1 or W-2 header in
          bad OCR alone (pipeline/formscan.py). The census must not come in
          under its own floor.
   Upper  a hand-verifiable sample. Under-counting only wastes a corpus;
@@ -43,7 +43,11 @@ OUT = ROOT / "data" / "census"
 VERIFY = OUT / "verify"
 
 #: The floor from pipeline/formscan.py, measured on the OCR layer alone.
-OCR_FLOOR_RECORDS = 72
+#:
+#: Was 72 until DEFECTS #15. Four of those records had no completion-report
+#: header at all: their only G-1 or W-2 in OCR was an L-1 face listing the
+#: forms it is filed alongside. A guard reading four records too high.
+OCR_FLOOR_RECORDS = 68
 
 #: HANDOFF's threshold: below this, reopen fetch.py.
 SUFFICIENCY_THRESHOLD = 80

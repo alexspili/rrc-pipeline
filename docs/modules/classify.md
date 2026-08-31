@@ -167,7 +167,7 @@ not be quoted as if they carried the same weight.
 
 **115 of 202 records (57%) contain a completion report.**
 
-Above the OCR floor (71) and above HANDOFF's sufficiency threshold (80). A
+Above the OCR floor (68) and above HANDOFF's sufficiency threshold (80). A
 seeded random sample of 15 of those 115 records was rendered and hand-checked
 by Alex: **15 of 15 confirmed**, zero over-counting. Verdicts in
 `data/census/verify.csv`.
