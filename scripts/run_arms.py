@@ -236,9 +236,14 @@ def report(all_rows, scores, truth):
     print("  census estimate is batched, at 50% of list price")
 
     if not scores:
-        print("\nNo labelled pages yet, so no accuracy. Fill "
-              "tests/fixtures/labels_stage1.csv and re-run; cached pages will "
-              "not be charged again.")
+        if not truth:
+            print("\nNo labels in tests/fixtures/labels_stage1.csv, so no "
+                  "accuracy. Fill it and re-run; cached pages are not charged "
+                  "again.")
+        else:
+            print(f"\n{len(truth)} pages are labelled, but none of the pages "
+                  "run are among them, so there is nothing to score. This is "
+                  "what --limit does on a slice that misses the sample.")
         return
 
     print("\n" + "=" * 72)
