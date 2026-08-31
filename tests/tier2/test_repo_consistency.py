@@ -45,7 +45,11 @@ def test_makefile_recipe_lines_begin_with_tab():
 
 # ---------------------------------------------------------------- corpus counts
 
-DOCS = ("CLAUDE.md", "HANDOFF.md", "SETUP.md")
+#: README.md joined this list on 2026-08-31, when it stopped being a template
+#: and started carrying measured numbers. It is the document most likely to be
+#: read by somebody who cannot check it, which makes it the one drift hurts
+#: most.
+DOCS = ("CLAUDE.md", "HANDOFF.md", "SETUP.md", "README.md")
 
 # Numbers that are followed by "records"/"files"/"pages" but describe something
 # other than this corpus. Each one is listed deliberately; an unlisted number
@@ -57,6 +61,8 @@ NOT_CORPUS_COUNTS = {
         "2015",        # a year, in "2015 records return well logs/P-17s only"
         "83",          # records holding a form page with no form number,
                        # from the 2026-08-31 census page-grouping finding
+        "68",          # the OCR floor in records (DEFECTS #15), not a corpus
+                       # count: records with a legible G-1 or W-2 header
     },
     "files": set(),
     "pages": {
