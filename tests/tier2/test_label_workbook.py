@@ -70,7 +70,12 @@ def test_dropdowns_offer_exactly_the_vocabulary(workbook):
     assert column("A", len(pc.PageClass)) == {c.value for c in pc.PageClass}
     assert column("D", len(pc.Part)) == {p.value for p in pc.Part}
     assert column("E", len(pc.Orientation)) == {o.value for o in pc.Orientation}
-    assert column("G", len(pc.CENSUS_ONLY)) == {c.value for c in pc.CENSUS_ONLY}
+    # Column G drives the check formula and lists the classes that must NOT
+    # carry a part. That is not the same set as CENSUS_ONLY: other_form is
+    # census-only but may carry one, since a page can plainly be a form back
+    # while its number is unreadable.
+    assert column("G", len(pc.PART_FORBIDDEN)) == {c.value for c in pc.PART_FORBIDDEN}
+    assert pc.PageClass.OTHER_FORM not in pc.PART_FORBIDDEN
 
 
 def test_every_class_carries_its_gloss(workbook):
