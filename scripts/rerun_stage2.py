@@ -58,7 +58,8 @@ def main() -> None:
 
     api = classify.client()
     cache = classify.ResultCache(CACHE)
-    spend = 0.0
+    spend = 0.0          # real money: cache hits cost nothing
+    notional = 0.0       # what the same run would cost with a cold cache
     written = 0
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w") as out:
@@ -67,7 +68,9 @@ def main() -> None:
             attempt = classify.classify_page(
                 api, ARM, pdf_for(record_id, file_index), page,
                 record_id=record_id, file_index=file_index, cache=cache)
-            spend += attempt.cost_usd()
+            notional += attempt.cost_usd()
+            if not attempt.cached:
+                spend += attempt.cost_usd()
             label = attempt.label
             out.write(json.dumps({
                 "page_id": row["page_id"],
@@ -95,7 +98,8 @@ def main() -> None:
             print(f"  {i:3d}/{len(rows)} {mark} {row['page_id']:16s} {klass}{note}")
 
     print(f"\nwrote {written} rows to {OUT}")
-    print(f"spent this run: ${spend:.2f} standard")
+    print(f"spent this run: ${spend:.2f}   "
+          f"(${notional:.2f} if the cache had been cold)")
 
 
 if __name__ == "__main__":

@@ -126,6 +126,27 @@ R13. A page may not claim a form number it could not read.
     ::test_a_named_completion_report_needs_a_readable_number and
     ::test_a_guess_on_an_unreadable_page_is_refused_at_the_parser
 
+R15. A printed W-15 header outranks a completion-face guess.
+    `reconcile_with_header` overrules `g1`, `w2` and both abstention classes
+    when the page's own OCR header carries a W-15 token. Origin: the
+    before-and-after, where 10 of the 13 remaining wrong `w2` faces were W-15
+    cementing reports on pages whose number both the model and the labeller
+    called legible. `HEADER_OVERRIDES` is one token wide because that is what
+    the labels support: all 12 labelled pages carrying a W-15 token are W-15,
+    while the general rule would overturn two real G-1 faces whose headers
+    carry a P-5 token from field 3's own wording. Widening it needs the same
+    measurement again.
+    Pinned by: tests/tier1/test_abstention.py::test_a_w15_header_beats_a_completion_guess
+    and ::test_the_header_check_is_scoped_to_w15_on_purpose, plus
+    tests/tier2/test_classify.py::test_a_cached_result_is_reconciled_like_a_fresh_one
+
+R16. A deterministic correction is counted, never applied quietly.
+    Every label overruled after the model answered carries `resolved_from` and
+    `resolution`, and the correction rate is reported beside the accuracy it
+    produced. Origin: DEFECTS #19. A repair nobody counts is a repair nobody
+    can argue with, and the accuracy it buys cannot be attributed.
+    Pinned by: tests/tier1/test_abstention.py::test_a_contradicting_face_is_routed_rather_than_refused
+
 ## Probe results
 
 Run 2026-08-30 against record 1501720 page 2, the G-1 face of the demo
@@ -519,11 +540,81 @@ stratified to be rich in errors, a falling union is the correction working.
 
 ### The cost, in DEFECTS #19
 
-Parse failures rose from 0.4% on the census to **9.1%, 13 of 143**. Seven are a
-model answering `w2` while reporting the form number illegible: R13 refuses the
-label and the page produces nothing. The design intended an abstention, which
-stays in the union; what it got is absence, which does not. Logged, not fixed,
-because the fix changes what R4 means.
+Parse failures rose from 0.4% on the census to 9.1%, 13 of 143. Seven were a
+model answering `w2` while reporting the form number illegible: R13 refused the
+label and the page produced nothing. The design intended an abstention, which
+stays in the union; what it got was absence, which does not.
+
+Corrected the same day. See the second run below.
+
+## The corrected run, 2026-08-31
+
+Both corrections landed together, because both change the classifier output the
+extraction frame is drawn from and landing them apart would mean drawing that
+frame twice.
+
+1. DEFECTS #19: `parse_response` routes a contradicting face to
+   `completion_face_unknown_form` instead of refusing it, and records that it
+   did.
+2. R15 below: a printed W-15 header outranks a completion-face guess.
+
+No model calls. Only deterministic post-processing changed, so every page was a
+result-cache hit and the run cost nothing, which is what CLAUDE.md rule 7's
+cache is for.
+
+| Predicted | Before | After both corrections | 90% bootstrap |
+|---|---|---|---|
+| `g1` face | 64.7% +/- 4.5pp | **94.0%** | [85.6%, 100.0%] |
+| `w2` face | 44.0% +/- 5.2pp | **57.4%** | [41.0%, 83.5%] |
+
+W-2's point estimate rose 13 points on the W-15 correction, from 48.3% before
+it. **The interval still contains the before figure**, so the pre-registered
+instrument does not establish the W-2 improvement at 90% confidence, and it is
+not claimed. A paired test on the same pages would be more sensitive and was
+not pre-registered, so it is not run after the fact.
+
+### Every correction was defensible
+
+12 of 143 pages, 8.4%, corrected deterministically, and the labels agree with
+all 12.
+
+| Correction | Pages | Right |
+|---|---|---|
+| `header_token_w15` | 7 | 7 |
+| `illegible_form_number` | 5 | 5 |
+
+The five routed pages are all `other_form` by the labels, so abstaining was the
+correct answer on every one. The seven overridden pages are all W-15.
+
+### Parse failures fell to 8 of 143
+
+Three causes remain, and only three of the eight come from the new invariants:
+
+    3  pre-existing: out-of-vocabulary class
+    2  pre-existing: a named form with no part
+    2  DEFECTS #19 residue: a contradicting sec_ii or continuation
+    1  completion_face_legacy with part back_instructions
+
+The two residue pages stay refused on purpose. `completion_face_unknown_form`
+is faces only, and the other resolution would move a page out of the
+record-level union, which is a decision about the census headline rather than a
+parser detail.
+
+### The union still holds
+
+60 records to 46 across the drawn pages, and **0 of the 14 records that lost a
+completion page genuinely held one**. The labels put the true figure at 27, so
+the union moved from 60 toward 27.
+
+### The frozen extraction frame
+
+This run is the classifier output the extraction milestone draws its frame
+from. Coverage over the 736-page scored frame: `g1` face ~65, `w2` face ~127,
+`completion_face_unknown_form` ~91, `completion_face_legacy` ~10, any
+completion face ~293.
+
+The model's own legibility answer agrees with the labeller's on 125 of 135
+pages, 93%.
 
 ## Era drift, as a measured classifier defect
 
