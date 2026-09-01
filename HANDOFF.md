@@ -320,4 +320,5 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    BOTH directions and settle candidates by identity-field agreement, not
    by position: the smoke pairing looked only forward and three of fifteen
    ground-truth documents turned out to be sections without their face.
-   Worked cases in DEFECTS #25.
+   Design, evidence, worked cases and tier-1 test plan:
+   docs/modules/reassemble.md.

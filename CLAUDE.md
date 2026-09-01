@@ -28,41 +28,27 @@ must be defensible line by line in an interview.
 
 - fetch.py works end to end; corpus is CLOSED: 202 records, 249 files,
   3,689 pages in data/raw (git-ignored), manifest at data/manifest.jsonl.
-- Page classifier done and measured. Census run 2026-08-31 on 3,689 pages,
-  $4.25 batched, 0.4% parse failures, reconciled with none missing.
-- **115 of 202 records (57%) contain a completion report.** Hand-verified
-  15/15 on a seeded sample. Corpus is sufficient; fetch.py stays closed.
-- The G-1 vs W-2 split is NOT yet reliable: sectionless pages carry no form
-  number and get attributed by guess. Do not quote a per-form split. The
-  83.6% arm accuracy is a uniform-sample number on 60 pages containing 0
-  G-1 pages; never quote it as accuracy on the target classes. Both caveats
-  in full: docs/modules/classify.md.
-- Extraction ground truth DONE 2026-09-01: 405 rows, 15 documents, keyed
-  blind from page images. Protocol docs/labeling-protocol-extract.md.
-- NEXT, in order: (1) re-run the 20-doc smoke, ~$1.41, the prompt changed
-  when `page_not_in_document` was added so the cache is invalidated;
+- Classifier and census DONE. **115 of 202 records (57%) contain a completion
+  report**, hand-verified 15/15. Corpus sufficient; fetch.py stays closed.
+- Stage-2 labels and the abstention fix DONE 2026-08-31. G-1 face precision
+  64.7% -> **94.0%**, W-2 44.0% -> **57.4%**, whose interval still contains
+  its own before figure so W-2 is not claimed. The failure was an unreadable
+  form number, not a confused layout. Never quote the 83.6% arm accuracy as
+  accuracy on the target classes. All of it, with the caveats that travel
+  with each number: docs/modules/classify.md.
+- Extraction: schema, extractor and validation rules built. Ground truth DONE
+  2026-09-01, 405 rows over 15 documents, keyed blind from page images.
+- NEXT, in order: (1) re-run the 20-doc smoke, ~$1.41, since the prompt
+  changed when `page_not_in_document` was added and the cache is invalidated;
   (2) score against the ground truth. Reporting rules fixed in advance:
-  exclude document 1 from the headline (DEFECTS #23, it is the document
-  the schema was designed on), and report documents 6/8/9 separately as
-  absence detection (DEFECTS #25, they are sections without their face).
-- Stage-2 labels DONE 2026-08-31, 143 pages. **G-1 face precision 64.7%
-  +/-4.5pp, W-2 face 44.0% +/-5.2pp.** All 20 drawn faces whose printed form
-  number is illegible were misclassified; where the number is legible the
-  model is essentially never wrong. The split is measurable and still not
-  reportable as a count. docs/modules/classify.md → Stage 2 results.
-- Fix DECIDED 2026-08-31, NOT implemented, gated: abstain rather than guess.
-  A completion face with no legible form number gets
-  `completion_face_unknown_form`; the pre-numbering family (Form 2/3, GWT-1)
-  gets `completion_face_legacy`. The 115 headline is a union over all four
-  completion classes, so it does not move. Needs a rule-5 proposal for the
-  PageLabel invariant, then a before/after on the stage-2 labels. Design and
-  test plan: docs/modules/classify.md → The decided fix.
-- Then extraction per the cut order in HANDOFF.md → validation →
-  cross-form disagreement → eval (`make eval`) → TypeScript span viewer →
-  optional Postgres projection.
-- Open finding, no implementation: page grouping. 157 pages / 83 records are
-  form pages carrying no form number, plus 137 non-face completion pages.
-  See docs/modules/classify.md.
+  exclude document 1 from the headline (DEFECTS #23, the schema was designed
+  on it) and report documents 6/8/9 separately as absence detection
+  (DEFECTS #25, they are sections without their face).
+- Then validation -> cross-form disagreement -> eval (`make eval`) ->
+  TypeScript span viewer -> optional Postgres projection.
+- Biggest known gap, unbuilt: page reassembly. Pair in both directions and
+  settle by identity-field agreement, never by position.
+  docs/modules/reassemble.md.
 
 ## Standing rules
 

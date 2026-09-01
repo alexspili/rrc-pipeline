@@ -676,12 +676,15 @@ substantial minority of form pages cannot be identified in isolation, and a
 single-page classifier cannot fix that by getting better.**
 
 Recommendation for extraction, not implemented here: pair a section to its face
-within a file by proximity and by agreement on the identity fields both carry
-(operator, lease, well number, completion date), rather than by classifying the
-section page harder. Record 1493495 is the worked example: page 9 is a W-2 face
-and page 10 its Section II, and they agree on operator, completion date and
-total depth. The cut order has no step for this; it belongs before or inside
-extraction.
+within a file by agreement on the identity fields both carry (operator, lease,
+well number, completion date), rather than by classifying the section page
+harder.
+
+**Superseded in one word, 2026-09-01.** This paragraph originally read "by
+proximity and by agreement". Proximity was then implemented as a placeholder,
+in one direction, and produced three broken documents out of fifteen
+(DEFECTS #25). Position narrows the candidate list; it never decides. The
+design, the evidence and the test plan now live in docs/modules/reassemble.md.
 
 ## RETIRED
 
