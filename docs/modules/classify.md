@@ -413,6 +413,56 @@ dependency that the pipeline currently does not need, for a gain bounded above
 by the illegible share of completion faces, and abstention already handles that
 slice honestly. Recorded here so that the choice is visible as a choice.
 
+## The before-and-after: method, recorded before the run
+
+**Written 2026-08-31, before the re-run was submitted.**
+
+The same 143 labelled pages go through the new prompt. "Before" is the census
+already on disk. "After" is the new run. The labels do not move, so the
+comparison is paired.
+
+**Precision before** uses the stratified estimator in `pipeline/estimate.py`,
+because strata A to E exactly partition the old predicted-face population.
+
+**Precision after cannot use it.** The set of pages called `w2` face is
+different after the change, and a page from any stratum could enter or leave
+it, so the quantity is a ratio over a domain rather than a proportion within a
+stratum:
+
+    precision_after = sum_i (N_i / n_i) * correct_i  /  sum_i (N_i / n_i) * in_domain_i
+
+where `in_domain_i` counts drawn pages in stratum i that the new run calls that
+class, and `correct_i` counts those the labels agree with. Its interval comes
+from a **within-stratum bootstrap, 2,000 resamples, 5th and 95th percentiles**.
+The estimator formula and the resample count are fixed here so that neither can
+be chosen after seeing a number.
+
+The domain is the 736-page frame of strata A to G. A page outside that frame
+could in principle become a completion face and would not be counted. That is a
+known and unmeasured edge, not a silent one.
+
+**Five things get reported, and they answer different questions.**
+
+1. Precision before and after, for both face classes.
+2. Coverage: how many pages the run still calls a named completion face. A
+   precision rise bought entirely by calling fewer pages is a real result but a
+   different one, and the pair of numbers distinguishes them.
+3. Where each previously-wrong page went: now correct, now an abstention, still
+   wrong, or a parse failure.
+4. **Parse failures counted separately from abstentions.** A model answering
+   `g1` while reporting the form number illegible is refused by the constructor
+   under R13. That is a refusal, not an abstention: the page produces no label
+   at all and leaves the census, which could move the record-level union the
+   whole design is meant to protect. If this happens at any material rate the
+   design needs a follow-up decision, and this is where it would show.
+5. The record-level union across the 143 pages, before and after. It should not
+   fall.
+
+**Stated before the run:** a precision rise with a stable union is the good
+outcome. A precision rise bought by abstaining on much of the frame is the
+honest-relocation outcome, also reportable, and it would be reported as such
+rather than as a recovery.
+
 ## Era drift, as a measured classifier defect
 
 The project thesis is that this archive drifts across eras and that a pipeline
