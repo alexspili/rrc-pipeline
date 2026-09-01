@@ -981,3 +981,45 @@ accuracy with and without the pages already seen during census verification.
 The number that goes anywhere public is the one computed without it.
 **Pin:** none possible in code; this is a property of how a sample was drawn.
 The procedural guard is the reporting rule above.
+
+---
+
+## #24 — 2026-08-31 — A protocol that could not express a fifth of its own sheet
+
+**What happened:** Alex, part way through keying the extraction ground truth,
+asked what to record when a W-2 has no second page and the completion data
+lives on a reverse nobody imaged. Document 13, record 1511465.
+
+The four statuses had no answer. `not_on_this_form` asserts the 1975 W-2 has no
+total depth field, which is false. `blank` asserts an operator left it empty,
+which is also false. The truth is a third fact: the field exists, on a page
+this document does not contain.
+
+**Measured footprint:** **9 of the 15 ground-truth documents are face-only, so
+90 of the 405 rows.** Not an edge case; 22% of the sheet.
+
+**Why it was wrong:** docs/labeling-protocol-extract.md says "the document is
+all of its pages together: where a field appears on any page of the document,
+it is present." That was written from the documents that have their second
+page, and never asked what happens to the ones that do not. HANDOFF has said
+since the recon session that only 107 of the 486 pages carrying a "reverse
+side" pointer are actually followed by one, so this was knowable before a
+single row was keyed.
+
+Standing rule 9's shape, on the rule's own author: the multi-page case was
+validated against documents that had a second page, and the residue was not
+characterised.
+
+**Resolution:** a fifth status, `page_not_in_document`. Both sides determine it
+from the same evidence and neither guesses: the W-2 face prints "if well is
+newly completed or recompleted, fill in reverse side also", and the reverse is
+not among the pages given. It also buys a measurement worth having, which is
+how often the model says a section is absent rather than inventing `blank`.
+
+The extraction prompt changes with it, which invalidates the result cache, so
+the 20-document smoke run has to be repeated at about $1.41 before scoring.
+Deferred until the keying is finished rather than run under it.
+**Pin:** tests/tier1/test_extract.py::test_a_field_on_a_page_nobody_imaged_has_its_own_status
+and ::test_the_missing_page_status_is_not_the_missing_field_status. The
+absent-status tests now parametrise over every non-present member so the next
+addition cannot skip them.

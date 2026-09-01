@@ -29,8 +29,10 @@ def test_a_present_value_must_say_where_it_was_read():
         Value(status=Status.PRESENT, value="9200'", raw="9200'")
 
 
-@pytest.mark.parametrize("status", [Status.BLANK, Status.ILLEGIBLE,
-                                    Status.NOT_ON_THIS_FORM])
+ABSENT = [s for s in Status if s is not Status.PRESENT]
+
+
+@pytest.mark.parametrize("status", ABSENT)
 def test_an_absent_value_carries_no_box(status):
     """Approved before coding: box is null, never [0, 0, 0, 0]. The probe
     returned the degenerate box on a field the form does not have, which reads
@@ -41,8 +43,7 @@ def test_an_absent_value_carries_no_box(status):
         Value(status=status, region=region())
 
 
-@pytest.mark.parametrize("status", [Status.BLANK, Status.ILLEGIBLE,
-                                    Status.NOT_ON_THIS_FORM])
+@pytest.mark.parametrize("status", ABSENT)
 def test_an_absent_value_carries_no_text(status):
     with pytest.raises(ValueError, match="carries no text"):
         Value(status=status, value="9200'")
@@ -344,3 +345,27 @@ def test_a_form_class_outside_the_taxonomy_is_refused():
     with pytest.raises(ValueError, match="not a page class"):
         parse_report('{"document": {"form_class": "completion report"}}',
                      record_id="1", file_index=0, pages=(1,))
+
+
+# ------------------------------- a page that was never imaged is its own fact
+
+def test_a_field_on_a_page_nobody_imaged_has_its_own_status():
+    """Three facts, and until now two statuses. The form has no such field;
+    the field is empty; the field is on a page this document does not include.
+
+    9 of the 15 ground-truth documents are face-only, so this is 90 of 405
+    rows. HANDOFF already records that only 107 of the 486 pages pointing to a
+    reverse side are actually followed by one.
+    """
+    value = parse_value({"status": "page_not_in_document"})
+    assert value.status is Status.PAGE_NOT_IN_DOCUMENT
+    assert value.region is None and value.value is None
+
+
+def test_the_missing_page_status_is_not_the_missing_field_status():
+    """Marking a W-2's total depth not_on_this_form would assert the 1975 form
+    has no total depth field, which is false and is exactly the conflation the
+    enum exists to prevent.
+    """
+    assert Status.PAGE_NOT_IN_DOCUMENT is not Status.NOT_ON_THIS_FORM
+    assert Status.PAGE_NOT_IN_DOCUMENT is not Status.BLANK
