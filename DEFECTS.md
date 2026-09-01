@@ -809,3 +809,58 @@ changes the meaning of a rule and rule 5 covers that.
 **Pin:** pending. The case is real: a response of `form_class: "w2"` with
 `form_number_legible: false` must produce a label, not an exception, and must
 carry a flag saying it was resolved.
+
+---
+
+## #20 — 2026-08-31 — The P-4 trap was fixed by how much it removed, not by what was left
+
+**What happened:** validating the W-15 header rule against the stage-2 labels
+turned up two hand-labelled G-1 faces, records 1760703 page 6 and 1495392
+page 6, whose OCR header carries a `P-5` token. A general "the header token
+wins" rule would have overturned both, so the rule was scoped to W-15 alone.
+
+Measuring the token that caused that gave a worse answer than the two pages
+suggested. Across the corpus, 147 pages carry a `P-5` header token, and the
+census classifies them:
+
+    76 p4    31 w1    16 w15    7 p12    4 w2    3 g1    3 other_form
+     3 letter_memo
+
+**Zero** of the 147 are classified `p5`. Meanwhile the census finds 21 `p5`
+pages, and `formscan` gives a `P-5` token to none of them. The two sets are
+disjoint.
+
+**Why it was wrong:** DEFECTS #11 named this exact sentence as the cause. Field
+3 of a completion report, and the equivalent field on a P-4, W-1 and W-15,
+reads "OPERATOR'S NAME (Exactly as shown on Form P-5, Organization Report)".
+`CROSS_REFERENCE` was extended to catch it and the count fell from 373 pages to
+147, which was recorded as the fix.
+
+147 was never checked against anything. It is not the number of P-5 headers in
+this corpus; on the evidence above it is approximately all of the remaining
+leak. The OCR is what defeats the filter: on record 1760703 the phrase reads
+"as shown n..Form P-5", and on 1495392 the line break leaves only
+"P-5. Organization Report)" with no cross-referencing words in front of it at
+all. The lookback window has nothing to find.
+
+The lesson is the one the fix itself should have applied. A filter was
+validated by the size of the drop, and nobody asked what the residue was. That
+is the same shape as DEFECTS #16, where a fix was measured and reported as
+"actual" while a second mechanism kept 18 pages leaking, and as DEFECTS #15
+before it. Three entries in one day for the same habit: measure what the fix
+removed, do not measure what it left.
+
+**Consequences, and what they are not.** Nothing above it changes. The W-15
+rule was already scoped away from this, `p5` is not an extraction target, and
+the tier-2 coverage threshold is unaffected because P-5 has a class either way.
+What is wrong is a committed number: `data/form_headers.json` reports P-5 on
+147 pages, and `docs/labeling-protocol.md` repeats it in prose as "P-5 on 373
+pages when it is on 147".
+
+**Resolution:** logged now, fix deferred by agreement. The fix is not another
+phrase in `CROSS_REFERENCE`, since the OCR breaks the phrase itself; it needs a
+different signal, most likely that a token appearing in a field label rather
+than in the top-right corner is not a header, which is a geometry question the
+text layer cannot answer.
+**Pin:** pending. Two real cases: `header_tokens` on the OCR of record 1760703
+page 6 and record 1495392 page 6 must not return `P-5`.
