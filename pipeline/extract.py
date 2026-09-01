@@ -26,6 +26,7 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
+from pipeline.pageclass import PageClass
 from pipeline.pageclass import _json_object   # fenced or bare JSON, one parser
 
 
@@ -340,6 +341,25 @@ def _text(value) -> str | None:
     return text or None
 
 
+def normalise_form_class(raw: str) -> str:
+    """One spelling per class, and the class must exist.
+
+    Origin: DEFECTS #22. The smoke run wrote `g1` on two documents and `g-1` on
+    two others, which are two classes to every count downstream.
+
+    Validated against the whole `PageClass` vocabulary rather than against the
+    two values the prompt asks for. The same run answered `w15` on a page the
+    stage-2 labels confirm is a W-15 cementing report, which is extraction
+    acting as a second opinion on the classifier. Narrowing this to g1 and w2
+    would throw that away.
+    """
+    token = (raw or "").strip().lower().replace("-", "").replace(" ", "")
+    for member in PageClass:
+        if member.value.replace("_", "") == token.replace("_", ""):
+            return member.value
+    raise ValueError(f"form_class={raw!r} is not a page class")
+
+
 def parse_report(body: str, *, record_id: str, file_index: int,
                  pages: tuple[int, ...]) -> CompletionReport:
     """A whole document from one model response.
@@ -359,6 +379,7 @@ def parse_report(body: str, *, record_id: str, file_index: int,
         form_class = form_class.get("value")
     if not form_class or not isinstance(form_class, str):
         raise ValueError("response has no document.form_class")
+    form_class = normalise_form_class(form_class)
 
     def group(name: str, allowed) -> dict[str, Value]:
         source = obj.get(name) or {}
