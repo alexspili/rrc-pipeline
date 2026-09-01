@@ -905,3 +905,37 @@ same posture as `scripts/probe_haiku.py` for the classifier.
 **Pin:** none available. A price is an external fact and no test can hold it.
 The guard is procedural: a cost figure in prose names the model and the date it
 was measured, or it does not appear.
+
+---
+
+## #22 — 2026-08-31 — One form, two spellings, two classes
+
+**What happened:** the 20-document smoke run returned `form_class` as `g1` on
+two documents and `g-1` on two others. The extraction schema took whatever
+string arrived, so those are two different classes to every count, group and
+join downstream, and nothing would have said so.
+
+**Why it was wrong:** the classifier's `form_class` is a closed enum validated
+by `_enum` against `PageClass`. The extraction schema was written the same day
+and validated only that the field was a non-empty string. The prompt names the
+values, which is a request, not a constraint, and DEFECTS #19 is the same
+lesson from the same week: a prompt can be ignored and a constructor cannot.
+
+**Measured footprint:** 4 of 20 smoke documents, 2 of them spelled the way the
+taxonomy spells it and 2 not. No number has been published from this run, so
+nothing downstream is wrong yet. It was found before the ground truth was keyed
+rather than after, which is the only reason it is cheap.
+
+**A second answer worth keeping.** The same run returned `w15` on record
+1494847, which the census called a W-2 face and the stage-2 labels confirm is a
+W-15 cementing report. That is out of the two values the prompt asked for and
+it is correct: extraction is a second opinion on the classifier, and R4's
+principle applies here too. So the fix normalises spelling and validates
+against the whole `PageClass` vocabulary, rather than against the two classes
+the prompt happens to request. Narrowing it to g1 and w2 would have thrown away
+a true finding.
+
+**Resolution:** `form_class` is normalised (case, surrounding space, hyphens)
+and must be a `PageClass` value; anything else raises.
+**Pin:** tests/tier1/test_extract.py::test_form_class_spelling_is_normalised
+and ::test_a_form_class_outside_the_taxonomy_is_refused.

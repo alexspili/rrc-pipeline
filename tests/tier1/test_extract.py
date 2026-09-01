@@ -319,3 +319,28 @@ def test_form_class_parses_whether_bare_or_wrapped():
         doc = parse_report('{"document": %s}' % document,
                            record_id="1", file_index=0, pages=(1,))
         assert doc.form_class == "w2"
+
+
+def test_form_class_spelling_is_normalised():
+    """The smoke run returned "g1" on two documents and "g-1" on two others.
+    Left alone they are two different classes to every grouping and count
+    downstream.
+    """
+    for spelling in ("g1", "g-1", "G-1", " g1 "):
+        body = '{"document": {"form_class": "%s"}}' % spelling.strip()
+        doc = parse_report(body, record_id="1", file_index=0, pages=(1,))
+        assert doc.form_class == "g1", spelling
+
+
+def test_a_form_class_outside_the_taxonomy_is_refused():
+    """R4's principle at the extraction layer. The smoke run answered "w15" on
+    a document the census called a W-2 face, and the stage-2 labels say the
+    page really is a W-15 cementing report. That answer is worth surfacing, so
+    it must parse; an answer that is not a class at all must not.
+    """
+    body = '{"document": {"form_class": "w15"}}'
+    assert parse_report(body, record_id="1", file_index=0,
+                        pages=(1,)).form_class == "w15"
+    with pytest.raises(ValueError, match="not a page class"):
+        parse_report('{"document": {"form_class": "completion report"}}',
+                     record_id="1", file_index=0, pages=(1,))
