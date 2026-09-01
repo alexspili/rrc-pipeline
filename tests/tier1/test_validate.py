@@ -1,8 +1,8 @@
 """Tier 1: deterministic checks over one extracted document.
 
-Pure, and deliberately built from records 1501720 and 1494409 rather than from
-any document in the ground-truth set, so that nothing here can leak into a
-blind labelling pass.
+Pure, and deliberately built from record 1501720 and from synthetic values
+rather than from any document in the ground-truth set, so that no true value
+for a blind eval document lands in the repository.
 
 The severity split is the load-bearing part. An ERROR is impossible on any form
 of any era. A WARNING is suspicious and its false-positive rate on this corpus
@@ -49,8 +49,8 @@ def test_an_api_number_parses_however_it_is_punctuated():
 
 
 def test_depths_parse_through_the_marks_on_the_page():
-    assert parse_depth("9200'") == 9200
-    assert parse_depth("8,608") == 8608
+    assert parse_depth("11000'") == 11000
+    assert parse_depth("10,200") == 10200
     assert parse_depth("6954 (Cal)") == 6954
     assert parse_depth("Surface") is None
     assert parse_depth(None) is None
@@ -151,16 +151,16 @@ def test_drilling_that_finishes_before_it_starts_is_an_error():
         ["date.drilling_commenced_before_drilling_completed"]
 
 
-def test_the_real_sequence_from_record_1493495_passes():
-    """Permit May 4 1977, drilled 8-16-77 to 9-22-77, completion date 9/22/77,
-    tested 11-14-77. Nothing should fire.
+def test_a_well_ordered_date_sequence_passes():
+    """Synthetic, for the same reason as the depths below: the natural fixture
+    is a document in the ground-truth set.
     """
     assert check_dates(doc(
-        identity={"completion_date": val("9/22/77")},
-        completion={"date_permit_issued": val("May 4, 1977"),
-                    "drilling_commenced": val("8-16-77"),
-                    "drilling_completed": val("9-22-77")},
-        test={"date_of_test": val("11-14-77")})) == []
+        identity={"completion_date": val("6/30/81")},
+        completion={"date_permit_issued": val("Feb 2, 1981"),
+                    "drilling_commenced": val("4-11-81"),
+                    "drilling_completed": val("6-30-81")},
+        test={"date_of_test": val("8-05-81")})) == []
 
 
 def test_a_test_dated_before_completion_is_a_warning_not_an_error():
@@ -185,38 +185,40 @@ def casing(depth):
 
 def test_a_plug_back_below_total_depth_is_an_error():
     findings = check_depths(doc(completion={
-        "total_depth": val("9200'"), "plug_back_depth": val("9600'")}))
+        "total_depth": val("11000'"), "plug_back_depth": val("11400'")}))
     assert [f.rule for f in findings] == ["depth.below_total"]
 
 
-def test_the_real_depths_from_record_1493495_pass():
-    """Total 9200, plug back 8608, top of pay 8465, casing at 120, 2020 and
-    9187, tubing 7935 with the packer at 7920, perforations 8466 to 8478.
+def test_a_well_formed_depth_set_passes():
+    """Synthetic, and synthetic on purpose. The obvious fixture was record
+    1493495's Section II, and that record is document 1 of the ground-truth
+    set: writing its true depths into a committed test would put the answers
+    to a blind eval document in the repository.
     """
     assert check_depths(doc(
-        completion={"total_depth": val("9200'"),
-                    "plug_back_depth": val("8608'"),
-                    "top_of_pay": val("8465'")},
-        tables={"casing_strings": (casing("120'"), casing("2020'"),
-                                   casing("9187'")),
-                "tubing": (Row(cells={"depth_set": val("7935'"),
-                                      "packer_set": val("7920'")}),),
-                "producing_intervals": (Row(cells={"from": val("8466"),
-                                                   "to": val("8478'")}),)})) == []
+        completion={"total_depth": val("11000'"),
+                    "plug_back_depth": val("10200'"),
+                    "top_of_pay": val("9800'")},
+        tables={"casing_strings": (casing("300'"), casing("3100'"),
+                                   casing("10900'")),
+                "tubing": (Row(cells={"depth_set": val("9500'"),
+                                      "packer_set": val("9450'")}),),
+                "producing_intervals": (Row(cells={"from": val("9810"),
+                                                   "to": val("9860'")}),)})) == []
 
 
 def test_a_packer_below_the_tubing_shoe_is_an_error():
     findings = check_depths(doc(
-        completion={"total_depth": val("9200'")},
-        tables={"tubing": (Row(cells={"depth_set": val("7935'"),
-                                      "packer_set": val("7999'")}),)}))
+        completion={"total_depth": val("11000'")},
+        tables={"tubing": (Row(cells={"depth_set": val("9500'"),
+                                      "packer_set": val("9600'")}),)}))
     assert [f.rule for f in findings] == ["depth.packer_below_tubing"]
 
 
 def test_an_inverted_perforation_interval_is_an_error():
     findings = check_depths(doc(
-        tables={"producing_intervals": (Row(cells={"from": val("8478'"),
-                                                   "to": val("8466'")}),)}))
+        tables={"producing_intervals": (Row(cells={"from": val("9860'"),
+                                                   "to": val("9810'")}),)}))
     assert [f.rule for f in findings] == ["depth.interval_inverted"]
 
 
@@ -226,16 +228,16 @@ def test_casing_set_out_of_order_is_a_warning():
     surfaced rather than counted.
     """
     findings = check_depths(doc(
-        completion={"total_depth": val("9200'")},
-        tables={"casing_strings": (casing("2020'"), casing("120'"))}))
+        completion={"total_depth": val("11000'")},
+        tables={"casing_strings": (casing("3100'"), casing("300'"))}))
     assert [f.rule for f in findings] == ["depth.casing_order"]
     assert findings[0].severity is Severity.WARNING
 
 
 def test_a_casing_string_below_total_depth_is_an_error():
     findings = check_depths(doc(
-        completion={"total_depth": val("9200'")},
-        tables={"casing_strings": (casing("9500'"),)}))
+        completion={"total_depth": val("11000'")},
+        tables={"casing_strings": (casing("11400'"),)}))
     assert [f.rule for f in findings] == ["depth.below_total"]
 
 
@@ -245,7 +247,7 @@ def test_validate_puts_errors_before_warnings():
     findings = validate(doc(
         identity={"api_number": val("42-309-31674"),
                   "county": val("Brazoria"), "completion_date": val("11/18/08")},
-        completion={"total_depth": val("9200'")},
+        completion={"total_depth": val("11000'")},
         test={"date_of_test": val("2/18/2008")}), BRAZORIA)
     assert [f.severity for f in findings] == [Severity.ERROR, Severity.WARNING]
 

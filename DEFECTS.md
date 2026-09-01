@@ -939,3 +939,45 @@ a true finding.
 and must be a `PageClass` value; anything else raises.
 **Pin:** tests/tier1/test_extract.py::test_form_class_spelling_is_normalised
 and ::test_a_form_class_outside_the_taxonomy_is_refused.
+
+---
+
+## #23 — 2026-08-31 — The regression anchor is also an eval document
+
+**What happened:** record 1493495 is document 1 of the 15-document
+ground-truth set, and it is also the document I read page by page while
+designing the extraction schema, the document `scripts/probe_sonnet.py`
+measured, and the anchor deliberately forced into the smoke draw so the coded
+path could be compared against the probe.
+
+Its true values are quoted in this repository: in commit messages, in
+docs/modules/extract.md, and until this entry in
+tests/tier1/test_validate.py, which used its Section II depths as a
+"well-formed depths" fixture.
+
+**Why it was wrong:** HANDOFF's eval design says dev fixtures are not the eval
+set, hold the eval set out, and do not look at it while iterating. Document 1
+fails all three from my side. Alex is keying it blind from page images, so his
+labels are uncontaminated; the contamination is that I have read the document
+in full, written its values down, and built a schema around what it contains.
+An accuracy figure that includes it is measured partly against a document the
+schema was fitted to.
+
+The two decisions that produced this were each individually right. Reading a
+real document before proposing a schema is what stopped the schema being
+invented from HANDOFF's prose. Forcing the probe document into the smoke draw
+is what proved the coded path reproduces the probe. Nobody checked what
+happens when the same document is then drawn into the eval set, which is
+standing rule 9's shape again: each step was validated, the interaction was not.
+
+**Measured footprint:** 1 of 15 ground-truth documents. The other 14 are
+documents I have never opened.
+
+**Resolution:** the fixtures are scrubbed, so no true value for any eval
+document sits in the repository. Document 1 stays in the sheet, because it is
+the anchor and because dropping it mid-keying would waste work already done,
+and **accuracy is reported with and without it**, exactly as stage 2 reports
+accuracy with and without the pages already seen during census verification.
+The number that goes anywhere public is the one computed without it.
+**Pin:** none possible in code; this is a property of how a sample was drawn.
+The procedural guard is the reporting rule above.

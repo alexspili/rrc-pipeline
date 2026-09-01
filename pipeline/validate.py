@@ -211,11 +211,9 @@ _DATE_ORDER = (
 def check_dates(report: CompletionReport) -> list[Finding]:
     """Date orderings, and one flag whose rate is unmeasured.
 
-    Checked against record 1493495, where the permit is dated May 4 1977,
-    drilling ran 8-16-77 to 9-22-77 and the completion date is 9/22/77, and
-    against record 1501720, whose completion date of 11/18/08 sits nine months
-    after its own test date of 2/18/2008 and after the RRC's received stamp.
-    HANDOFF records that document as carrying real date errors.
+    Checked against record 1501720, whose completion date of 11/18/08 sits nine
+    months after its own test date of 2/18/2008 and after the RRC's received
+    stamp. HANDOFF records that document as carrying real date errors.
     """
     findings: list[Finding] = []
     dates = {name: parse_date(_read(report.completion, name))
@@ -254,9 +252,9 @@ def check_dates(report: CompletionReport) -> list[Finding]:
 def check_depths(report: CompletionReport) -> list[Finding]:
     """Depth orderings within one document.
 
-    Checked against record 1493495 Section II: total depth 9200, plug back
-    8608, top of pay 8465, casing set at 120, 2020 and 9187, tubing at 7935
-    with the packer at 7920, perforations 8466 to 8478.
+    The orderings are structural: a well is not plugged back below its own
+    total depth, a packer does not sit below the tubing shoe it hangs from,
+    and an interval does not end above where it starts.
     """
     findings: list[Finding] = []
     total = parse_depth(_read(report.completion, "total_depth"))
