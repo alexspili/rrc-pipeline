@@ -120,6 +120,39 @@ form of that rule failed exactly that test. Three data points, two of them
 still unresolved until the ground truth is keyed, is a signal worth watching
 and not a mechanism.
 
+## Validation rules, and why they carry two severities
+
+`pipeline/validate.py`, pure, cut order step 4. It reads a `CompletionReport`
+and returns findings. No corpus, no model, no I/O.
+
+**ERROR** means structurally impossible on any form of any era: a plug-back
+below the well's own total depth, a perforation interval that ends above where
+it starts, a packer below the tubing shoe, drilling that finishes before it
+starts, a Texas API number whose county code is not the county the form names.
+
+**WARNING** means suspicious with an unmeasured false-positive rate. Casing
+strings out of depth order, and a test dated before the completion date, are
+both real signals and both have plausible innocent explanations that nobody has
+counted yet. They are surfaced for review and must not be reported as defects
+until somebody measures how often they fire on documents that are correct.
+
+The split is DEFECTS #10 and #11 turned into a habit. Rules written from the
+handful of documents somebody happened to read do not survive a corpus spanning
+1950s to 2008 paper, so every rule names the documents it was checked against,
+and a rule checked against two documents is a warning.
+
+Two things the rules deliberately do not do. A field that is `blank`,
+`illegible` or `not_on_this_form` produces no finding: a 1975 Form W-2 has no
+API number, and manufacturing a defect out of a form revision is the failure
+the status enum exists to prevent. And a county missing from the county-code
+map produces no finding either, because that is a gap in the map rather than a
+defect in the document.
+
+The county-prefix rule is the one that makes the demo document machine-checkable.
+Record 1501720 carries 42-039-31674 on its G-1 face and 42-309-31674 on the G-5
+in the same file. Brazoria is 039, so the transposition is caught from the
+single page that carries it, without needing the other form to compare against.
+
 ## Road not taken: AWS Textract word-level geometry
 
 Textract `DetectDocumentText` returns word-level bounding boxes, which would be
