@@ -463,6 +463,68 @@ outcome. A precision rise bought by abstaining on much of the frame is the
 honest-relocation outcome, also reportable, and it would be reported as such
 rather than as a recovery.
 
+## The before-and-after: results, 2026-08-31
+
+143 pages, standard path, $0.38. Method as pre-registered above.
+
+### Precision
+
+| Predicted | Before | After | 90% bootstrap |
+|---|---|---|---|
+| `g1` face | 64.7% +/- 4.5pp | **94.0%** | [85.6%, 100.0%] |
+| `w2` face | 44.0% +/- 5.2pp | **48.3%** | [34.1%, 70.3%] |
+
+**G-1 recovered. W-2 did not**, and its interval overlaps its own before
+figure, so nothing is claimed for it.
+
+This is the answer to the question the run was for, and it is a split answer.
+The legibility guard fixed the failure it was built for and did nothing to a
+second failure it was never aimed at.
+
+### Why W-2 did not move
+
+Of the 13 drawn pages the new run still calls a `w2` face and the labels
+disagree with, **10 are Form W-15 cementing reports**. On those the model and
+the labeller independently agree that the printed form number is legible.
+
+A guard that fires when the number cannot be read cannot help when the number
+can be read and is misidentified. This is a second, separable defect: a legible
+W-15 header read as a W-2.
+
+It is also already detectable without any model change. Seven of those ten
+carry an OCR header token that says W-15, and stratum D was built out of
+exactly that signal, where it was right 7 times out of 7. The instrument for
+the next fix already exists.
+
+### Coverage, and what the abstention cost
+
+Weighted over the 736-page scored frame: `g1` face 72 -> ~65, `w2` face
+166 -> ~151, plus ~59 `completion_face_unknown_form` and ~10
+`completion_face_legacy`.
+
+So the precision gain was not bought by mass abstention. It cost two pages that
+were correctly named before and are now abstentions, both G-1 faces in record
+1865760.
+
+### The record-level union held
+
+Across the drawn pages the union fell from 60 records to 46. That looks like
+the failure the pre-registration said to watch for, and it is not.
+
+**Of the 14 records that lost their completion page, 0 genuinely held one.**
+Every lost page is `other_form`, `w3`, `w15`, `p4` or `plat_map` by the labels.
+The labels put the true figure for the drawn pages at 27 records, so the union
+moved from 60 toward 27, which is the direction of the truth. On a sample
+stratified to be rich in errors, a falling union is the correction working.
+
+### The cost, in DEFECTS #19
+
+Parse failures rose from 0.4% on the census to **9.1%, 13 of 143**. Seven are a
+model answering `w2` while reporting the form number illegible: R13 refuses the
+label and the page produces nothing. The design intended an abstention, which
+stays in the union; what it got is absence, which does not. Logged, not fixed,
+because the fix changes what R4 means.
+
 ## Era drift, as a measured classifier defect
 
 The project thesis is that this archive drifts across eras and that a pipeline
