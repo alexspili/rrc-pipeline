@@ -80,15 +80,19 @@ def main() -> None:
                 "form_number_legible": (label.form_number_legible
                                         if label else None),
                 "oversize": label.oversize if label else None,
+                "resolution": label.resolution if label else None,
+                "resolved_from": (label.resolved_from.value
+                                  if label and label.resolved_from else None),
                 "input_tokens": attempt.input_tokens,
                 "output_tokens": attempt.output_tokens,
                 "cached": attempt.cached,
                 "error": attempt.error,
             }) + "\n")
             written += 1
-            mark = "!" if attempt.error else " "
+            mark = "!" if attempt.error else ("*" if label and label.resolution else " ")
             klass = label.form_class.value if label else "PARSE FAIL"
-            print(f"  {i:3d}/{len(rows)} {mark} {row['page_id']:16s} {klass}")
+            note = f"  <- {label.resolution}" if label and label.resolution else ""
+            print(f"  {i:3d}/{len(rows)} {mark} {row['page_id']:16s} {klass}{note}")
 
     print(f"\nwrote {written} rows to {OUT}")
     print(f"spent this run: ${spend:.2f} standard")

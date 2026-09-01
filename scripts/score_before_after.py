@@ -54,6 +54,7 @@ def load():
             "before_class": k["predicted_class"], "before_part": k["predicted_part"],
             "after_class": a["form_class"], "after_part": a["part"],
             "after_legible": a["form_number_legible"], "after_error": a["error"],
+            "resolution": a.get("resolution"), "resolved_from": a.get("resolved_from"),
             "true_class": labels[pid]["form_class"].strip(),
             "true_part": labels[pid]["part"].strip(),
             "true_legible": labels[pid]["form_number_legible"].strip().lower(),
@@ -204,6 +205,23 @@ def main():
     print(f"    records with a completion page, after:  {len(after_recs)}")
     print(f"    records the LABELS say have one:        {len(true_recs)}")
     print(f"    lost: {sorted(before_recs - after_recs)}")
+
+    print("\n" + "=" * 70)
+    print("5b. DETERMINISTIC CORRECTIONS, counted rather than applied quietly")
+    print("=" * 70)
+    fixed = [r for r in rows if r["resolution"]]
+    print(f"    {len(fixed)} of {len(rows)} pages corrected "
+          f"({len(fixed) / len(rows):.1%})")
+    for kind in sorted({r["resolution"] for r in fixed}):
+        group = [r for r in fixed if r["resolution"] == kind]
+        right = sum(1 for r in group
+                    if r["after_class"] == r["true_class"]
+                    or (r["after_class"] == "completion_face_unknown_form"
+                        and r["true_class"] not in ("g1", "w2")))
+        print(f"      {kind:24s} {len(group):3d}, defensible on {right}")
+        for r in group:
+            print(f"        {r['page_id']:16s} {r['resolved_from']} -> "
+                  f"{r['after_class']:28s} true={r['true_class']}")
 
     print("\n" + "=" * 70)
     print("6. THE LEGIBILITY ANSWER AGAINST ALEX'S")

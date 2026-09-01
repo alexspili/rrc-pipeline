@@ -235,3 +235,43 @@ def test_a_cached_out_of_vocabulary_class_does_not_raise(tmp_path):
                                    file_index=0, cache=cache, doc_hash="abc")
     assert again.label is None
     assert "back_instructions" in again.error
+
+
+def test_a_cached_result_is_reconciled_like_a_fresh_one(tmp_path, monkeypatch):
+    """DEFECTS #14's bug class, applied to the correction added for #19. A
+    deterministic fix that runs on fresh results and not on cached ones makes
+    the cache change the answer, which is the one thing a cache must never do.
+    """
+    from pipeline import classify, pageclass as pc
+
+    body = ('{"form_class":"w2","part":"face","orientation":"up",'
+            '"confidence":"high","alt_class":null,"form_number_legible":true}')
+    monkeypatch.setattr(classify.render, "page_text",
+                        lambda pdf, page: "FORM W-15 CEMENTING REPORT")
+    monkeypatch.setattr(classify.render, "page_dimensions",
+                        lambda pdf: [(1000, 1300)])
+    monkeypatch.setattr(classify, "build_content",
+                        lambda arm, pdf, page: ([], (775, 1000)))
+
+    class FakeAPI:
+        class messages:
+            @staticmethod
+            def create(**kw):
+                class R:
+                    content = [type("B", (), {"type": "text", "text": body})()]
+                    usage = type("U", (), {"input_tokens": 10,
+                                           "output_tokens": 5})()
+                return R()
+
+    pdf = tmp_path / "x.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    cache = classify.ResultCache(tmp_path / "cache.jsonl")
+    fresh = classify.classify_page(FakeAPI(), "vision_1000", pdf, 1,
+                                   record_id="1", file_index=0, cache=cache)
+    replayed = classify.classify_page(FakeAPI(), "vision_1000", pdf, 1,
+                                      record_id="1", file_index=0, cache=cache)
+
+    assert fresh.label.form_class is pc.PageClass.W15
+    assert replayed.cached and not fresh.cached
+    assert replayed.label.form_class == fresh.label.form_class
+    assert replayed.label.resolution == fresh.label.resolution == pc.RESOLVED_HEADER

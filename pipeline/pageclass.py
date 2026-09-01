@@ -25,7 +25,7 @@ import hashlib
 import json
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 
 
@@ -328,6 +328,12 @@ class PageLabel:
     alt_class: PageClass | None = None
     oversize: bool = False
 
+    #: Set when a deterministic step overruled the model. Both are reported
+    #: rather than applied silently: a repair nobody counts is a repair nobody
+    #: can argue with.
+    resolved_from: PageClass | None = None
+    resolution: str | None = None
+
     #: Whether a printed form number can be read on the page.
     #:
     #: None means the question was never asked. Stage-1 labels and every census
@@ -401,6 +407,44 @@ class PageLabel:
 _REQUIRED = ("form_class", "part", "orientation", "confidence", "alt_class",
              "form_number_legible")
 
+#: The model named a form on a page it says carries no readable form number.
+RESOLVED_ILLEGIBLE = "illegible_form_number"
+
+#: The page's own printed header disagreed with the model, and won.
+RESOLVED_HEADER = "header_token_w15"
+
+#: The one token allowed to overrule the model, and why only this one.
+#:
+#: Measured against the stage-2 labels before the rule was written: all 12
+#: labelled pages whose header carries W-15 are W-15 cementing reports, and it
+#: overturns 7 pages the re-run called a completion face, correctly on all 7.
+#:
+#: The general rule, any header token naming another form wins, was measured on
+#: the same labels and rejected. It would overturn two real G-1 faces whose
+#: headers carry a P-5 token, because field 3 of a G-1 reads "OPERATOR'S NAME
+#: (Exactly as shown on Form P-5, Organization Report)" and the OCR mangles the
+#: wording formscan's cross-reference filter looks for. Records 1760703 page 6
+#: and 1495392 page 6. Widening this set requires the same measurement again.
+HEADER_OVERRIDES = {"W-15": PageClass.W15}
+
+
+def reconcile_with_header(label: "PageLabel",
+                          header_tokens: frozenset[str] | set[str]) -> "PageLabel":
+    """Let the form number printed on the page outrank the model's guess.
+
+    Pure, and applied to cached and fresh results alike. DEFECTS #14 was a
+    guard that ran on one of those paths and not the other.
+    """
+    if label.form_class not in COMPLETION_FACES or label.part is not Part.FACE:
+        return label
+    for token in {t.upper() for t in header_tokens}:
+        target = HEADER_OVERRIDES.get(token)
+        if target is not None and target is not label.form_class:
+            return replace(label, form_class=target,
+                           resolved_from=label.form_class,
+                           resolution=RESOLVED_HEADER)
+    return label
+
 
 def _enum(cls, value, field_name: str):
     if value is None:
@@ -454,16 +498,38 @@ def parse_response(body: str, *, record_id: str, file_index: int,
     missing = [k for k in _REQUIRED if k not in obj]
     if missing:
         raise ValueError(f"response missing {', '.join(missing)}")
+
+    form_class = _enum(PageClass, obj["form_class"], "form_class")
+    part = _enum(Part, obj["part"], "part")
+    legible = _boolean(obj["form_number_legible"], "form_number_legible")
+
+    # DEFECTS #19. Two legal values that contradict each other, with exactly
+    # one resolution the taxonomy already names. Routed rather than refused,
+    # and recorded rather than repaired quietly: refusing produced no label at
+    # all, so the page left the corpus where the design intended an abstention
+    # that still joins the record-level union.
+    #
+    # Only a face. The abstention class is faces only, and resolving a
+    # contradicting sec_ii or continuation would move a page out of that union,
+    # which is a decision about the census headline rather than a parser
+    # detail. Those stay refused.
+    resolved_from = resolution = None
+    if (form_class in EXTRACTION_TARGETS and legible is False
+            and part is Part.FACE):
+        resolved_from, form_class = form_class, PageClass.COMPLETION_FACE_UNKNOWN_FORM
+        resolution = RESOLVED_ILLEGIBLE
+
     return PageLabel(
         record_id=record_id, file_index=file_index, page=page,
-        form_class=_enum(PageClass, obj["form_class"], "form_class"),
-        part=_enum(Part, obj["part"], "part"),
+        form_class=form_class,
+        part=part,
         orientation=_enum(Orientation, obj["orientation"], "orientation"),
         confidence=_enum(Confidence, obj["confidence"], "confidence"),
         alt_class=_enum(PageClass, obj["alt_class"], "alt_class"),
         oversize=oversize,
-        form_number_legible=_boolean(obj["form_number_legible"],
-                                     "form_number_legible"))
+        resolved_from=resolved_from,
+        resolution=resolution,
+        form_number_legible=legible)
 
 
 # ----------------------------------------------------------------- census

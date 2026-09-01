@@ -23,6 +23,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from pipeline import formscan
 from pipeline import pageclass as pc
 from pipeline import render
 
@@ -228,17 +229,34 @@ def classify_page(api, arm: str, pdf: Path, page: int, *,
     width, height = dims[page - 1]
     oversize = pc.is_oversize(width, height) if width and height else False
 
+    cached_tokens: set[str] | None = None
+
+    def header_tokens() -> set[str]:
+        """The form numbers printed on this page, read from the text layer.
+
+        Computed at most once per call and only when a label was parsed, so a
+        page that never reaches reconciliation costs no pdftotext.
+        """
+        nonlocal cached_tokens
+        if cached_tokens is None:
+            cached_tokens = set(formscan.header_tokens(
+                render.page_text(pdf, page)))
+        return cached_tokens
+
     def build(payload: dict, cached: bool) -> Attempt:
         """One parse and one guard, shared by the cached and live paths.
 
         DEFECTS #14: these were two call sites, and only the live one caught a
         parse failure, so a run that tolerated bad pages on the way out died on
-        the first one on the way back.
+        the first one on the way back. The header reconciliation added for
+        DEFECTS #19 lives here for the same reason: a correction that runs on
+        fresh results and not on cached ones makes the cache change the answer.
         """
         try:
             label = pc.parse_response(
                 payload["body"], record_id=record_id, file_index=file_index,
                 page=page, oversize=oversize)
+            label = pc.reconcile_with_header(label, header_tokens())
             error = None
         except ValueError as exc:
             label, error = None, str(exc)

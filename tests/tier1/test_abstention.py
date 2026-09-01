@@ -12,8 +12,6 @@ can be ignored and the constructor cannot.
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from pipeline import pageclass as pc
@@ -145,17 +143,19 @@ def test_a_non_boolean_legibility_answer_is_refused():
                           oversize=False)
 
 
-def test_a_guess_on_an_unreadable_page_is_refused_at_the_parser():
-    """End to end: the model answering g1 on a page it admits it cannot read
-    does not produce a label at all. It produces a parse failure, which the
-    census already counts and reports.
+def test_a_guess_on_an_unreadable_page_never_becomes_a_named_form():
+    """This asserted a refusal until DEFECTS #19 measured what refusing costs:
+    the page produced no label at all and left the corpus, where the design
+    intended an abstention that still joins the record-level union. The
+    invariant it was really protecting is below, and is unchanged.
     """
     body = ('{"form_class": "g1", "part": "face", "orientation": "up", '
             '"confidence": "high", "alt_class": null, '
             '"form_number_legible": false}')
-    with pytest.raises(ValueError, match="no form number can be read"):
-        pc.parse_response(body, record_id="1501720", file_index=0, page=2,
-                          oversize=False)
+    label = pc.parse_response(body, record_id="1501720", file_index=0, page=2,
+                              oversize=False)
+    assert label.form_class not in pc.EXTRACTION_TARGETS
+    assert label.form_class is PageClass.COMPLETION_FACE_UNKNOWN_FORM
 
 
 # ------------------------------------------------------------- taxonomy
@@ -192,14 +192,14 @@ def test_a_contradicting_face_is_routed_rather_than_refused():
 
 
 def test_routing_leaves_every_consistent_answer_alone():
-    for legible, expected in ((True, PageClass.G1), (None, PageClass.G1)):
-        body = ('{"form_class": "g1", "part": "face", "orientation": "up", '
-                '"confidence": "high", "alt_class": null, '
-                f'"form_number_legible": {json.dumps(legible)}}}')
-        label = pc.parse_response(body, record_id="1501720", file_index=0,
-                                  page=2, oversize=False)
-        assert label.form_class is expected
-        assert label.resolution is None
+    body = ('{"form_class": "g1", "part": "face", "orientation": "up", '
+            '"confidence": "high", "alt_class": null, '
+            '"form_number_legible": true}')
+    label = pc.parse_response(body, record_id="1501720", file_index=0,
+                              page=2, oversize=False)
+    assert label.form_class is PageClass.G1
+    assert label.resolution is None
+    assert label.resolved_from is None
 
 
 def test_a_contradicting_section_page_is_still_refused():
@@ -259,5 +259,11 @@ def test_the_header_check_leaves_everything_else_alone():
 
 
 def test_a_reconciled_label_is_a_valid_label():
-    fixed = pc.reconcile_with_header(label(PageClass.W2, legible=False), {"W-15"})
+    """The realistic path: a page already routed to an abstention, whose own
+    header then names the form. W2 with an illegible number is not
+    constructible at all any more, which is R13 doing its job.
+    """
+    routed = label(PageClass.COMPLETION_FACE_UNKNOWN_FORM, legible=False)
+    fixed = pc.reconcile_with_header(routed, {"W-15"})
     assert fixed.part is Part.FACE and fixed.form_class is PageClass.W15
+    assert fixed.form_number_legible is False
