@@ -1071,3 +1071,46 @@ record 1511465 has three W-2 faces in one file with a section between two of
 them.
 **Pin:** pending, on the reassembly module. The case is record 1495193: pages
 7 and 8 must resolve to one document, and pages 7 and 9 must not.
+
+---
+
+## #26 — 2026-09-01 — A generator that destroys the work it generated for
+
+**What happened:** the extraction prompt changed when `page_not_in_document`
+was added, which invalidated the result cache, so the 20-document smoke run
+was repeated. `scripts/smoke_extract.py` writes the ground-truth template at
+the end of every run. The sheet had been keyed by hand in the meantime.
+
+**405 hand-keyed rows were replaced with blanks.**
+
+They came back with `git checkout` because they had been committed twenty
+minutes earlier. That is the only reason this is a log entry rather than a day
+of somebody's work gone.
+
+**Why it was wrong:** the script does two things whose lifetimes are different.
+Running extraction is repeatable and expected to be repeated. Writing the
+template is a once-per-frame act. They were in one function because they
+happened in one sitting, and nothing marked the second as unrepeatable.
+
+The failure needed a specific sequence: draw the frame, key the sheet, change
+the prompt, re-run. Every step was reasonable and the combination was
+destructive. Standing rule 9's shape yet again, on a script rather than a rule:
+each half was checked, the interaction was not.
+
+**Why the commit discipline is the thing that saved it.** CLAUDE.md rule 4 says
+commit small and in sequence. The labels were committed as their own change the
+moment they validated, before anything else was touched, so recovery was one
+command with nothing else to untangle. A habit that exists for reviewability
+turned out to be the backup.
+
+**Resolution:** `pipeline/guard.refuse_if_filled` raises rather than
+overwriting a sheet with any filled row. One row is enough; a threshold would
+be a judgement about whose work is worth keeping. A missing column is an error
+rather than a free pass, because a guard that silently passes when it cannot
+find what it checks reports safety it did not verify.
+
+Not a warning and not an automatic backup. The generator simply cannot do it
+any more, which is the same move as R13 in the classifier: a prompt or a flag
+is a rule, and a raised exception is a constructor.
+**Pin:** tests/tier1/test_template_guard.py, six cases including the
+single-filled-row case and the missing-column case.

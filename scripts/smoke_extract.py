@@ -37,6 +37,7 @@ sys.path.insert(0, str(ROOT))
 from pipeline import classify                     # noqa: E402
 from pipeline import extractor                    # noqa: E402
 from pipeline import formscan                     # noqa: E402
+from pipeline.guard import refuse_if_filled        # noqa: E402
 from pipeline import pageclass as pc              # noqa: E402
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
@@ -204,7 +205,12 @@ def write_template(written) -> None:
     """The 15-document ground-truth sheet, stratified by the revision the
     extraction actually read, which is the signal the text layer could not
     give before the run.
+
+    Refuses to run once the sheet has been keyed. DEFECTS #26: this function
+    ran at the end of every smoke run, and the smoke run was repeated after
+    the labelling was finished. It replaced 405 hand-keyed rows with blanks.
     """
+    refuse_if_filled(TEMPLATE, "status")
     ok = [(d, r) for d, r in written if r.report]
     buckets = {}
     for doc, result in ok:
