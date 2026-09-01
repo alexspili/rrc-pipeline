@@ -756,3 +756,56 @@ of this one. The protocol's metric 5 is answered "partly, and here is the part
 that is missing" rather than quietly reported as if complete.
 **Pin:** none possible. This is a claim in a document, and the tier-2 test that
 would catch it does not exist; the honest pin is this entry.
+
+---
+
+## #19 — 2026-08-31 — The guard turned a wrong answer into no answer
+
+**What happened:** the abstention re-run put parse failures at **13 of 143
+pages, 9.1%**, against 0.4% on the census. Seven of the thirteen are one new
+message:
+
+    w2 claims a specific form number on a page where no form number can be
+    read. Use completion_face_unknown_form instead.
+
+The model answered `w2` while reporting `form_number_legible: false`. R13's
+constructor invariant refused the label, `classify_page` recorded a parse
+failure, and the page produced nothing at all.
+
+**Why it was wrong:** the design intent, written into
+docs/modules/classify.md the same day, was that such a page becomes an
+abstention. What it actually becomes is absent. An abstention is a page the
+census still counts, in a class that still joins the record-level union. A
+parse failure leaves the corpus, and the union is the thing the whole
+abstention design exists to protect.
+
+The invariant is right and the routing is missing. R13 says where the page
+belongs; nothing carries it there.
+
+**Measured, on the seven pages:** all seven are `other_form` by Alex's labels,
+and on all seven Alex independently answered that the form number is illegible.
+So the model's legibility answer was correct every time and only its class was
+wrong, which is exactly the case `completion_face_unknown_form` was created
+for. Routing rather than refusing would have produced the right label 7 times
+out of 7.
+
+An eighth failure is the same shape from the other new invariant:
+`completion_face_legacy is a face; part must be face, got back_instructions`.
+
+**Why this is not R4 being violated.** R4 exists so that an out-of-vocabulary
+class surfaces as a prompt or model problem instead of being silently bucketed.
+Nothing here is out of vocabulary. Both values the model returned are legal;
+they contradict each other, and the contradiction has exactly one resolution,
+which the taxonomy already names. Resolving a contradiction between two valid
+answers is not the same act as inventing a class for an invalid one. The
+distinction is worth keeping sharp, because "we already coerce in one place" is
+how R4 would eventually be lost.
+
+**Resolution:** none yet. Proposed and awaiting a decision: `parse_response`
+resolves the contradiction to `completion_face_unknown_form`, records that it
+did so on the Attempt, and the coercion rate becomes a reported metric rather
+than a silent repair. Deliberately not written before the decision, because it
+changes the meaning of a rule and rule 5 covers that.
+**Pin:** pending. The case is real: a response of `form_class: "w2"` with
+`form_number_legible: false` must produce a label, not an exception, and must
+carry a flag saying it was resolved.
