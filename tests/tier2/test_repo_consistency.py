@@ -69,6 +69,8 @@ NOT_CORPUS_COUNTS = {
         "60",          # the stage-1 hand-labelled sample
         "157",         # other_form pages in the 2026-08-31 census
         "143",         # the stage-2 stratified sample, drawn 2026-08-31
+        "373",         # the P-5 header leak before DEFECTS #11, and still
+                       # wrong after it (DEFECTS #20)
     },
 }
 

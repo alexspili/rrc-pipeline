@@ -25,6 +25,34 @@ Coordinates are fractions of page width and height rather than pixels. The
 image sent to the model is downscaled from the source scan, and the viewer
 renders at a third size again; fractions survive both, pixels do not.
 
+## Cost is output, not pixels
+
+**Measured 2026-08-31, `scripts/probe_sonnet.py`, one two-page completion
+report on `claude-sonnet-5` at $2/$10 per 1M tokens.**
+
+| | Tokens | Share of cost |
+|---|---|---|
+| Input, both page images plus prompt | 5,975 | 15% |
+| Output, 56 value objects | 6,559 | 85% |
+
+$0.0775 standard, $0.0388 batched.
+
+Sending the same document at a 1000px cap instead of 1568px costs 2,947 input
+tokens rather than 5,975: a difference of about **$0.006 per document**.
+
+**So resolution is effectively free and must not be optimised.** Extraction
+reads handwriting, struck-through corrections and small figures off degraded
+microfilm, and the accuracy that buys is worth far more than six tenths of a
+cent. Anyone reaching for a smaller image to save money is trading the thing
+that matters for the thing that does not.
+
+If cost ever needs to come down, the lever is output compactness, because that
+is where 85% of it is. Nothing in the schema is currently worth removing for
+that reason.
+
+This reverses two earlier estimates, one of them 2.2x high and one 2x low, in
+opposite directions. See DEFECTS #21.
+
 ## Road not taken: AWS Textract word-level geometry
 
 Textract `DetectDocumentText` returns word-level bounding boxes, which would be

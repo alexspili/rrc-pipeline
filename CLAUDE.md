@@ -86,6 +86,12 @@ must be defensible line by line in an interview.
    declarative. No em dashes, no marketing adjectives, no absolutes, no
    "turns X into Y" constructions. Only claims backed by something in the
    repo. Numbers are measured or absent — never estimated in prose.
+9. A fix's report states what remains, not just what it removed; the
+   residue gets characterized before the fix is called done. Origin:
+   DEFECTS #11 cut a leak from 373 pages to 147 and stopped, and #20 found
+   all 147 were still leaks; #15's "actual" counts were still over, which
+   #16 found the same day; and the general form of the W-15 header rule
+   was caught only because its residue was measured before it shipped.
 
 ## Commit message format
 
