@@ -37,6 +37,11 @@ must be defensible line by line in an interview.
   83.6% arm accuracy is a uniform-sample number on 60 pages containing 0
   G-1 pages; never quote it as accuracy on the target classes. Both caveats
   in full: docs/modules/classify.md.
+- Extraction ground truth IN PROGRESS: 15 documents x 27 fields at
+  tests/fixtures/extract_truth.csv, protocol at
+  docs/labeling-protocol-extract.md, workbook via `make truthbook`, page
+  images in data/labelset/thumbs_extract. Blind: nothing that touches
+  extraction output while it is being keyed.
 - Stage-2 labels DONE 2026-08-31, 143 pages. **G-1 face precision 64.7%
   +/-4.5pp, W-2 face 44.0% +/-5.2pp.** All 20 drawn faces whose printed form
   number is illegible were misclassified; where the number is legible the
