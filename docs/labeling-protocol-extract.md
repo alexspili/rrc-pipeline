@@ -62,6 +62,20 @@ in reverse side also".
 405 rows. Check the `pages` column: one page number means one page, and the
 thumbnails are the whole document.
 
+**It runs the other way too.** Three documents are the opposite case: the page
+you have is a section or a continuation, and the face carrying the identity
+block is not in the document. Documents 6, 8 and 9, records 1495193 page 8 and
+1495195 pages 6 and 38, each sit immediately after another completion face,
+which is almost certainly the face they belong to (DEFECTS #25).
+
+Same rule, mirrored: the identity fields are `page_not_in_document`. The form
+has a field 2 for the lease name; this document just does not contain the page
+it is printed on. Key whatever the page you do have carries, in the normal way.
+
+**Do not go and look at the neighbouring page.** It is not part of the document,
+the model was not given it, and a value read from it would be one no correct
+output could produce.
+
 The rule in one line: **`not_on_this_form` is about the form, and
 `page_not_in_document` is about the scan.**
 

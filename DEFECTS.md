@@ -1023,3 +1023,51 @@ Deferred until the keying is finished rather than run under it.
 and ::test_the_missing_page_status_is_not_the_missing_field_status. The
 absent-status tests now parametrise over every non-present member so the next
 addition cannot skip them.
+
+---
+
+## #25 — 2026-09-01 — The pairing heuristic only ever looked forward
+
+**What happened:** Alex, keying the extraction ground truth, reported that
+document 6 has no first page: record 1495193 page 8 is a section of a
+completion report whose face is page 7, and only page 8 is in the document.
+
+Checking the other fourteen the same way, **three of the fifteen documents sit
+immediately after another completion face**: documents 6, 8 and 9, records
+1495193 page 8 and 1495195 pages 6 and 38. All three are probably sections
+separated from their faces.
+
+**Why it was wrong:** `scripts/smoke_extract.py` builds a document as a
+predicted face plus the next page when the census calls that page a
+continuation. It never asks whether the predicted face is itself a
+continuation whose face precedes it. The census's own numbers said this would
+happen: stage 2 measured `w2` face precision at 44% before the corrections and
+57% after, so roughly two in five predicted faces are not faces, and a
+forward-only heuristic has no way to notice.
+
+The heuristic was documented as a placeholder for the reassembly step, and it
+was checked in the direction it looks. Standing rule 9 again: what it does not
+look at was never characterised.
+
+**What it costs.** Three of fifteen ground-truth documents are partial in the
+opposite direction from the nine face-only ones. Their identity fields are
+`page_not_in_document`, which is a real and gradeable answer, but it means
+identity accuracy on those three measures absence detection rather than
+extraction.
+
+**Resolution for the sheet:** none. The frame is frozen and Alex is keying
+against it; changing which pages a document contains mid-keying would discard
+work and re-open a frame that was deliberately closed. Identity accuracy is
+reported on the twelve documents that carry their own face, and the three are
+reported separately as absence detection. That is the same shape as the
+with-and-without reporting for DEFECTS #23.
+
+**Resolution for the pipeline:** the reassembly step, which is not built, must
+pair in both directions and settle candidates by agreement on the identity
+fields both pages carry, not by position. This entry is evidence for that
+design rather than an argument to patch the placeholder: record 1495195 alone
+supplied three of the fifteen documents and two of them are suspect, and
+record 1511465 has three W-2 faces in one file with a section between two of
+them.
+**Pin:** pending, on the reassembly module. The case is record 1495193: pages
+7 and 8 must resolve to one document, and pages 7 and 9 must not.
