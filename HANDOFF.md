@@ -39,8 +39,25 @@ only, referenced by record id.
    faces with an illegible form number were wrong, and where OCR reads the
    number the model chose it is right 16 of 16. Full results and the two
    defects it surfaced: docs/modules/classify.md → Stage 2 results.
-3. G-1 **and W-2** Sections I & III extraction (identity, dates, depths, casing). Skip
-   Section II initially.
+3. G-1 **and W-2** extraction. IN PROGRESS. Schema, extractor, validation
+   rules and ground truth all exist; scoring is the next step.
+   - The cut order's "Sections I & III, skip Section II" is WRONG and was
+     corrected by reading the paper: on the 1975 W-2 every depth and casing
+     string is in Section II, and section numbers are not stable across
+     forms or revisions. The schema is organised by data type (identity /
+     completion / test) with the section as provenance. docs/modules/extract.md.
+   - v1 is identity + completion + date_of_test only. Do not let it grow
+     into the per-form test tables; that is v2.
+   - Provenance is region-level from the model, in the schema and prompt
+     from v1. Textract stays a documented road not taken.
+   - Cost MEASURED: $0.0705/doc standard, $0.0352 batched, on
+     claude-sonnet-5 at $2/$10. Output is 85% of it, so image resolution is
+     effectively free and must not be optimised.
+   - Ground truth: 15 docs x 27 fields, tests/fixtures/extract_truth.csv.
+   - Five statuses, not four: present, blank, illegible, not_on_this_form,
+     page_not_in_document. The last two are 87 and 47 of the 405 rows and
+     are different facts (a form family that changed vs an archive imaged
+     front-only).
 4. Deterministic validation (API check structure + county prefix, date order,
    depth order)
 5. Cross-form identity extractor + disagreement detector (scoped: identity
@@ -295,4 +312,12 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    the stage-2 labels. Deferred on purpose: a targeted OCR/vision read of
    the form-number region, which would reopen Textract. See
    docs/modules/classify.md → The decided fix, and Era drift.
-6. Then extraction per cut order.
+6. Extraction: re-run the smoke (~$1.41; the prompt changed with the fifth
+   status so the result cache is invalidated), then score against the
+   ground truth. Headline excludes document 1 (DEFECTS #23) and reports
+   documents 6, 8 and 9 separately (DEFECTS #25).
+7. Reassembly is unbuilt and is now the biggest known gap. It must pair in
+   BOTH directions and settle candidates by identity-field agreement, not
+   by position: the smoke pairing looked only forward and three of fifteen
+   ground-truth documents turned out to be sections without their face.
+   Worked cases in DEFECTS #25.

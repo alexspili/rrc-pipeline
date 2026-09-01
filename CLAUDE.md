@@ -37,11 +37,14 @@ must be defensible line by line in an interview.
   83.6% arm accuracy is a uniform-sample number on 60 pages containing 0
   G-1 pages; never quote it as accuracy on the target classes. Both caveats
   in full: docs/modules/classify.md.
-- Extraction ground truth IN PROGRESS: 15 documents x 27 fields at
-  tests/fixtures/extract_truth.csv, protocol at
-  docs/labeling-protocol-extract.md, workbook via `make truthbook`, page
-  images in data/labelset/thumbs_extract. Blind: nothing that touches
-  extraction output while it is being keyed.
+- Extraction ground truth DONE 2026-09-01: 405 rows, 15 documents, keyed
+  blind from page images. Protocol docs/labeling-protocol-extract.md.
+- NEXT, in order: (1) re-run the 20-doc smoke, ~$1.41, the prompt changed
+  when `page_not_in_document` was added so the cache is invalidated;
+  (2) score against the ground truth. Reporting rules fixed in advance:
+  exclude document 1 from the headline (DEFECTS #23, it is the document
+  the schema was designed on), and report documents 6/8/9 separately as
+  absence detection (DEFECTS #25, they are sections without their face).
 - Stage-2 labels DONE 2026-08-31, 143 pages. **G-1 face precision 64.7%
   +/-4.5pp, W-2 face 44.0% +/-5.2pp.** All 20 drawn faces whose printed form
   number is illegible were misclassified; where the number is legible the
