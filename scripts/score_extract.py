@@ -14,10 +14,24 @@ applied here rather than chosen after seeing a number:
                so their identity fields test absence detection rather than
                extraction. Reported separately.
 
-The value comparison is stated here rather than tuned: `exact` is the two
-strings equal after stripping surrounding whitespace, `normalised` also
-casefolds, collapses internal whitespace, and drops commas and trailing
-punctuation. Both are reported, so the choice is visible.
+Three value comparisons, and which were decided when is stated rather than
+buried:
+
+  exact        the two strings equal after stripping surrounding whitespace
+  normalised   also casefolds, collapses internal whitespace, drops commas
+               and trailing punctuation
+  equivalent   dates compared as dates and depths as numbers, using the
+               parsers in pipeline/validate.py
+
+exact and normalised were fixed before the ground truth was keyed. **equivalent
+was added after the first scoring run**, when it showed 0 of 7 on dates because
+"4-23-75" and "1975-04-23" are the same date written twice. That is a real
+result about representation rather than about extraction, and it is reported as
+its own column rather than folded into the others.
+
+The labels carry raw text, as the protocol instructed, so comparison is against
+the model's `raw` field. Comparing against its normalised `value` was the first
+version of this script and it scored every date wrong.
 """
 
 from __future__ import annotations
@@ -36,6 +50,7 @@ sys.path.insert(0, str(ROOT))
 from pipeline import classify                      # noqa: E402
 from pipeline import extract as ex                 # noqa: E402
 from pipeline import extractor                     # noqa: E402
+from pipeline.validate import parse_date, parse_depth   # noqa: E402
 
 TRUTH = ROOT / "tests" / "fixtures" / "extract_truth.csv"
 CACHE = ROOT / "data" / "extract" / "cache_smoke.jsonl"
@@ -51,6 +66,28 @@ IDENTITY = tuple(f"identity.{f}" for f in ex.IDENTITY_FIELDS)
 def normalise(text: str) -> str:
     text = re.sub(r"\s+", " ", (text or "").strip()).casefold()
     return re.sub(r"[.,;:]+$", "", text.replace(",", ""))
+
+
+def equivalent(want: str, got: str) -> bool:
+    """Same value, possibly written differently.
+
+    A date keyed 4-23-75 and returned 1975-04-23 is one correct extraction and
+    two spellings. So is a depth keyed 9200' and returned 9200.
+    """
+    if normalise(want) == normalise(got):
+        return True
+    if not want or not got:
+        return False
+    first, second = parse_date(want), parse_date(got)
+    if first and second:
+        return first == second
+    first, second = parse_depth(want), parse_depth(got)
+    if first is not None and second is not None:
+        # Only when neither side carries anything but the number, or a
+        # unit mark. "8-1/2 inch casing" is not a depth.
+        if re.fullmatch(r"[^\d]*[\d,]+(\.\d+)?['\"]?[^\d]*", want.strip()):
+            return first == second
+    return False
 
 
 def truth():
@@ -103,7 +140,10 @@ def compare(docs) -> list[dict]:
         for name, want in doc["fields"].items():
             got = model_field(report, name) if report else None
             got_status = got.status.value if got else "missing"
-            got_value = (got.value or got.raw or "") if got else ""
+            # raw first: the protocol has the labels carrying what is written
+            # on the page, so the model's raw is the comparable field. Using
+            # its normalised value scored every date wrong.
+            got_value = (got.raw or got.value or "") if got else ""
             rows.append({
                 "seq": seq, "field": name, "group": name.split(".")[0],
                 "want_status": want["status"], "got_status": got_status,
@@ -112,6 +152,7 @@ def compare(docs) -> list[dict]:
                 "status_ok": want["status"] == got_status,
                 "exact": want["value"].strip() == got_value.strip(),
                 "normalised": normalise(want["value"]) == normalise(got_value),
+                "equivalent": equivalent(want["value"], got_value),
                 "revision": doc["fields"].get(
                     "document.form_revision", {}).get("value", "") or "unknown",
             })
@@ -136,8 +177,12 @@ def table(rows, title):
         print(f"   value normalised     "
               f"{sum(r['normalised'] for r in both):4d}/{len(both):<4d} "
               f"{sum(r['normalised'] for r in both) / len(both):6.1%}")
+        print(f"   value equivalent     "
+              f"{sum(r['equivalent'] for r in both):4d}/{len(both):<4d} "
+              f"{sum(r['equivalent'] for r in both) / len(both):6.1%}"
+              "   (dates as dates, depths as numbers)")
     if wanted:
-        recovered = sum(r["normalised"] for r in wanted)
+        recovered = sum(r["equivalent"] for r in wanted)
         print(f"   recovered            {recovered:4d}/{len(wanted):<4d} "
               f"{recovered / len(wanted):6.1%}   "
               "(a value exists and the model has it)")
@@ -184,7 +229,7 @@ def main() -> None:
     for era, group in sorted(by_era.items()):
         ok = sum(r["status_ok"] for r in group)
         both = [r for r in group if r["want_status"] == r["got_status"] == "present"]
-        value = (sum(r["normalised"] for r in both) / len(both)) if both else None
+        value = (sum(r["equivalent"] for r in both) / len(both)) if both else None
         shown = f"{value:6.1%}" if value is not None else "     -"
         print(f"   {era:20s} n={len(group):4d}  status {ok / len(group):6.1%}"
               f"  value {shown}")
@@ -199,7 +244,7 @@ def main() -> None:
         print("DISAGREEMENTS")
         print("=" * 72)
         for row in headline:
-            if row["status_ok"] and (row["normalised"] or
+            if row["status_ok"] and (row["equivalent"] or
                                      row["want_status"] != "present"):
                 continue
             print(f"   doc {row['seq']:>2} {row['field']:34s}")

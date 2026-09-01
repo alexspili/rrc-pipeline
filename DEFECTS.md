@@ -1114,3 +1114,54 @@ any more, which is the same move as R13 in the classifier: a prompt or a flag
 is a rule, and a raised exception is a constructor.
 **Pin:** tests/tier1/test_template_guard.py, six cases including the
 single-filled-row case and the missing-column case.
+
+---
+
+## #27 — 2026-09-01 — "This form" meant two things on a partial document
+
+**What happened:** scoring the first extraction run, 32 of the 42 status
+disagreements in the headline slice are between the two statuses that both mean
+"no value here for a reason": `not_on_this_form` and `page_not_in_document`.
+They run in both directions, 20 one way and 12 the other, which is the
+signature of an ambiguous rule rather than of a model that is wrong.
+
+The clearest case is documents 8 and 9, record 1495195 pages 38 and 6. Alex
+labelled all 15 identity fields `not_on_this_form`; the model answered
+`page_not_in_document` on 22 of the 30. Both readings follow the protocol.
+
+**Why it was wrong:** docs/labeling-protocol-extract.md defines
+`not_on_this_form` as "this form revision has no such field at all" and
+`page_not_in_document` as "the form has this field, on a page you were not
+given". On a complete document those are unambiguous. On a section page
+separated from its face, **"this form" means either the form family, which is
+a W-2 and does have a lease name field, or the page in front of you, which is
+a Section II and does not.**
+
+The protocol was written for whole documents and then applied to partial ones,
+which is standing rule 9 in the place it keeps landing: the case that was
+thought about was checked, the case that was not thought about was not.
+
+**Measured footprint:** 32 of 333 headline fields, 9.6%. Collapsing the two
+into one "absent" category takes status agreement from **87.4% to 97.9%**, so
+the model and the labeller almost always agree on whether a value is there and
+disagree about why roughly one time in ten.
+
+**A second finding inside the first.** On documents 6, 8 and 9 the model
+returned seven identity values as `present` where the sheet says the page is
+absent, among them an operator name and two completion dates. A W-2 Section II
+does carry the operator, in field 26, "Notice of Intention to Drill this Well
+was filed in Name of". So the model may be right and the blanket instruction I
+gave, that identity fields on a faceless document are all
+`page_not_in_document`, may be too broad.
+
+If it is right, it is also the premise the reassembly design rests on: a
+section page carries enough identity to be matched to its face. That is worth
+confirming by eye on two or three fields before it is treated as established.
+
+**Resolution:** none applied to the numbers. Relabelling after seeing a score
+is the thing this project exists not to do, so the run is reported as scored,
+with the collapsed figure beside it and this entry naming the cause. The
+protocol needs a sentence defining "this form" as the form family, and the
+prompt needs the same sentence, before the next run.
+**Pin:** none in code; this is a definition. The guard is that both numbers are
+always reported together.
