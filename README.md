@@ -40,6 +40,15 @@ above unchanged. Full working: `docs/modules/classify.md`.
 
 The distance between those two paragraphs is most of what this repository is for.
 
+**Era coverage is recovered by the model, not by the text layer.** These are microfilm scans of
+paper filed from the 1950s onward, and the form revision printed beside the form number is what
+dates a document. The embedded OCR recovers that revision on 62 of 238 completion faces, and every
+year it finds is 1983 or later, so sampling on it would systematically over-sample the newest
+paper. Reading the page image instead recovers revisions the text layer cannot: on a 20-document
+sample, 14 carried a readable revision, including 7 of the 12 documents whose text layer yields no
+form number at all, and the years span **1966, 1975 and 1983**. Accuracy is reported per era
+bucket rather than blended, and the buckets come from the paper.
+
 ## Roads not taken
 
 - **Reading the form number instead of abstaining on it.** A targeted OCR or vision read of the

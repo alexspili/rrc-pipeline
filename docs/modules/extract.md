@@ -53,6 +53,73 @@ that reason.
 This reverses two earlier estimates, one of them 2.2x high and one 2x low, in
 opposite directions. See DEFECTS #21.
 
+## What the smoke set caught that the probe could not
+
+**Recorded 2026-08-31, after the first 20-document run failed completely.**
+
+The probe measured one document, reported it as a clean success, and it was one
+on its own terms. It could not have caught either of the two defects that
+stopped the first smoke run.
+
+The probe was a single document whose page numbering I had supplied by hand, so
+it could not have caught the page-index defect. And its output at 6,559 tokens
+sat close enough to the 8,000-token cap that it could not have caught the
+truncation either. A 20-document smoke set found both in one pass for a dollar.
+That is the argument for the tiered eval rather than for probing harder.
+
+The four defects, all now pinned by tier-1 tests built from the real response
+bodies:
+
+1. **Page indices.** The model is shown "Page 1 of 2" and answers with that
+   index; the document knows those pages are 9 and 10 of the file.
+   `parse_report` compared the two directly, so every value cited a page its
+   document did not have.
+2. **`max_tokens` at 8,000** truncated 4 of 14 documents mid-string, and each
+   surfaced as "malformed JSON" rather than as truncation. Completed documents
+   average 5,114 output tokens; the largest in the finished run reached 11,535.
+3. **An empty table arrives as a value object**, not as `[]`. The prompt said
+   every value is an object and also that tables are arrays, and an empty table
+   satisfies the first rule.
+4. **`form_class` came back bare on four documents and wrapped on six**,
+   because the prompt asked for both shapes in one block.
+
+Three and four were ambiguities in the prompt rather than model failures.
+
+### A cache key covers everything that shapes a response, or the cache refuses it
+
+`max_tokens` is a request parameter and not part of the cache key, which is
+(document hash, prompt hash) under CLAUDE.md rule 7. A truncated response
+stored under that key would have been served back unchanged forever, with the
+cap already raised and the bug already fixed.
+
+So a truncated response is now its own error and is never cached. The general
+rule, worth more than the instance: **a cache key must cover everything that
+shapes a response, or the cache must refuse to store that response.** Anything
+that changes an answer without changing its key is a way for a fixed bug to
+keep returning. DEFECTS #14 is the same family from the other direction, where
+the cached path and the fresh path disagreed about how to handle a failure.
+
+### The vocabulary is the taxonomy's, not the prompt's
+
+DEFECTS #22: `form_class` arrived as `g1` on two documents and `g-1` on two
+others, which are two classes to every count downstream. It is now normalised
+and validated against the whole `PageClass` vocabulary rather than against the
+two values the prompt asks for. The same run answered `w15` on a page the
+census called a W-2 face and the stage-2 labels confirm is a W-15 cementing
+report. Narrowing the check to `g1` and `w2` would have discarded that.
+
+## Extraction disagreeing with the classifier is output, not an override
+
+The first finished smoke run disagreed with the census on three documents:
+`w15` where the census said `w2` face, on a page the stage-2 labels confirm is
+a W-15, and `w2` twice where the census said `g1`.
+
+That is reported and not acted on. The bar is the one the W-15 header rule had
+to clear: measure the rule against labels before wiring it, and the general
+form of that rule failed exactly that test. Three data points, two of them
+still unresolved until the ground truth is keyed, is a signal worth watching
+and not a mechanism.
+
 ## Road not taken: AWS Textract word-level geometry
 
 Textract `DetectDocumentText` returns word-level bounding boxes, which would be
