@@ -217,8 +217,11 @@ itself a headline README table.
 ## Pipeline design decisions (settled)
 
 - Two-pass: Haiku classify every page (~2,500 tok/page image) → Sonnet
-  extract G-1 pages only. Batch API (50% off) default. ~$0.17/doc at Sonnet
-  standard $3/$15 (intro $2/$10 ended 2026-08-31) + ~$0.03 Textract.
+  extract G-1 pages only. Batch API (50% off) default. MEASURED 2026-08-31 on
+  one two-page document: $0.0775 standard, $0.0388 batched, on claude-sonnet-5
+  at $2/$10 per 1M. The earlier ~$0.17/doc was an estimate priced at $3/$15,
+  which is claude-sonnet-4-6's rate and not the model this pipeline uses
+  (DEFECTS #21). Textract is not in the pipeline; see docs/modules/extract.md.
 - AWS Textract DetectDocumentText ONLY ($1.50/1k pages) for word-level
   geometry = source spans (provenance, not accuracy). NO Forms/Tables
   analysis ($50–65/1k, not worth it). Three-source ablation available:

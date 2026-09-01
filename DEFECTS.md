@@ -864,3 +864,44 @@ than in the top-right corner is not a header, which is a geometry question the
 text layer cannot answer.
 **Pin:** pending. Two real cases: `header_tokens` on the OCR of record 1760703
 page 6 and record 1495392 page 6 must not return `P-5`.
+
+---
+
+## #21 — 2026-08-31 — A cost estimate priced against a different model
+
+**What happened:** the Sonnet extraction probe measured one two-page
+completion document at **$0.0775 standard, $0.0388 batched**. HANDOFF had
+carried `~$0.17/doc at Sonnet standard $3/$15 (intro $2/$10 ended
+2026-08-31)` since the recon session.
+
+$3/$15 per 1M tokens is `claude-sonnet-4-6`. The model this pipeline uses is
+`claude-sonnet-5`, which is **$2/$10**. The "intro price that ended" was never
+an intro price; it is the current price of the current model. Two models'
+rates were merged into one line and the wrong half was labelled standard.
+
+**Why it was wrong:** the figure was written from memory during recon, before
+any call had been made, and nothing checked it afterwards. CLAUDE.md rule 8
+says numbers in prose are measured or absent; this one was neither, and the
+`~` in front of it did not make it a smaller claim than it was.
+
+**Measured footprint:** the estimate was 2.2x the measured cost. The error has
+two parts and they point in the same direction: the price was 1.5x too high,
+and the token counts behind the estimate were guessed.
+
+Worth recording that a second estimate, made today in the extraction proposal
+and explicitly labelled an estimate, was wrong the other way: it put the
+document at $0.04 by assuming ~1,200 output tokens where the real answer is
+6,559. Both estimates were wrong by about 2x in opposite directions, which is
+the argument for probing rather than for estimating more carefully.
+
+**What the measurement also showed:** output tokens are 85% of the cost, so
+image resolution barely moves it. Input at a 1000px cap is 2,947 tokens and at
+1568px is 5,975, a difference of about $0.006 per document. Extraction can
+afford the resolution its accuracy needs.
+
+**Resolution:** HANDOFF now carries the measured figure and names the model and
+the rate it was priced at. `scripts/probe_sonnet.py` is the measurement, in the
+same posture as `scripts/probe_haiku.py` for the classifier.
+**Pin:** none available. A price is an external fact and no test can hold it.
+The guard is procedural: a cost figure in prose names the model and the date it
+was measured, or it does not appear.
