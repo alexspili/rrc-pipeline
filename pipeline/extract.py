@@ -238,6 +238,26 @@ class CompletionReport:
 _FRACTION = re.compile(r"^-?\d+(\.\d+)?$")
 
 
+def _page_of(index, pages: tuple[int, ...] | None) -> int | None:
+    """Translate the model's page index into a page of the file.
+
+    The model is shown "Page 1 of 2" and answers with that index. The document
+    knows the pages are, say, 9 and 10 of the file. Conflating the two made
+    every value in the first smoke run cite a page its document did not have.
+    """
+    if index is None:
+        return None
+    try:
+        index = int(index)
+    except (TypeError, ValueError):
+        return None
+    if pages is None:
+        return index
+    if 1 <= index <= len(pages):
+        return pages[index - 1]
+    return None
+
+
 def _region(raw, page_hint: int | None) -> Region | None:
     """A box from the model, or None. A degenerate box is not a box.
 
@@ -257,10 +277,25 @@ def _region(raw, page_hint: int | None) -> Region | None:
     if numbers[0] >= numbers[2] or numbers[1] >= numbers[3]:
         return None
     page = raw.get("page") if isinstance(raw, dict) else None
-    return Region(page=int(page or page_hint or 1), box=numbers)
+    resolved = page if page is not None else page_hint
+    if resolved is None:
+        return None
+    return Region(page=int(resolved), box=numbers)
 
 
-def parse_value(obj, *, page_hint: int | None = None) -> Value:
+#: Keys that mark an object as a value rather than a table row. An empty
+#: table comes back as a value object with status "blank": the prompt says
+#: every value is an object and also that tables are arrays, and a table with
+#: nothing in it satisfies the first rule. Two smoke documents did this.
+_VALUE_KEYS = frozenset({"status"})
+
+
+def looks_like_value(obj) -> bool:
+    return isinstance(obj, dict) and bool(_VALUE_KEYS & set(obj))
+
+
+def parse_value(obj, *, page_hint: int | None = None,
+                pages: tuple[int, ...] | None = None) -> Value:
     """One value object from the model.
 
     Strict about status, which is the field the whole schema turns on, and
@@ -277,13 +312,18 @@ def parse_value(obj, *, page_hint: int | None = None) -> Value:
         raise ValueError(
             f"status={obj['status']!r} is not one of: {allowed}") from None
 
-    region = _region(obj, page_hint) if status in LOCATABLE else None
+    mapped = dict(obj)
+    mapped["page"] = _page_of(obj.get("page"), pages)
+    region = _region(mapped, page_hint) if status in LOCATABLE else None
     correction = None
     raw_correction = obj.get("correction")
     if raw_correction and status in LOCATABLE:
+        fixed = dict(raw_correction)
+        fixed["page"] = _page_of(raw_correction.get("page", obj.get("page")),
+                                 pages)
         correction = Correction(
             raw=str(raw_correction.get("raw", "")),
-            region=_region(raw_correction, page_hint))
+            region=_region(fixed, page_hint))
 
     if status in LOCATABLE:
         return Value(status=status,
@@ -309,28 +349,40 @@ def parse_report(body: str, *, record_id: str, file_index: int,
     output; a second parser would have been a second thing to keep correct.
     """
     obj = _json_object(body)
+    pages = tuple(pages)
     document = obj.get("document") or {}
     form_class = document.get("form_class")
-    if not form_class:
+    # Returned as a bare string on some documents and as a value object on
+    # others, because the prompt asked for both shapes in one block. Accept
+    # either rather than losing a document to a wrapper.
+    if looks_like_value(form_class):
+        form_class = form_class.get("value")
+    if not form_class or not isinstance(form_class, str):
         raise ValueError("response has no document.form_class")
 
     def group(name: str, allowed) -> dict[str, Value]:
         source = obj.get(name) or {}
-        return {k: parse_value(v) for k, v in source.items() if k in allowed}
+        return {k: parse_value(v, pages=pages)
+                for k, v in source.items() if k in allowed}
 
     completion_obj = obj.get("completion") or {}
     tables: dict[str, tuple[Row, ...]] = {}
     for name in COMPLETION_TABLES:
         rows = completion_obj.get(name) or []
+        # An empty table arrives as a value object with status "blank", not as
+        # an empty list. Read as no rows; reading its status and box keys as
+        # cells is what the first smoke run did.
+        if looks_like_value(rows):
+            rows = []
         # A one-row table may arrive as a bare object. The W-2 prints tubing
         # as a single row and the model returns it either way.
-        if isinstance(rows, dict):
+        elif isinstance(rows, dict):
             rows = [rows]
         parsed = []
         for row in rows:
             if not isinstance(row, dict):
                 raise ValueError(f"{name} contains a non-row entry")
-            parsed.append(Row(cells={k: parse_value(v)
+            parsed.append(Row(cells={k: parse_value(v, pages=pages)
                                      for k, v in row.items()}))
         if parsed:
             tables[name] = tuple(parsed)
@@ -344,10 +396,10 @@ def parse_report(body: str, *, record_id: str, file_index: int,
         if key not in allowed))
 
     return CompletionReport(
-        record_id=record_id, file_index=file_index, pages=tuple(pages),
+        record_id=record_id, file_index=file_index, pages=pages,
         form_class=form_class,
         form_revision=parse_value(document.get("form_revision")
-                                  or {"status": "blank"}),
+                                  or {"status": "blank"}, pages=pages),
         identity=group("identity", IDENTITY_FIELDS),
         completion=group("completion", COMPLETION_FIELDS),
         tables=tables,

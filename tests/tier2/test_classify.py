@@ -136,12 +136,23 @@ def test_cache_returns_the_stored_label_without_calling_the_model(tmp_path):
     assert first.label == second.label
 
 
-def test_cache_key_separates_arms_and_pages_and_prompts():
-    key = classify.ResultCache.key
+def test_cache_key_separates_arms_and_pages_and_prompts(tmp_path):
+    key = classify.ResultCache(tmp_path / "c.jsonl").key
     assert key("abc", 1, "vision_1000") != key("abc", 2, "vision_1000")
     assert key("abc", 1, "vision_1000") != key("abc", 1, "vision_1568")
     assert key("abc", 1, "vision_1000") != key("xyz", 1, "vision_1000")
     assert classify.PROMPT_HASH in key("abc", 1, "vision_1000")
+
+
+def test_a_second_prompt_cannot_read_the_first_prompts_cache(tmp_path):
+    """Extraction reuses this cache with its own prompt. CLAUDE.md rule 7 keys
+    on (document, prompt); sharing a file must not mean sharing an answer.
+    """
+    classifier = classify.ResultCache(tmp_path / "c.jsonl")
+    extractor = classify.ResultCache(tmp_path / "c.jsonl",
+                                     prompt_hash="0123456789abcdef")
+    assert classifier.key("abc", 1, "vision_1000") != \
+        extractor.key("abc", 1, "vision_1000")
 
 
 def test_cache_survives_a_reopen(tmp_path):

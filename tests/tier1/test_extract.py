@@ -262,3 +262,60 @@ def test_what_the_schema_has_no_home_for_is_counted_not_discarded():
 def test_nothing_is_dropped_when_the_response_fits_the_schema():
     doc = parse_report(FENCED, record_id="1493495", file_index=0, pages=(1, 2))
     assert doc.dropped == ()
+
+
+# --------------------------- what the first smoke run found, as fixtures
+
+def test_a_page_index_is_translated_to_a_page_of_the_file():
+    """The model is shown "Page 1 of 2" and answers with that index; the
+    document knows those pages are 9 and 10 of the file. Conflating them made
+    every value in the first smoke run cite a page its document did not have.
+    """
+    body = ('{"document": {"form_class": "w2"}, "identity": {"lease_name": '
+            '{"value": "State Tract 130", "raw": "State Tract 130", '
+            '"status": "present", "page": 2, "box": [0.1, 0.2, 0.3, 0.25]}}}')
+    doc = parse_report(body, record_id="1493495", file_index=0, pages=(9, 10))
+    assert doc.identity["lease_name"].region.page == 10
+
+
+def test_a_page_index_outside_the_document_yields_no_region():
+    body = ('{"document": {"form_class": "w2"}, "identity": {"lease_name": '
+            '{"value": "x", "raw": "x", "status": "present", "page": 7, '
+            '"box": [0.1, 0.2, 0.3, 0.25]}}}')
+    with pytest.raises(ValueError, match="must say where it was read from"):
+        parse_report(body, record_id="1", file_index=0, pages=(9, 10))
+
+
+def test_an_empty_table_arrives_as_a_value_object():
+    """Real output from two smoke documents. The prompt says every value is an
+    object and also that tables are arrays; a table with nothing in it
+    satisfies the first rule. Read as no rows, not as one row whose cells are
+    "status", "page" and "box".
+    """
+    body = ('{"document": {"form_class": "w2"}, "completion": '
+            '{"liner_strings": {"value": [], "raw": "", "status": "blank", '
+            '"page": 1, "box": null, "correction": null}}}')
+    doc = parse_report(body, record_id="1", file_index=0, pages=(5,))
+    assert "liner_strings" not in doc.tables
+
+
+def test_a_one_row_table_is_still_a_row_not_a_value():
+    body = ('{"document": {"form_class": "w2"}, "completion": {"tubing": '
+            '{"size": {"value": "2-3/8", "raw": "2-3/8", "status": "present", '
+            '"page": 1, "box": [0.1, 0.6, 0.2, 0.63]}}}}')
+    doc = parse_report(body, record_id="1", file_index=0, pages=(5,))
+    assert doc.tables["tubing"][0].get("size").value == "2-3/8"
+
+
+def test_form_class_parses_whether_bare_or_wrapped():
+    """It came back as a bare string on 4 of 10 smoke documents and as a value
+    object on the other 6, because the prompt asked for both shapes in one
+    block. The prompt is fixed; the parser stays tolerant.
+    """
+    for document in ('{"form_class": "w2"}',
+                     '{"form_class": {"value": "w2", "raw": "Form W-2", '
+                     '"status": "present", "page": 1, '
+                     '"box": [0.8, 0.05, 0.95, 0.09]}}'):
+        doc = parse_report('{"document": %s}' % document,
+                           record_id="1", file_index=0, pages=(1,))
+        assert doc.form_class == "w2"

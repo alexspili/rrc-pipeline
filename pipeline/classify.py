@@ -184,8 +184,12 @@ class ResultCache:
     prompt this short.
     """
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, prompt_hash: str | None = None):
         self.path = path
+        # Extraction reuses this cache with its own prompt, so the hash that
+        # forms half the key (CLAUDE.md rule 7) is a parameter rather than a
+        # module constant. Defaults to the classifier's.
+        self.prompt_hash = prompt_hash or PROMPT_HASH
         self._entries: dict[str, dict] = {}
         if path.exists():
             for line in path.open():
@@ -193,9 +197,8 @@ class ResultCache:
                     entry = json.loads(line)
                     self._entries[entry["key"]] = entry
 
-    @staticmethod
-    def key(doc_hash: str, page: int, arm: str) -> str:
-        return pc.cache_key(f"{doc_hash}-{page}-{arm}", PROMPT_HASH)
+    def key(self, doc_hash: str, page: int, arm: str) -> str:
+        return pc.cache_key(f"{doc_hash}-{page}-{arm}", self.prompt_hash)
 
     def get(self, key: str) -> dict | None:
         return self._entries.get(key)
