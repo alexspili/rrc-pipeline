@@ -12,6 +12,8 @@ can be ignored and the constructor cannot.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from pipeline import pageclass as pc
@@ -164,3 +166,98 @@ def test_the_pre_numbering_forms_now_have_a_class(token):
     these tokens on 2026-08-31; this is the class it hands them to.
     """
     assert pc.form_token_class(token) is PageClass.COMPLETION_FACE_LEGACY
+
+
+# ------------------------------------- DEFECTS #19: routing, not refusing
+
+def test_a_contradicting_face_is_routed_rather_than_refused():
+    """Origin: DEFECTS #19. The model answering w2 while reporting the form
+    number illegible used to produce no label at all, so the page left the
+    corpus entirely where the design intended an abstention that still joins
+    the record union.
+
+    Both values are legal and contradict each other, and the taxonomy already
+    names the one resolution. That is not R4 being weakened: nothing here is
+    out of vocabulary.
+    """
+    body = ('{"form_class": "w2", "part": "face", "orientation": "up", '
+            '"confidence": "high", "alt_class": null, '
+            '"form_number_legible": false}')
+    label = pc.parse_response(body, record_id="1501720", file_index=0, page=2,
+                              oversize=False)
+    assert label.form_class is PageClass.COMPLETION_FACE_UNKNOWN_FORM
+    assert label.resolved_from is PageClass.W2
+    assert label.resolution == pc.RESOLVED_ILLEGIBLE
+    assert label.extraction_eligible
+
+
+def test_routing_leaves_every_consistent_answer_alone():
+    for legible, expected in ((True, PageClass.G1), (None, PageClass.G1)):
+        body = ('{"form_class": "g1", "part": "face", "orientation": "up", '
+                '"confidence": "high", "alt_class": null, '
+                f'"form_number_legible": {json.dumps(legible)}}}')
+        label = pc.parse_response(body, record_id="1501720", file_index=0,
+                                  page=2, oversize=False)
+        assert label.form_class is expected
+        assert label.resolution is None
+
+
+def test_a_contradicting_section_page_is_still_refused():
+    """The residue of DEFECTS #19, left deliberately. `sec_ii` cannot become
+    completion_face_unknown_form, which is faces only, and the alternative
+    resolution would move a page out of the record-level union. That is a
+    decision about the census headline, not a parser detail.
+    """
+    body = ('{"form_class": "w2", "part": "sec_ii", "orientation": "up", '
+            '"confidence": "high", "alt_class": null, '
+            '"form_number_legible": false}')
+    with pytest.raises(ValueError, match="no form number can be read"):
+        pc.parse_response(body, record_id="1501720", file_index=0, page=2,
+                          oversize=False)
+
+
+# ------------------------------- the page's own header outranks the model
+
+def test_a_w15_header_beats_a_completion_guess():
+    """Measured before it was written: of the 12 labelled pages whose OCR
+    header carries a W-15 token, all 12 are W-15 cementing reports. It fires
+    on 7 pages the re-run called a completion face and is right on all 7.
+    """
+    guess = label(PageClass.W2, legible=True)
+    fixed = pc.reconcile_with_header(guess, {"W-15"})
+    assert fixed.form_class is PageClass.W15
+    assert fixed.resolved_from is PageClass.W2
+    assert fixed.resolution == pc.RESOLVED_HEADER
+
+
+def test_the_header_check_also_catches_an_abstention():
+    guess = label(PageClass.COMPLETION_FACE_UNKNOWN_FORM, legible=False)
+    assert pc.reconcile_with_header(guess, {"W-15"}).form_class is PageClass.W15
+
+
+def test_the_header_check_is_scoped_to_w15_on_purpose():
+    """The general rule, "any header token naming another form wins", was
+    measured on the same labels and rejected: it would overturn two real G-1
+    faces whose headers carry a P-5 token, because field 3 of a G-1 reads
+    "as shown on Form P-5, Organization Report" and the OCR mangles the
+    cross-reference wording. Records 1760703 page 6 and 1495392 page 6.
+    """
+    guess = label(PageClass.G1, legible=True)
+    assert pc.reconcile_with_header(guess, {"P-5"}).form_class is PageClass.G1
+    assert pc.reconcile_with_header(guess, {"G-1", "P-5"}).form_class is PageClass.G1
+
+
+def test_the_header_check_leaves_everything_else_alone():
+    assert pc.reconcile_with_header(label(PageClass.W2, legible=True),
+                                    set()).form_class is PageClass.W2
+    plat = PageLabel(record_id="1", file_index=0, page=1,
+                     form_class=PageClass.PLAT_MAP, part=None,
+                     orientation=Orientation.UP, confidence=Confidence.HIGH)
+    assert pc.reconcile_with_header(plat, {"W-15"}).form_class is PageClass.PLAT_MAP
+    section = label(PageClass.W2, part=Part.SEC_II, legible=True)
+    assert pc.reconcile_with_header(section, {"W-15"}).form_class is PageClass.W2
+
+
+def test_a_reconciled_label_is_a_valid_label():
+    fixed = pc.reconcile_with_header(label(PageClass.W2, legible=False), {"W-15"})
+    assert fixed.part is Part.FACE and fixed.form_class is PageClass.W15
