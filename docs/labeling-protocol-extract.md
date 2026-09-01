@@ -36,16 +36,34 @@ where a field appears on any page of the document, it is present.
 | `blank` | The field exists on this form and nobody filled it in |
 | `illegible` | Something is written and you cannot make it out |
 | `not_on_this_form` | This form revision has no such field at all |
+| `page_not_in_document` | The form has this field, on a page you were not given |
 
-**`blank` and `not_on_this_form` are different facts and must never be
-mixed.** A 1975 Form W-2 has no API number field anywhere on it; that is
-`not_on_this_form`. A 1983 Form G-1 has an API number box that somebody left
-empty; that is `blank`. Scoring that conflates them measures nothing, and this
-distinction is the reason the schema has a status enum at all.
+These are four different facts about a field that has no value, and mixing any
+two of them measures nothing. This is the reason the schema has a status enum
+at all.
 
-The test is simple: **is there a printed box or label for this field on the
-paper?** If there is no label, it is `not_on_this_form`, whatever you know
-about wells.
+**`blank` against `not_on_this_form`.** A 1975 Form W-2 has no API number field
+anywhere on it, which is `not_on_this_form`. A 1983 Form G-1 has an API number
+box that somebody left empty, which is `blank`. The test is simple: **is there
+a printed box or label for this field on the paper?** If there is no label it
+is `not_on_this_form`, whatever you know about wells.
+
+**`page_not_in_document`.** Most of this archive was imaged front only: of the
+486 corpus pages that print a "reverse side" pointer, 107 are actually followed
+by one. So a W-2 face often arrives with no reverse, and the reverse is where
+every completion and casing field lives.
+
+When that happens, those fields are `page_not_in_document`. Not `blank`, since
+nobody left them empty. Not `not_on_this_form`, since the form plainly has
+them: the face itself prints "if well is newly completed or recompleted, fill
+in reverse side also".
+
+**Nine of your fifteen documents are face-only**, so this is about 90 of the
+405 rows. Check the `pages` column: one page number means one page, and the
+thumbnails are the whole document.
+
+The rule in one line: **`not_on_this_form` is about the form, and
+`page_not_in_document` is about the scan.**
 
 `illegible` is for ink you cannot read, not for a field you find confusing.
 These are microfilm scans and some of them are bad; say so rather than
@@ -110,9 +128,12 @@ These live in the completion-and-casing section, which on the 1975 W-2 is
 
 **Read this before keying a G-1.** The 1983 G-1's Section I is gas measurement
 and its Section II is pressure calculations. Neither carries depths or casing.
-If a G-1 document in front of you has no completion-and-casing section on any
-of its pages, these ten fields are `not_on_this_form`, not `blank`. Judge it
-from the paper, not from this paragraph.
+
+So for a G-1 the ten fields below are usually `not_on_this_form`, because the
+form has no such section, while for a W-2 whose reverse was not imaged they
+are `page_not_in_document`, because it does. Judge it from the paper in front
+of you rather than from this paragraph: read the form's own section headings
+and its own pointers to a reverse.
 
 | Field | Where |
 |---|---|

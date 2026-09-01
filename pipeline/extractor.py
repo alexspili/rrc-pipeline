@@ -53,13 +53,23 @@ Every extracted value is an object, never a bare scalar:
    "box": [x0, y0, x1, y1], "correction": null}
 
 status is one of:
-  present            a value is written and you read it
-  blank              the field exists on this form and is empty
-  illegible          something is written and you cannot read it
-  not_on_this_form   this form revision has no such field
+  present               a value is written and you read it
+  blank                 the field exists on this form and is empty
+  illegible             something is written and you cannot read it
+  not_on_this_form      this form revision has no such field
+  page_not_in_document  the form has this field, on a page you were not given
 
-The distinction matters. A 1975 Form W-2 has no API number field at all, which
-is not_on_this_form, not blank. Never guess between them.
+The distinctions matter and you must not collapse them.
+
+A 1975 Form W-2 has no API number field anywhere on it. That is
+not_on_this_form, not blank.
+
+A Form W-2 face says "if well is newly completed or recompleted, fill in
+reverse side also", and the completion and casing data lives on that reverse.
+If you were not given the reverse, every field that lives on it is
+page_not_in_document. It is not blank, because nobody left it empty, and it is
+not not_on_this_form, because the form has it. Most documents in this archive
+were imaged front only.
 
 box locates the value on the page as fractions of page width and height, from
 0 to 1, as [left, top, right, bottom]. It is a region locator for a human

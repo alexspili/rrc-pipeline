@@ -38,6 +38,15 @@ class Status(str, Enum):
     ILLEGIBLE = "illegible"                # written, and not readable
     NOT_ON_THIS_FORM = "not_on_this_form"  # this revision has no such field
 
+    #: The form has this field, on a page this document does not contain.
+    #:
+    #: Origin: DEFECTS #24. Distinct from both neighbours above, and common
+    #: rather than exotic: 9 of the 15 ground-truth documents are face-only,
+    #: and only 107 of the 486 corpus pages that point to a reverse side are
+    #: actually followed by one. Calling it not_on_this_form asserts the form
+    #: has no such field; calling it blank asserts an operator left it empty.
+    PAGE_NOT_IN_DOCUMENT = "page_not_in_document"
+
 
 #: Only a value that is actually on the page can be pointed at.
 LOCATABLE = frozenset({Status.PRESENT})

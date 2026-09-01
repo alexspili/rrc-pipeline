@@ -48,6 +48,10 @@ MEANING = {
     Status.ILLEGIBLE: "something is written and you cannot make it out",
     Status.NOT_ON_THIS_FORM:
         "this form revision has no such field at all. Not the same as blank",
+    Status.PAGE_NOT_IN_DOCUMENT:
+        "the form has this field, on a page this document does not include. "
+        "A W-2 face with no reverse imaged: the completion data is not absent "
+        "from the form, it is on paper nobody scanned",
 }
 
 

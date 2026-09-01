@@ -120,6 +120,28 @@ form of that rule failed exactly that test. Three data points, two of them
 still unresolved until the ground truth is keyed, is a signal worth watching
 and not a mechanism.
 
+## Five statuses, because there are five facts
+
+`present`, `blank`, `illegible`, `not_on_this_form`, `page_not_in_document`.
+
+The fifth arrived on 2026-08-31, part way through the ground-truth keying, when
+Alex asked what to record for a W-2 whose completion data sits on a reverse
+nobody imaged (DEFECTS #24). It is not `blank`, because no operator left it
+empty, and not `not_on_this_form`, because the form plainly has the field.
+
+**`not_on_this_form` is a fact about the form. `page_not_in_document` is a fact
+about the scan.** Collapsing them would make a form-revision difference and an
+imaging gap into the same number, and the whole point of the enum is that
+scoring cannot mix facts of different kinds.
+
+It is common rather than exotic: 9 of the 15 ground-truth documents are
+face-only, 90 of 405 rows, and only 107 of the 486 corpus pages that print a
+"reverse side" pointer are followed by one.
+
+It also buys a measurement worth having, which is how often the model reports a
+section as absent instead of inventing `blank` for it. That is the abstention
+principle from the classifier, arriving at the extraction layer.
+
 ## Validation rules, and why they carry two severities
 
 `pipeline/validate.py`, pure, cut order step 4. It reads a `CompletionReport`
