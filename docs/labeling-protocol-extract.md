@@ -69,6 +69,26 @@ The rule in one line: **`not_on_this_form` is about the form, and
 These are microfilm scans and some of them are bad; say so rather than
 guessing.
 
+**When you cannot read the printed label.** Some scans are degraded enough that
+the field labels are gone even though you know from the form which field sits
+where. `illegible` is about the **value**, not the label: reading the label is
+how you find the field, and failing to read it does not change what is or is
+not written in it.
+
+- You can see the field's area and it is plainly empty: `blank`.
+- The scan is degraded enough that faint pencil or a thin typewriter strike
+  would not have survived either: `illegible`. You cannot tell an empty field
+  from a lost one, and saying so claims less than guessing.
+
+And if the label is unreadable **and** you are unsure which revision this is,
+prefer `illegible` over `blank`: you may be pointing at a field this revision
+does not have, which would be `not_on_this_form`.
+
+Whichever you choose, write `label illegible` in the note. A blank against
+illegible disagreement between your label and the model's is a distinct
+failure class rather than a plain error, and the note is what separates them
+at scoring time.
+
 ## value: exactly what is written
 
 Key what is on the paper, not what it means. `9/22/77`, not `1977-09-22`.
