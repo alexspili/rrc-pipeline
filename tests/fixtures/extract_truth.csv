@@ -1,406 +1,406 @@
-seq,record_id,pages,field,value,status,note
-1,1493495,9 10,document.form_revision,,,
-1,1493495,9 10,identity.field_name,,,
-1,1493495,9 10,identity.lease_name,,,
-1,1493495,9 10,identity.well_number,,,
-1,1493495,9 10,identity.operator_name,,,
-1,1493495,9 10,identity.operator_address,,,
-1,1493495,9 10,identity.county,,,
-1,1493495,9 10,identity.rrc_district,,,
-1,1493495,9 10,identity.location_survey,,,
-1,1493495,9 10,identity.distance_to_town,,,
-1,1493495,9 10,identity.api_number,,,
-1,1493495,9 10,identity.rrc_well_id,,,
-1,1493495,9 10,identity.purpose_of_filing,,,
-1,1493495,9 10,identity.completion_date,,,
-1,1493495,9 10,identity.pipeline_connection,,,
-1,1493495,9 10,identity.logs_run,,,
-1,1493495,9 10,completion.type_of_completion,,,
-1,1493495,9 10,completion.date_permit_issued,,,
-1,1493495,9 10,completion.drilling_commenced,,,
-1,1493495,9 10,completion.drilling_completed,,,
-1,1493495,9 10,completion.total_depth,,,
-1,1493495,9 10,completion.plug_back_depth,,,
-1,1493495,9 10,completion.top_of_pay,,,
-1,1493495,9 10,completion.elevation,,,
-1,1493495,9 10,completion.directional_survey,,,
-1,1493495,9 10,completion.drilling_contractor,,,
-1,1493495,9 10,test.date_of_test,,,
-2,1493540,7 8,document.form_revision,,,
-2,1493540,7 8,identity.field_name,,,
-2,1493540,7 8,identity.lease_name,,,
-2,1493540,7 8,identity.well_number,,,
-2,1493540,7 8,identity.operator_name,,,
-2,1493540,7 8,identity.operator_address,,,
-2,1493540,7 8,identity.county,,,
-2,1493540,7 8,identity.rrc_district,,,
-2,1493540,7 8,identity.location_survey,,,
-2,1493540,7 8,identity.distance_to_town,,,
-2,1493540,7 8,identity.api_number,,,
-2,1493540,7 8,identity.rrc_well_id,,,
-2,1493540,7 8,identity.purpose_of_filing,,,
-2,1493540,7 8,identity.completion_date,,,
-2,1493540,7 8,identity.pipeline_connection,,,
-2,1493540,7 8,identity.logs_run,,,
-2,1493540,7 8,completion.type_of_completion,,,
-2,1493540,7 8,completion.date_permit_issued,,,
-2,1493540,7 8,completion.drilling_commenced,,,
-2,1493540,7 8,completion.drilling_completed,,,
-2,1493540,7 8,completion.total_depth,,,
-2,1493540,7 8,completion.plug_back_depth,,,
-2,1493540,7 8,completion.top_of_pay,,,
-2,1493540,7 8,completion.elevation,,,
-2,1493540,7 8,completion.directional_survey,,,
-2,1493540,7 8,completion.drilling_contractor,,,
-2,1493540,7 8,test.date_of_test,,,
-3,1493608,5 6,document.form_revision,,,
-3,1493608,5 6,identity.field_name,,,
-3,1493608,5 6,identity.lease_name,,,
-3,1493608,5 6,identity.well_number,,,
-3,1493608,5 6,identity.operator_name,,,
-3,1493608,5 6,identity.operator_address,,,
-3,1493608,5 6,identity.county,,,
-3,1493608,5 6,identity.rrc_district,,,
-3,1493608,5 6,identity.location_survey,,,
-3,1493608,5 6,identity.distance_to_town,,,
-3,1493608,5 6,identity.api_number,,,
-3,1493608,5 6,identity.rrc_well_id,,,
-3,1493608,5 6,identity.purpose_of_filing,,,
-3,1493608,5 6,identity.completion_date,,,
-3,1493608,5 6,identity.pipeline_connection,,,
-3,1493608,5 6,identity.logs_run,,,
-3,1493608,5 6,completion.type_of_completion,,,
-3,1493608,5 6,completion.date_permit_issued,,,
-3,1493608,5 6,completion.drilling_commenced,,,
-3,1493608,5 6,completion.drilling_completed,,,
-3,1493608,5 6,completion.total_depth,,,
-3,1493608,5 6,completion.plug_back_depth,,,
-3,1493608,5 6,completion.top_of_pay,,,
-3,1493608,5 6,completion.elevation,,,
-3,1493608,5 6,completion.directional_survey,,,
-3,1493608,5 6,completion.drilling_contractor,,,
-3,1493608,5 6,test.date_of_test,,,
-4,1494690,9 10,document.form_revision,,,
-4,1494690,9 10,identity.field_name,,,
-4,1494690,9 10,identity.lease_name,,,
-4,1494690,9 10,identity.well_number,,,
-4,1494690,9 10,identity.operator_name,,,
-4,1494690,9 10,identity.operator_address,,,
-4,1494690,9 10,identity.county,,,
-4,1494690,9 10,identity.rrc_district,,,
-4,1494690,9 10,identity.location_survey,,,
-4,1494690,9 10,identity.distance_to_town,,,
-4,1494690,9 10,identity.api_number,,,
-4,1494690,9 10,identity.rrc_well_id,,,
-4,1494690,9 10,identity.purpose_of_filing,,,
-4,1494690,9 10,identity.completion_date,,,
-4,1494690,9 10,identity.pipeline_connection,,,
-4,1494690,9 10,identity.logs_run,,,
-4,1494690,9 10,completion.type_of_completion,,,
-4,1494690,9 10,completion.date_permit_issued,,,
-4,1494690,9 10,completion.drilling_commenced,,,
-4,1494690,9 10,completion.drilling_completed,,,
-4,1494690,9 10,completion.total_depth,,,
-4,1494690,9 10,completion.plug_back_depth,,,
-4,1494690,9 10,completion.top_of_pay,,,
-4,1494690,9 10,completion.elevation,,,
-4,1494690,9 10,completion.directional_survey,,,
-4,1494690,9 10,completion.drilling_contractor,,,
-4,1494690,9 10,test.date_of_test,,,
-5,1494774,4,document.form_revision,,,
-5,1494774,4,identity.field_name,,,
-5,1494774,4,identity.lease_name,,,
-5,1494774,4,identity.well_number,,,
-5,1494774,4,identity.operator_name,,,
-5,1494774,4,identity.operator_address,,,
-5,1494774,4,identity.county,,,
-5,1494774,4,identity.rrc_district,,,
-5,1494774,4,identity.location_survey,,,
-5,1494774,4,identity.distance_to_town,,,
-5,1494774,4,identity.api_number,,,
-5,1494774,4,identity.rrc_well_id,,,
-5,1494774,4,identity.purpose_of_filing,,,
-5,1494774,4,identity.completion_date,,,
-5,1494774,4,identity.pipeline_connection,,,
-5,1494774,4,identity.logs_run,,,
-5,1494774,4,completion.type_of_completion,,,
-5,1494774,4,completion.date_permit_issued,,,
-5,1494774,4,completion.drilling_commenced,,,
-5,1494774,4,completion.drilling_completed,,,
-5,1494774,4,completion.total_depth,,,
-5,1494774,4,completion.plug_back_depth,,,
-5,1494774,4,completion.top_of_pay,,,
-5,1494774,4,completion.elevation,,,
-5,1494774,4,completion.directional_survey,,,
-5,1494774,4,completion.drilling_contractor,,,
-5,1494774,4,test.date_of_test,,,
-6,1495193,8,document.form_revision,,,
-6,1495193,8,identity.field_name,,,
-6,1495193,8,identity.lease_name,,,
-6,1495193,8,identity.well_number,,,
-6,1495193,8,identity.operator_name,,,
-6,1495193,8,identity.operator_address,,,
-6,1495193,8,identity.county,,,
-6,1495193,8,identity.rrc_district,,,
-6,1495193,8,identity.location_survey,,,
-6,1495193,8,identity.distance_to_town,,,
-6,1495193,8,identity.api_number,,,
-6,1495193,8,identity.rrc_well_id,,,
-6,1495193,8,identity.purpose_of_filing,,,
-6,1495193,8,identity.completion_date,,,
-6,1495193,8,identity.pipeline_connection,,,
-6,1495193,8,identity.logs_run,,,
-6,1495193,8,completion.type_of_completion,,,
-6,1495193,8,completion.date_permit_issued,,,
-6,1495193,8,completion.drilling_commenced,,,
-6,1495193,8,completion.drilling_completed,,,
-6,1495193,8,completion.total_depth,,,
-6,1495193,8,completion.plug_back_depth,,,
-6,1495193,8,completion.top_of_pay,,,
-6,1495193,8,completion.elevation,,,
-6,1495193,8,completion.directional_survey,,,
-6,1495193,8,completion.drilling_contractor,,,
-6,1495193,8,test.date_of_test,,,
-7,1495195,15,document.form_revision,,,
-7,1495195,15,identity.field_name,,,
-7,1495195,15,identity.lease_name,,,
-7,1495195,15,identity.well_number,,,
-7,1495195,15,identity.operator_name,,,
-7,1495195,15,identity.operator_address,,,
-7,1495195,15,identity.county,,,
-7,1495195,15,identity.rrc_district,,,
-7,1495195,15,identity.location_survey,,,
-7,1495195,15,identity.distance_to_town,,,
-7,1495195,15,identity.api_number,,,
-7,1495195,15,identity.rrc_well_id,,,
-7,1495195,15,identity.purpose_of_filing,,,
-7,1495195,15,identity.completion_date,,,
-7,1495195,15,identity.pipeline_connection,,,
-7,1495195,15,identity.logs_run,,,
-7,1495195,15,completion.type_of_completion,,,
-7,1495195,15,completion.date_permit_issued,,,
-7,1495195,15,completion.drilling_commenced,,,
-7,1495195,15,completion.drilling_completed,,,
-7,1495195,15,completion.total_depth,,,
-7,1495195,15,completion.plug_back_depth,,,
-7,1495195,15,completion.top_of_pay,,,
-7,1495195,15,completion.elevation,,,
-7,1495195,15,completion.directional_survey,,,
-7,1495195,15,completion.drilling_contractor,,,
-7,1495195,15,test.date_of_test,,,
-8,1495195,38,document.form_revision,,,
-8,1495195,38,identity.field_name,,,
-8,1495195,38,identity.lease_name,,,
-8,1495195,38,identity.well_number,,,
-8,1495195,38,identity.operator_name,,,
-8,1495195,38,identity.operator_address,,,
-8,1495195,38,identity.county,,,
-8,1495195,38,identity.rrc_district,,,
-8,1495195,38,identity.location_survey,,,
-8,1495195,38,identity.distance_to_town,,,
-8,1495195,38,identity.api_number,,,
-8,1495195,38,identity.rrc_well_id,,,
-8,1495195,38,identity.purpose_of_filing,,,
-8,1495195,38,identity.completion_date,,,
-8,1495195,38,identity.pipeline_connection,,,
-8,1495195,38,identity.logs_run,,,
-8,1495195,38,completion.type_of_completion,,,
-8,1495195,38,completion.date_permit_issued,,,
-8,1495195,38,completion.drilling_commenced,,,
-8,1495195,38,completion.drilling_completed,,,
-8,1495195,38,completion.total_depth,,,
-8,1495195,38,completion.plug_back_depth,,,
-8,1495195,38,completion.top_of_pay,,,
-8,1495195,38,completion.elevation,,,
-8,1495195,38,completion.directional_survey,,,
-8,1495195,38,completion.drilling_contractor,,,
-8,1495195,38,test.date_of_test,,,
-9,1495195,6,document.form_revision,,,
-9,1495195,6,identity.field_name,,,
-9,1495195,6,identity.lease_name,,,
-9,1495195,6,identity.well_number,,,
-9,1495195,6,identity.operator_name,,,
-9,1495195,6,identity.operator_address,,,
-9,1495195,6,identity.county,,,
-9,1495195,6,identity.rrc_district,,,
-9,1495195,6,identity.location_survey,,,
-9,1495195,6,identity.distance_to_town,,,
-9,1495195,6,identity.api_number,,,
-9,1495195,6,identity.rrc_well_id,,,
-9,1495195,6,identity.purpose_of_filing,,,
-9,1495195,6,identity.completion_date,,,
-9,1495195,6,identity.pipeline_connection,,,
-9,1495195,6,identity.logs_run,,,
-9,1495195,6,completion.type_of_completion,,,
-9,1495195,6,completion.date_permit_issued,,,
-9,1495195,6,completion.drilling_commenced,,,
-9,1495195,6,completion.drilling_completed,,,
-9,1495195,6,completion.total_depth,,,
-9,1495195,6,completion.plug_back_depth,,,
-9,1495195,6,completion.top_of_pay,,,
-9,1495195,6,completion.elevation,,,
-9,1495195,6,completion.directional_survey,,,
-9,1495195,6,completion.drilling_contractor,,,
-9,1495195,6,test.date_of_test,,,
-10,1499700,1,document.form_revision,,,
-10,1499700,1,identity.field_name,,,
-10,1499700,1,identity.lease_name,,,
-10,1499700,1,identity.well_number,,,
-10,1499700,1,identity.operator_name,,,
-10,1499700,1,identity.operator_address,,,
-10,1499700,1,identity.county,,,
-10,1499700,1,identity.rrc_district,,,
-10,1499700,1,identity.location_survey,,,
-10,1499700,1,identity.distance_to_town,,,
-10,1499700,1,identity.api_number,,,
-10,1499700,1,identity.rrc_well_id,,,
-10,1499700,1,identity.purpose_of_filing,,,
-10,1499700,1,identity.completion_date,,,
-10,1499700,1,identity.pipeline_connection,,,
-10,1499700,1,identity.logs_run,,,
-10,1499700,1,completion.type_of_completion,,,
-10,1499700,1,completion.date_permit_issued,,,
-10,1499700,1,completion.drilling_commenced,,,
-10,1499700,1,completion.drilling_completed,,,
-10,1499700,1,completion.total_depth,,,
-10,1499700,1,completion.plug_back_depth,,,
-10,1499700,1,completion.top_of_pay,,,
-10,1499700,1,completion.elevation,,,
-10,1499700,1,completion.directional_survey,,,
-10,1499700,1,completion.drilling_contractor,,,
-10,1499700,1,test.date_of_test,,,
-11,1504957,6 7,document.form_revision,,,
-11,1504957,6 7,identity.field_name,,,
-11,1504957,6 7,identity.lease_name,,,
-11,1504957,6 7,identity.well_number,,,
-11,1504957,6 7,identity.operator_name,,,
-11,1504957,6 7,identity.operator_address,,,
-11,1504957,6 7,identity.county,,,
-11,1504957,6 7,identity.rrc_district,,,
-11,1504957,6 7,identity.location_survey,,,
-11,1504957,6 7,identity.distance_to_town,,,
-11,1504957,6 7,identity.api_number,,,
-11,1504957,6 7,identity.rrc_well_id,,,
-11,1504957,6 7,identity.purpose_of_filing,,,
-11,1504957,6 7,identity.completion_date,,,
-11,1504957,6 7,identity.pipeline_connection,,,
-11,1504957,6 7,identity.logs_run,,,
-11,1504957,6 7,completion.type_of_completion,,,
-11,1504957,6 7,completion.date_permit_issued,,,
-11,1504957,6 7,completion.drilling_commenced,,,
-11,1504957,6 7,completion.drilling_completed,,,
-11,1504957,6 7,completion.total_depth,,,
-11,1504957,6 7,completion.plug_back_depth,,,
-11,1504957,6 7,completion.top_of_pay,,,
-11,1504957,6 7,completion.elevation,,,
-11,1504957,6 7,completion.directional_survey,,,
-11,1504957,6 7,completion.drilling_contractor,,,
-11,1504957,6 7,test.date_of_test,,,
-12,1505031,5 6,document.form_revision,,,
-12,1505031,5 6,identity.field_name,,,
-12,1505031,5 6,identity.lease_name,,,
-12,1505031,5 6,identity.well_number,,,
-12,1505031,5 6,identity.operator_name,,,
-12,1505031,5 6,identity.operator_address,,,
-12,1505031,5 6,identity.county,,,
-12,1505031,5 6,identity.rrc_district,,,
-12,1505031,5 6,identity.location_survey,,,
-12,1505031,5 6,identity.distance_to_town,,,
-12,1505031,5 6,identity.api_number,,,
-12,1505031,5 6,identity.rrc_well_id,,,
-12,1505031,5 6,identity.purpose_of_filing,,,
-12,1505031,5 6,identity.completion_date,,,
-12,1505031,5 6,identity.pipeline_connection,,,
-12,1505031,5 6,identity.logs_run,,,
-12,1505031,5 6,completion.type_of_completion,,,
-12,1505031,5 6,completion.date_permit_issued,,,
-12,1505031,5 6,completion.drilling_commenced,,,
-12,1505031,5 6,completion.drilling_completed,,,
-12,1505031,5 6,completion.total_depth,,,
-12,1505031,5 6,completion.plug_back_depth,,,
-12,1505031,5 6,completion.top_of_pay,,,
-12,1505031,5 6,completion.elevation,,,
-12,1505031,5 6,completion.directional_survey,,,
-12,1505031,5 6,completion.drilling_contractor,,,
-12,1505031,5 6,test.date_of_test,,,
-13,1511465,9,document.form_revision,,,
-13,1511465,9,identity.field_name,,,
-13,1511465,9,identity.lease_name,,,
-13,1511465,9,identity.well_number,,,
-13,1511465,9,identity.operator_name,,,
-13,1511465,9,identity.operator_address,,,
-13,1511465,9,identity.county,,,
-13,1511465,9,identity.rrc_district,,,
-13,1511465,9,identity.location_survey,,,
-13,1511465,9,identity.distance_to_town,,,
-13,1511465,9,identity.api_number,,,
-13,1511465,9,identity.rrc_well_id,,,
-13,1511465,9,identity.purpose_of_filing,,,
-13,1511465,9,identity.completion_date,,,
-13,1511465,9,identity.pipeline_connection,,,
-13,1511465,9,identity.logs_run,,,
-13,1511465,9,completion.type_of_completion,,,
-13,1511465,9,completion.date_permit_issued,,,
-13,1511465,9,completion.drilling_commenced,,,
-13,1511465,9,completion.drilling_completed,,,
-13,1511465,9,completion.total_depth,,,
-13,1511465,9,completion.plug_back_depth,,,
-13,1511465,9,completion.top_of_pay,,,
-13,1511465,9,completion.elevation,,,
-13,1511465,9,completion.directional_survey,,,
-13,1511465,9,completion.drilling_contractor,,,
-13,1511465,9,test.date_of_test,,,
-14,1912687,2,document.form_revision,,,
-14,1912687,2,identity.field_name,,,
-14,1912687,2,identity.lease_name,,,
-14,1912687,2,identity.well_number,,,
-14,1912687,2,identity.operator_name,,,
-14,1912687,2,identity.operator_address,,,
-14,1912687,2,identity.county,,,
-14,1912687,2,identity.rrc_district,,,
-14,1912687,2,identity.location_survey,,,
-14,1912687,2,identity.distance_to_town,,,
-14,1912687,2,identity.api_number,,,
-14,1912687,2,identity.rrc_well_id,,,
-14,1912687,2,identity.purpose_of_filing,,,
-14,1912687,2,identity.completion_date,,,
-14,1912687,2,identity.pipeline_connection,,,
-14,1912687,2,identity.logs_run,,,
-14,1912687,2,completion.type_of_completion,,,
-14,1912687,2,completion.date_permit_issued,,,
-14,1912687,2,completion.drilling_commenced,,,
-14,1912687,2,completion.drilling_completed,,,
-14,1912687,2,completion.total_depth,,,
-14,1912687,2,completion.plug_back_depth,,,
-14,1912687,2,completion.top_of_pay,,,
-14,1912687,2,completion.elevation,,,
-14,1912687,2,completion.directional_survey,,,
-14,1912687,2,completion.drilling_contractor,,,
-14,1912687,2,test.date_of_test,,,
-15,1995378,5,document.form_revision,,,
-15,1995378,5,identity.field_name,,,
-15,1995378,5,identity.lease_name,,,
-15,1995378,5,identity.well_number,,,
-15,1995378,5,identity.operator_name,,,
-15,1995378,5,identity.operator_address,,,
-15,1995378,5,identity.county,,,
-15,1995378,5,identity.rrc_district,,,
-15,1995378,5,identity.location_survey,,,
-15,1995378,5,identity.distance_to_town,,,
-15,1995378,5,identity.api_number,,,
-15,1995378,5,identity.rrc_well_id,,,
-15,1995378,5,identity.purpose_of_filing,,,
-15,1995378,5,identity.completion_date,,,
-15,1995378,5,identity.pipeline_connection,,,
-15,1995378,5,identity.logs_run,,,
-15,1995378,5,completion.type_of_completion,,,
-15,1995378,5,completion.date_permit_issued,,,
-15,1995378,5,completion.drilling_commenced,,,
-15,1995378,5,completion.drilling_completed,,,
-15,1995378,5,completion.total_depth,,,
-15,1995378,5,completion.plug_back_depth,,,
-15,1995378,5,completion.top_of_pay,,,
-15,1995378,5,completion.elevation,,,
-15,1995378,5,completion.directional_survey,,,
-15,1995378,5,completion.drilling_contractor,,,
-15,1995378,5,test.date_of_test,,,
+﻿seq,record_id,pages,field,value,status,note,check
+1,1493495,9 10,document.form_revision,Rev. 6/30/75,present,,ok
+1,1493495,9 10,identity.field_name,RED FISH REEF NORTH (F-8),present,"Original typed entry was crossed. New entry handwritten, spilled in the field below",ok
+1,1493495,9 10,identity.lease_name,State Tract 130,present,,ok
+1,1493495,9 10,identity.well_number,3,present,,ok
+1,1493495,9 10,identity.operator_name,Sun Oil Company,present,,ok
+1,1493495,9 10,identity.operator_address,"P. O. Box 3327, Houston, Texas 77001",present,,ok
+1,1493495,9 10,identity.county,Chambers,present,,ok
+1,1493495,9 10,identity.rrc_district,3,present,,ok
+1,1493495,9 10,identity.location_survey,Galveston 130,present,,ok
+1,1493495,9 10,identity.distance_to_town,10 miles SE of Baytown,present,,ok
+1,1493495,9 10,identity.api_number,,not_on_this_form,,ok
+1,1493495,9 10,identity.rrc_well_id,11670,present,Handwritten,ok
+1,1493495,9 10,identity.purpose_of_filing,Initial Potential,present,,ok
+1,1493495,9 10,identity.completion_date,9/22/77,present,,ok
+1,1493495,9 10,identity.pipeline_connection,,not_on_this_form,,ok
+1,1493495,9 10,identity.logs_run,ISF & GRN,present,,ok
+1,1493495,9 10,completion.type_of_completion,,illegible,,ok
+1,1493495,9 10,completion.date_permit_issued,"May 4, 1977",present,,ok
+1,1493495,9 10,completion.drilling_commenced,8-16-77,present,,ok
+1,1493495,9 10,completion.drilling_completed,9-22-77,present,,ok
+1,1493495,9 10,completion.total_depth,9200',present,,ok
+1,1493495,9 10,completion.plug_back_depth,8608',present,,ok
+1,1493495,9 10,completion.top_of_pay,8465',present,,ok
+1,1493495,9 10,completion.elevation,,blank,,ok
+1,1493495,9 10,completion.directional_survey,Yes,present,,ok
+1,1493495,9 10,completion.drilling_contractor,Columbia Drilling Company,present,,ok
+1,1493495,9 10,test.date_of_test,11-14-77,present,,ok
+2,1493540,7 8,document.form_revision,Rev. 6/30/75,present,,ok
+2,1493540,7 8,identity.field_name,,illegible,,ok
+2,1493540,7 8,identity.lease_name,,illegible,,ok
+2,1493540,7 8,identity.well_number,2,present,,ok
+2,1493540,7 8,identity.operator_name,,illegible,,ok
+2,1493540,7 8,identity.operator_address,,illegible,,ok
+2,1493540,7 8,identity.county,Wharton,present,,ok
+2,1493540,7 8,identity.rrc_district,3,present,,ok
+2,1493540,7 8,identity.location_survey,,illegible,,ok
+2,1493540,7 8,identity.distance_to_town,,illegible,,ok
+2,1493540,7 8,identity.api_number,,not_on_this_form,,ok
+2,1493540,7 8,identity.rrc_well_id,00534,present,,ok
+2,1493540,7 8,identity.purpose_of_filing,Retest,present,,ok
+2,1493540,7 8,identity.completion_date,,illegible,,ok
+2,1493540,7 8,identity.pipeline_connection,,not_on_this_form,,ok
+2,1493540,7 8,identity.logs_run,,illegible,,ok
+2,1493540,7 8,completion.type_of_completion,,blank,,ok
+2,1493540,7 8,completion.date_permit_issued,,blank,,ok
+2,1493540,7 8,completion.drilling_commenced,,blank,,ok
+2,1493540,7 8,completion.drilling_completed,,blank,,ok
+2,1493540,7 8,completion.total_depth,,blank,,ok
+2,1493540,7 8,completion.plug_back_depth,,blank,,ok
+2,1493540,7 8,completion.top_of_pay,,blank,,ok
+2,1493540,7 8,completion.elevation,,not_on_this_form,,ok
+2,1493540,7 8,completion.directional_survey,,blank,,ok
+2,1493540,7 8,completion.drilling_contractor,,blank,,ok
+2,1493540,7 8,test.date_of_test,,illegible,,ok
+3,1493608,5 6,document.form_revision,Rev. 7/5/66,present,,ok
+3,1493608,5 6,identity.field_name,Bay City (8000' Frio),present,,ok
+3,1493608,5 6,identity.lease_name,"F. G. Cobb ""B""",present,,ok
+3,1493608,5 6,identity.well_number,35-L,present,,ok
+3,1493608,5 6,identity.operator_name,SKELLY OIL COMPANY,present,,ok
+3,1493608,5 6,identity.operator_address,"1938 Houston Natural Gas Building, Houston, Texas 77002",present,,ok
+3,1493608,5 6,identity.county,Matagorda,present,,ok
+3,1493608,5 6,identity.rrc_district,3,present,,ok
+3,1493608,5 6,identity.location_survey,"Maria Cummins League & I&GN RR Co.'s Surveys 1,2,4,&5, Blk.5 & Sur.10,Blk.6",present,,ok
+3,1493608,5 6,identity.distance_to_town,,not_on_this_form,,ok
+3,1493608,5 6,identity.api_number,,not_on_this_form,,ok
+3,1493608,5 6,identity.rrc_well_id,09489,present,,ok
+3,1493608,5 6,identity.purpose_of_filing,Initial Potential,present,,ok
+3,1493608,5 6,identity.completion_date,4-15-75,present,,ok
+3,1493608,5 6,identity.pipeline_connection,,not_on_this_form,,ok
+3,1493608,5 6,identity.logs_run,Cement Bond Log & Neutron Lifetime Log,present,,ok
+3,1493608,5 6,completion.type_of_completion,Other,present,,ok
+3,1493608,5 6,completion.date_permit_issued,4-10-75,present,,ok
+3,1493608,5 6,completion.drilling_commenced,3-29-75,present,,ok
+3,1493608,5 6,completion.drilling_completed,4-15-75,present,,ok
+3,1493608,5 6,completion.total_depth,8465',present,,ok
+3,1493608,5 6,completion.plug_back_depth,8362',present,,ok
+3,1493608,5 6,completion.top_of_pay,8030',present,,ok
+3,1493608,5 6,completion.elevation,68.6' KB,present,,ok
+3,1493608,5 6,completion.directional_survey,Yes,present,,ok
+3,1493608,5 6,completion.drilling_contractor,"JFP WEll SERVICE, INC.",present,,ok
+3,1493608,5 6,test.date_of_test,4-23-75,present,,ok
+4,1494690,9 10,document.form_revision,Rev. 7/5/66,present,,ok
+4,1494690,9 10,identity.field_name,Anahuac,present,,ok
+4,1494690,9 10,identity.lease_name,Anahuac SWDSyst.#3,present,,ok
+4,1494690,9 10,identity.well_number,5,present,,ok
+4,1494690,9 10,identity.operator_name,Exxon Corporation,present,,ok
+4,1494690,9 10,identity.operator_address,"P.O. Box 2443, Houston, Tx 77001",present,,ok
+4,1494690,9 10,identity.county,Chambers,present,,ok
+4,1494690,9 10,identity.rrc_district,3,present,,ok
+4,1494690,9 10,identity.location_survey,"H. & T.C. RR, A-443, Sec.60",present,,ok
+4,1494690,9 10,identity.distance_to_town,,not_on_this_form,,ok
+4,1494690,9 10,identity.api_number,,not_on_this_form,,ok
+4,1494690,9 10,identity.rrc_well_id,10483,present,,ok
+4,1494690,9 10,identity.purpose_of_filing,See Remarks,present,"no boxes checked, ""See Remarks"" at the bottom of the page",ok
+4,1494690,9 10,identity.completion_date,6-28-74,present,,ok
+4,1494690,9 10,identity.pipeline_connection,,not_on_this_form,,ok
+4,1494690,9 10,identity.logs_run,-,present,,ok
+4,1494690,9 10,completion.type_of_completion,"Plug Back, Other",present,"Two boxes checked, ""Convert to SWD"" written by hand",ok
+4,1494690,9 10,completion.date_permit_issued,9/19/73,present,,ok
+4,1494690,9 10,completion.drilling_commenced,6/12/74,present,,ok
+4,1494690,9 10,completion.drilling_completed,6/28/74,present,,ok
+4,1494690,9 10,completion.total_depth,7235,present,,ok
+4,1494690,9 10,completion.plug_back_depth,2608,present,,ok
+4,1494690,9 10,completion.top_of_pay,-,present,,ok
+4,1494690,9 10,completion.elevation,-,present,,ok
+4,1494690,9 10,completion.directional_survey,No,present,,ok
+4,1494690,9 10,completion.drilling_contractor,,blank,,ok
+4,1494690,9 10,test.date_of_test,-,present,,ok
+5,1494774,4,document.form_revision,Rev. 7/5/66,present,,ok
+5,1494774,4,identity.field_name,COX (2nd FRIO),present,,ok
+5,1494774,4,identity.lease_name,MRS JENNIE BEARD,present,,ok
+5,1494774,4,identity.well_number,3,present,,ok
+5,1494774,4,identity.operator_name,BOLING PRODUCTION COMPANY INC.,present,,ok
+5,1494774,4,identity.operator_address,"P.O. BOX 188, BOLING, TEXAS 77420",present,,ok
+5,1494774,4,identity.county,WHARTON,present,,ok
+5,1494774,4,identity.rrc_district,3,present,,ok
+5,1494774,4,identity.location_survey,S. CASTLEMAN SURVEY,present,,ok
+5,1494774,4,identity.distance_to_town,,not_on_this_form,,ok
+5,1494774,4,identity.api_number,,not_on_this_form,,ok
+5,1494774,4,identity.rrc_well_id,05403,present,,ok
+5,1494774,4,identity.purpose_of_filing,Retest,present,,ok
+5,1494774,4,identity.completion_date,9-15-1951,present,,ok
+5,1494774,4,identity.pipeline_connection,,not_on_this_form,,ok
+5,1494774,4,identity.logs_run,,blank,,ok
+5,1494774,4,completion.type_of_completion,,page_not_in_document,,ok
+5,1494774,4,completion.date_permit_issued,,page_not_in_document,,ok
+5,1494774,4,completion.drilling_commenced,,page_not_in_document,,ok
+5,1494774,4,completion.drilling_completed,,page_not_in_document,,ok
+5,1494774,4,completion.total_depth,,page_not_in_document,,ok
+5,1494774,4,completion.plug_back_depth,,page_not_in_document,,ok
+5,1494774,4,completion.top_of_pay,,page_not_in_document,,ok
+5,1494774,4,completion.elevation,,page_not_in_document,,ok
+5,1494774,4,completion.directional_survey,,page_not_in_document,,ok
+5,1494774,4,completion.drilling_contractor,,page_not_in_document,,ok
+5,1494774,4,test.date_of_test,1-2-1974,present,,ok
+6,1495193,8,document.form_revision,,page_not_in_document,,ok
+6,1495193,8,identity.field_name,,page_not_in_document,,ok
+6,1495193,8,identity.lease_name,,page_not_in_document,,ok
+6,1495193,8,identity.well_number,,page_not_in_document,,ok
+6,1495193,8,identity.operator_name,,page_not_in_document,,ok
+6,1495193,8,identity.operator_address,,page_not_in_document,,ok
+6,1495193,8,identity.county,,page_not_in_document,,ok
+6,1495193,8,identity.rrc_district,,page_not_in_document,,ok
+6,1495193,8,identity.location_survey,,page_not_in_document,,ok
+6,1495193,8,identity.distance_to_town,,page_not_in_document,,ok
+6,1495193,8,identity.api_number,,page_not_in_document,,ok
+6,1495193,8,identity.rrc_well_id,,page_not_in_document,,ok
+6,1495193,8,identity.purpose_of_filing,,page_not_in_document,,ok
+6,1495193,8,identity.completion_date,,page_not_in_document,,ok
+6,1495193,8,identity.pipeline_connection,,page_not_in_document,,ok
+6,1495193,8,identity.logs_run,,page_not_in_document,,ok
+6,1495193,8,completion.type_of_completion,New Well,present,,ok
+6,1495193,8,completion.date_permit_issued,7-18-79,present,,ok
+6,1495193,8,completion.drilling_commenced,8/12/79,present,,ok
+6,1495193,8,completion.drilling_completed,8/30/79,present,,ok
+6,1495193,8,completion.total_depth,8515,present,,ok
+6,1495193,8,completion.plug_back_depth,,blank,,ok
+6,1495193,8,completion.top_of_pay,7852,present,,ok
+6,1495193,8,completion.elevation,265 GR (281 RKB),present,,ok
+6,1495193,8,completion.directional_survey,No,present,,ok
+6,1495193,8,completion.drilling_contractor,DB Drilling Corp.,present,,ok
+6,1495193,8,test.date_of_test,,page_not_in_document,,ok
+7,1495195,15,document.form_revision,Rev. 6/30/75,present,,ok
+7,1495195,15,identity.field_name,Fannett,present,,ok
+7,1495195,15,identity.lease_name,Mary Fitzhugh et al,present,,ok
+7,1495195,15,identity.well_number,8,present,,ok
+7,1495195,15,identity.operator_name,Gulf Oil Corporation,present,,ok
+7,1495195,15,identity.operator_address,"P.O. Box 72, Kilgore, Tx 75662",present,,ok
+7,1495195,15,identity.county,Jefferson,present,,ok
+7,1495195,15,identity.rrc_district,3,present,,ok
+7,1495195,15,identity.location_survey,"B. Blackman, A-69",present,,ok
+7,1495195,15,identity.distance_to_town,"2.7 miles NE of Hamshire, Texas",present,,ok
+7,1495195,15,identity.api_number,,not_on_this_form,,ok
+7,1495195,15,identity.rrc_well_id,01505,present,,ok
+7,1495195,15,identity.purpose_of_filing,Initial Potential,present,,ok
+7,1495195,15,identity.completion_date,10-4-77,present,,ok
+7,1495195,15,identity.pipeline_connection,,not_on_this_form,,ok
+7,1495195,15,identity.logs_run,I-VL; PDC,present,,ok
+7,1495195,15,completion.type_of_completion,,not_on_this_form,,ok
+7,1495195,15,completion.date_permit_issued,,not_on_this_form,,ok
+7,1495195,15,completion.drilling_commenced,,not_on_this_form,,ok
+7,1495195,15,completion.drilling_completed,,not_on_this_form,,ok
+7,1495195,15,completion.total_depth,,not_on_this_form,,ok
+7,1495195,15,completion.plug_back_depth,,not_on_this_form,,ok
+7,1495195,15,completion.top_of_pay,,not_on_this_form,,ok
+7,1495195,15,completion.elevation,,not_on_this_form,,ok
+7,1495195,15,completion.directional_survey,,not_on_this_form,,ok
+7,1495195,15,completion.drilling_contractor,,not_on_this_form,,ok
+7,1495195,15,test.date_of_test,10-5-77,present,,ok
+8,1495195,38,document.form_revision,,not_on_this_form,,ok
+8,1495195,38,identity.field_name,,not_on_this_form,,ok
+8,1495195,38,identity.lease_name,,not_on_this_form,,ok
+8,1495195,38,identity.well_number,,not_on_this_form,,ok
+8,1495195,38,identity.operator_name,,not_on_this_form,,ok
+8,1495195,38,identity.operator_address,,not_on_this_form,,ok
+8,1495195,38,identity.county,,not_on_this_form,,ok
+8,1495195,38,identity.rrc_district,,not_on_this_form,,ok
+8,1495195,38,identity.location_survey,,not_on_this_form,,ok
+8,1495195,38,identity.distance_to_town,,not_on_this_form,,ok
+8,1495195,38,identity.api_number,,not_on_this_form,,ok
+8,1495195,38,identity.rrc_well_id,,not_on_this_form,,ok
+8,1495195,38,identity.purpose_of_filing,,not_on_this_form,,ok
+8,1495195,38,identity.completion_date,,not_on_this_form,,ok
+8,1495195,38,identity.pipeline_connection,,not_on_this_form,,ok
+8,1495195,38,identity.logs_run,,not_on_this_form,,ok
+8,1495195,38,completion.type_of_completion,New Well,present,,ok
+8,1495195,38,completion.date_permit_issued,11-7-77,present,,ok
+8,1495195,38,completion.drilling_commenced,12-18-77,present,,ok
+8,1495195,38,completion.drilling_completed,1-8-78,present,,ok
+8,1495195,38,completion.total_depth,6403,present,,ok
+8,1495195,38,completion.plug_back_depth,6351,present,,ok
+8,1495195,38,completion.top_of_pay,6296,present,,ok
+8,1495195,38,completion.elevation,16' RKB,present,,ok
+8,1495195,38,completion.directional_survey,Yes,present,,ok
+8,1495195,38,completion.drilling_contractor,Richards Drilling Company,present,,ok
+8,1495195,38,test.date_of_test,,not_on_this_form,,ok
+9,1495195,6,document.form_revision,,not_on_this_form,,ok
+9,1495195,6,identity.field_name,,not_on_this_form,,ok
+9,1495195,6,identity.lease_name,,not_on_this_form,,ok
+9,1495195,6,identity.well_number,,not_on_this_form,,ok
+9,1495195,6,identity.operator_name,,not_on_this_form,,ok
+9,1495195,6,identity.operator_address,,not_on_this_form,,ok
+9,1495195,6,identity.county,,not_on_this_form,,ok
+9,1495195,6,identity.rrc_district,,not_on_this_form,,ok
+9,1495195,6,identity.location_survey,,not_on_this_form,,ok
+9,1495195,6,identity.distance_to_town,,not_on_this_form,,ok
+9,1495195,6,identity.api_number,,not_on_this_form,,ok
+9,1495195,6,identity.rrc_well_id,,not_on_this_form,,ok
+9,1495195,6,identity.purpose_of_filing,,not_on_this_form,,ok
+9,1495195,6,identity.completion_date,,not_on_this_form,,ok
+9,1495195,6,identity.pipeline_connection,,not_on_this_form,,ok
+9,1495195,6,identity.logs_run,,not_on_this_form,,ok
+9,1495195,6,completion.type_of_completion,Other,present,,ok
+9,1495195,6,completion.date_permit_issued,10/17/74,present,,ok
+9,1495195,6,completion.drilling_commenced,11/1/74,present,,ok
+9,1495195,6,completion.drilling_completed,11/28/74,present,,ok
+9,1495195,6,completion.total_depth,,blank,,ok
+9,1495195,6,completion.plug_back_depth,,blank,,ok
+9,1495195,6,completion.top_of_pay,,blank,,ok
+9,1495195,6,completion.elevation,121 KDB to CHF,present,,ok
+9,1495195,6,completion.directional_survey,No,present,,ok
+9,1495195,6,completion.drilling_contractor,Otis Russell Drilling Company,present,,ok
+9,1495195,6,test.date_of_test,,not_on_this_form,,ok
+10,1499700,1,document.form_revision,Rev. 7/5/66,present,,ok
+10,1499700,1,identity.field_name,Lockridge (Miocene E 3),present,,ok
+10,1499700,1,identity.lease_name,"Ramsey State Prison Farm ""B""",present,,ok
+10,1499700,1,identity.well_number,B-11 L,present,,ok
+10,1499700,1,identity.operator_name,Shell Oil Company,present,,ok
+10,1499700,1,identity.operator_address,"P.O. Box 2241, Fannin, Tx 75662",present,,ok
+10,1499700,1,identity.county,Brazoria,present,,ok
+10,1499700,1,identity.rrc_district,3,present,,ok
+10,1499700,1,identity.location_survey,J. W. Hall A-67,present,,ok
+10,1499700,1,identity.distance_to_town,,not_on_this_form,,ok
+10,1499700,1,identity.api_number,,not_on_this_form,,ok
+10,1499700,1,identity.rrc_well_id,NA,present,,ok
+10,1499700,1,identity.purpose_of_filing,Initial Potential,present,,ok
+10,1499700,1,identity.completion_date,6/4/67,present,,ok
+10,1499700,1,identity.pipeline_connection,,not_on_this_form,,ok
+10,1499700,1,identity.logs_run,,blank,,ok
+10,1499700,1,completion.type_of_completion,,page_not_in_document,,ok
+10,1499700,1,completion.date_permit_issued,,page_not_in_document,,ok
+10,1499700,1,completion.drilling_commenced,,page_not_in_document,,ok
+10,1499700,1,completion.drilling_completed,,page_not_in_document,,ok
+10,1499700,1,completion.total_depth,,page_not_in_document,,ok
+10,1499700,1,completion.plug_back_depth,,page_not_in_document,,ok
+10,1499700,1,completion.top_of_pay,,page_not_in_document,,ok
+10,1499700,1,completion.elevation,,page_not_in_document,,ok
+10,1499700,1,completion.directional_survey,,page_not_in_document,,ok
+10,1499700,1,completion.drilling_contractor,,page_not_in_document,,ok
+10,1499700,1,test.date_of_test,7/8/67,present,,ok
+11,1504957,6 7,document.form_revision,Rev. 4/1/83,present,,ok
+11,1504957,6 7,identity.field_name,Hempstead NW (11030),present,,ok
+11,1504957,6 7,identity.lease_name,"S.D. David, Jr.",present,,ok
+11,1504957,6 7,identity.well_number,4,present,,ok
+11,1504957,6 7,identity.operator_name,Flag-Redfern Oil Company,present,,ok
+11,1504957,6 7,identity.operator_address,"P.O. Box 11050 Midland, TX 79702",present,,ok
+11,1504957,6 7,identity.county,Waller,present,,ok
+11,1504957,6 7,identity.rrc_district,3,present,,ok
+11,1504957,6 7,identity.location_survey,Isaac Best Survey A-13,present,,ok
+11,1504957,6 7,identity.distance_to_town,7 miles NW of Hempstead,present,,ok
+11,1504957,6 7,identity.api_number,42-473-30300,present,,ok
+11,1504957,6 7,identity.rrc_well_id,17578,present,,ok
+11,1504957,6 7,identity.purpose_of_filing,Reclass,present,,ok
+11,1504957,6 7,identity.completion_date,10-03-80,present,,ok
+11,1504957,6 7,identity.pipeline_connection,,not_on_this_form,,ok
+11,1504957,6 7,identity.logs_run,CNL FDC DIL,present,,ok
+11,1504957,6 7,completion.type_of_completion,Other Reclassing,present,,ok
+11,1504957,6 7,completion.date_permit_issued,3-16-78,present,,ok
+11,1504957,6 7,completion.drilling_commenced,3-15-78,present,,ok
+11,1504957,6 7,completion.drilling_completed,4-10-78,present,,ok
+11,1504957,6 7,completion.total_depth,11516,present,,ok
+11,1504957,6 7,completion.plug_back_depth,11474,present,,ok
+11,1504957,6 7,completion.top_of_pay,11034,present,,ok
+11,1504957,6 7,completion.elevation,168 GL,present,,ok
+11,1504957,6 7,completion.directional_survey,No,present,,ok
+11,1504957,6 7,completion.drilling_contractor,T-L. Drilling Co.,present,,ok
+11,1504957,6 7,test.date_of_test,4-23-84,present,,ok
+12,1505031,5 6,document.form_revision,,illegible,,ok
+12,1505031,5 6,identity.field_name,Louise (Roux),present,Original entry crossed out; this was written by hand outside the field,ok
+12,1505031,5 6,identity.lease_name,Lancaster,present,,ok
+12,1505031,5 6,identity.well_number,3-UT,present,,ok
+12,1505031,5 6,identity.operator_name,Union Oil Co. of California,present,,ok
+12,1505031,5 6,identity.operator_address,"P.O. Box 67, Louise, Texas 77455",present,,ok
+12,1505031,5 6,identity.county,Wharton,present,,ok
+12,1505031,5 6,identity.rrc_district,3,present,,ok
+12,1505031,5 6,identity.location_survey,Morris & Cummings #23 A-257,present,,ok
+12,1505031,5 6,identity.distance_to_town,,not_on_this_form,,ok
+12,1505031,5 6,identity.api_number,,not_on_this_form,,ok
+12,1505031,5 6,identity.rrc_well_id,44037,present,,ok
+12,1505031,5 6,identity.purpose_of_filing,Initial Potential,present,,ok
+12,1505031,5 6,identity.completion_date,4-25-68,present,,ok
+12,1505031,5 6,identity.pipeline_connection,Industrial Gas Supply,present,,ok
+12,1505031,5 6,identity.logs_run,,blank,,ok
+12,1505031,5 6,completion.type_of_completion,Plug Back,present,,ok
+12,1505031,5 6,completion.date_permit_issued,4-4-68,present,,ok
+12,1505031,5 6,completion.drilling_commenced,4-9-68,present,,ok
+12,1505031,5 6,completion.drilling_completed,4-25-68,present,,ok
+12,1505031,5 6,completion.total_depth,7777,present,,ok
+12,1505031,5 6,completion.plug_back_depth,6388,present,,ok
+12,1505031,5 6,completion.top_of_pay,5945,present,,ok
+12,1505031,5 6,completion.elevation,86' GR,present,,ok
+12,1505031,5 6,completion.directional_survey,No,present,,ok
+12,1505031,5 6,completion.drilling_contractor,Company Rig,present,,ok
+12,1505031,5 6,test.date_of_test,4-26-68,present,Not sure about the last digit,ok
+13,1511465,9,document.form_revision,Rev. 4/1/83,present,,ok
+13,1511465,9,identity.field_name,CALDWELL (AUSTIN CHALK),present,,ok
+13,1511465,9,identity.lease_name,NEWBERRY,present,,ok
+13,1511465,9,identity.well_number,1,present,,ok
+13,1511465,9,identity.operator_name,HOWELL PETROLEUM CORPORATION,present,,ok
+13,1511465,9,identity.operator_address,"TEN TEN LAMAR, SUITE 1800, HOUSTON, TEXAS 77002",present,,ok
+13,1511465,9,identity.county,BRAZOS,present,,ok
+13,1511465,9,identity.rrc_district,3,present,,ok
+13,1511465,9,identity.location_survey,"DELA GARZA, A-18",present,,ok
+13,1511465,9,identity.distance_to_town,"10 1/2 MILES NW OF BRYAN, TEXAS",present,,ok
+13,1511465,9,identity.api_number,42-041-31272,present,,ok
+13,1511465,9,identity.rrc_well_id,20631,present,,ok
+13,1511465,9,identity.purpose_of_filing,Initial Potential,present,,ok
+13,1511465,9,identity.completion_date,2/9/90,present,,ok
+13,1511465,9,identity.pipeline_connection,,not_on_this_form,,ok
+13,1511465,9,identity.logs_run,,blank,,ok
+13,1511465,9,completion.type_of_completion,,page_not_in_document,,ok
+13,1511465,9,completion.date_permit_issued,,page_not_in_document,,ok
+13,1511465,9,completion.drilling_commenced,,page_not_in_document,,ok
+13,1511465,9,completion.drilling_completed,,page_not_in_document,,ok
+13,1511465,9,completion.total_depth,,page_not_in_document,,ok
+13,1511465,9,completion.plug_back_depth,,page_not_in_document,,ok
+13,1511465,9,completion.top_of_pay,,page_not_in_document,,ok
+13,1511465,9,completion.elevation,,page_not_in_document,,ok
+13,1511465,9,completion.directional_survey,,page_not_in_document,,ok
+13,1511465,9,completion.drilling_contractor,,page_not_in_document,,ok
+13,1511465,9,test.date_of_test,2/15/90,present,,ok
+14,1912687,2,document.form_revision,Rev. 4/1/83,present,,ok
+14,1912687,2,identity.field_name,Wildcat,present,,ok
+14,1912687,2,identity.lease_name,Malota Unit,present,,ok
+14,1912687,2,identity.well_number,1,present,,ok
+14,1912687,2,identity.operator_name,"U. S. Enercorp, LTD.",present,,ok
+14,1912687,2,identity.operator_address,"8610 N. New Braunfels, Suite 405 San Antonio, TX 78217",present,,ok
+14,1912687,2,identity.county,Wharton,present,,ok
+14,1912687,2,identity.rrc_district,03,present,,ok
+14,1912687,2,identity.location_survey,"SA & MG RR CO. #24, A-476",present,,ok
+14,1912687,2,identity.distance_to_town,4.6 miles SW of Wharton,present,,ok
+14,1912687,2,identity.api_number,42- 481- 34697,present,,ok
+14,1912687,2,identity.rrc_well_id,248811,present,,ok
+14,1912687,2,identity.purpose_of_filing,Well record only,present,,ok
+14,1912687,2,identity.completion_date,N/A,present,,ok
+14,1912687,2,identity.pipeline_connection,N/A,present,,ok
+14,1912687,2,identity.logs_run,"TCOM, FT",present,,ok
+14,1912687,2,completion.type_of_completion,,not_on_this_form,,ok
+14,1912687,2,completion.date_permit_issued,,not_on_this_form,,ok
+14,1912687,2,completion.drilling_commenced,,not_on_this_form,,ok
+14,1912687,2,completion.drilling_completed,,not_on_this_form,,ok
+14,1912687,2,completion.total_depth,,not_on_this_form,,ok
+14,1912687,2,completion.plug_back_depth,,not_on_this_form,,ok
+14,1912687,2,completion.top_of_pay,,not_on_this_form,,ok
+14,1912687,2,completion.elevation,,not_on_this_form,,ok
+14,1912687,2,completion.directional_survey,,not_on_this_form,,ok
+14,1912687,2,completion.drilling_contractor,,not_on_this_form,,ok
+14,1912687,2,test.date_of_test,,blank,,ok
+15,1995378,5,document.form_revision,Rev. 4/ 1/ 83,present,,ok
+15,1995378,5,identity.field_name,Katy (Combined),present,,ok
+15,1995378,5,identity.lease_name,KGFCU,present,,ok
+15,1995378,5,identity.well_number,8408,present,,ok
+15,1995378,5,identity.operator_name,Forest Oil Corporation,present,,ok
+15,1995378,5,identity.operator_address,"1100 Louisiana, Suite 2000, Houston, Texas 77002-5219",present,,ok
+15,1995378,5,identity.county,Waller,present,,ok
+15,1995378,5,identity.rrc_district,03,present,,ok
+15,1995378,5,identity.location_survey,"H&TC RR CO/Reese, T.S. A-334 Sec. 124",present,,ok
+15,1995378,5,identity.distance_to_town,5.1 miles SW from Brookshire,present,,ok
+15,1995378,5,identity.api_number,42-473-31173,present,,ok
+15,1995378,5,identity.rrc_well_id,248823,present,,ok
+15,1995378,5,identity.purpose_of_filing,Initial Potential,present,,ok
+15,1995378,5,identity.completion_date,11/13/2008,present,,ok
+15,1995378,5,identity.pipeline_connection,"Kinder Morgan Tejas Pipeline, LP",present,,ok
+15,1995378,5,identity.logs_run,None,present,,ok
+15,1995378,5,completion.type_of_completion,,not_on_this_form,,ok
+15,1995378,5,completion.date_permit_issued,,not_on_this_form,,ok
+15,1995378,5,completion.drilling_commenced,,not_on_this_form,,ok
+15,1995378,5,completion.drilling_completed,,not_on_this_form,,ok
+15,1995378,5,completion.total_depth,,not_on_this_form,,ok
+15,1995378,5,completion.plug_back_depth,,not_on_this_form,,ok
+15,1995378,5,completion.top_of_pay,,not_on_this_form,,ok
+15,1995378,5,completion.elevation,,not_on_this_form,,ok
+15,1995378,5,completion.directional_survey,,not_on_this_form,,ok
+15,1995378,5,completion.drilling_contractor,,not_on_this_form,,ok
+15,1995378,5,test.date_of_test,,blank,,ok
