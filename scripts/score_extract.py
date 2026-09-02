@@ -132,20 +132,8 @@ def files_of(record_id: str):
 
 
 def run_prompt_hash() -> str:
-    """The prompt the scored run used, not whatever the prompt is today.
-
-    The result cache is keyed on (document, prompt). Once the prompt changes,
-    reading the cache with the current hash looks under a key nothing was
-    written to, and scoring a finished run would demand a fresh paid run.
-    """
-    smoke = ROOT / "data" / "extract" / "smoke.jsonl"
-    if smoke.exists():
-        for line in smoke.open():
-            if line.strip():
-                recorded = json.loads(line).get("prompt_hash")
-                if recorded:
-                    return recorded
-    return extractor.PROMPT_HASH
+    """The prompt the scored run used, not whatever the prompt is today."""
+    return extractor.recorded_prompt_hash(ROOT / "data" / "extract" / "smoke.jsonl")
 
 
 def extracted(doc) -> ex.CompletionReport | None:

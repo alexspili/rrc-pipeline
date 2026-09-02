@@ -384,12 +384,60 @@ def check_depths(report: CompletionReport) -> list[Finding]:
     return findings
 
 
+#: Boxes closer than this, in page fractions, count as touching or equal for
+#: the schematic-grid signature. Real reads jitter by more than half a percent
+#: of the page; a schematic emission agrees to the decimal.
+_GRID_TOLERANCE = 0.005
+
+#: Fewer abutting cells than this is not a signature. Two adjacent cells can
+#: genuinely share a printed rule on the form.
+_GRID_MIN_CELLS = 3
+
+
+def check_geometry(report: CompletionReport) -> list[Finding]:
+    """Flag table rows whose boxes are a schematic, not a reading.
+
+    Origin: DEFECTS #29. The fingerprint, measured on document 1: every cell
+    box in the row starts exactly where the previous one ends and all share
+    one identical y band. That is a model drawing an idealized form from its
+    layout prior. A genuine reading carries gaps and jitter.
+
+    Permanent output, not a diagnostic one-off: if a later prompt or model
+    change regresses geometry back into confabulation, nothing else here
+    would say so.
+    """
+    findings: list[Finding] = []
+    for name, rows in report.tables.items():
+        for index, row in enumerate(rows):
+            boxes = sorted((cell.region.box for cell in row.cells.values()
+                            if cell.region is not None),
+                           key=lambda b: b[0])
+            if len(boxes) < _GRID_MIN_CELLS:
+                continue
+            same_band = all(
+                abs(b[1] - boxes[0][1]) <= _GRID_TOLERANCE
+                and abs(b[3] - boxes[0][3]) <= _GRID_TOLERANCE
+                for b in boxes)
+            abutting = all(
+                abs(boxes[i][0] - boxes[i - 1][2]) <= _GRID_TOLERANCE
+                for i in range(1, len(boxes)))
+            if same_band and abutting:
+                findings.append(Finding(
+                    "geometry.schematic_grid", Severity.WARNING,
+                    f"{name} row {index + 1}: {len(boxes)} cell boxes abut "
+                    "edge to edge in one y band, the fingerprint of a "
+                    "layout drawn from prior rather than read from the page",
+                    tuple(f"{name}[{index}]" for _ in [0])))
+    return findings
+
+
 def validate(report: CompletionReport,
              counties: dict[str, str] | None = None,
              api_ft: str | None = None) -> list[Finding]:
     """Every rule, worst first. An empty list means nothing was checkable."""
     findings = (check_api_number(report, counties or {})
                 + check_api_against_index(report, api_ft)
-                + check_dates(report) + check_depths(report))
+                + check_dates(report) + check_depths(report)
+                + check_geometry(report))
     return sorted(findings, key=lambda f: (f.severity is Severity.WARNING,
                                            f.rule))

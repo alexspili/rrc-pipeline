@@ -9,6 +9,7 @@ to the API. Costs are measured, never assumed (DEFECTS #21).
 from __future__ import annotations
 
 import base64
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -123,6 +124,23 @@ Return only the JSON object.
 """
 
 PROMPT_HASH = pc.prompt_hash(SYSTEM)
+
+
+def recorded_prompt_hash(results: Path) -> str:
+    """The prompt hash a finished run recorded, else the current prompt's.
+
+    The result cache is keyed on (document, prompt), so reading a finished run
+    back with today's hash looks under a key nothing was written to the moment
+    the prompt moves on (DEFECTS #28). Three scripts were each carrying their
+    own copy of this; one copy, here, next to the hash it falls back to.
+    """
+    if results.exists():
+        for line in results.open():
+            if line.strip():
+                recorded = json.loads(line).get("prompt_hash")
+                if recorded:
+                    return recorded
+    return PROMPT_HASH
 
 
 @dataclass(frozen=True)

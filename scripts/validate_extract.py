@@ -34,13 +34,8 @@ OUT = ROOT / "data" / "extract" / "findings.jsonl"
 
 
 def run_prompt_hash() -> str:
-    """The prompt the run being validated used. See score_extract."""
-    for line in SMOKE.open():
-        if line.strip():
-            recorded = json.loads(line).get("prompt_hash")
-            if recorded:
-                return recorded
-    return extractor.PROMPT_HASH
+    """The prompt the run being validated used."""
+    return extractor.recorded_prompt_hash(SMOKE)
 
 
 def manifest():

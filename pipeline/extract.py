@@ -234,6 +234,24 @@ class CompletionReport:
             for row in rows:
                 yield from row.cells.values()
 
+    def named_values(self):
+        """(dotted name, Value) pairs in a stable order.
+
+        The order is load-bearing for the overlay tooling: the numbers drawn
+        on a page and the rows of the grading sheet are the same enumeration,
+        and they must never diverge.
+        """
+        yield "document.form_revision", self.form_revision
+        for group_name, group in (("identity", self.identity),
+                                  ("completion", self.completion),
+                                  ("test", self.test)):
+            for field, value in group.items():
+                yield f"{group_name}.{field}", value
+        for table, rows in self.tables.items():
+            for index, row in enumerate(rows):
+                for cell_name, cell in row.cells.items():
+                    yield f"{table}[{index}].{cell_name}", cell
+
     @property
     def located(self) -> int:
         return sum(1 for v in self.values() if v.region is not None)
