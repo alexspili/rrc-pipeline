@@ -42,6 +42,20 @@ These are four different facts about a field that has no value, and mixing any
 two of them measures nothing. This is the reason the schema has a status enum
 at all.
 
+**The two absent-for-a-reason statuses, defined precisely.** `not_on_this_form`
+means the form family and revision does not print this field anywhere: an era
+fact about the paper. `page_not_in_document` means the family does print it,
+on a page that is absent from this document: a completeness fact about the
+scan.
+
+"This form" means the **form family**, not the page in front of you. A W-2
+Section II does not print a lease name box, but Form W-2 does, so on a section
+page separated from its face the lease name is `page_not_in_document`.
+
+Added 2026-09-01 after the first scoring run found that reading rule 32 of 333
+times, in both directions (DEFECTS #27). It governs runs from here on; nothing
+already keyed was changed.
+
 **`blank` against `not_on_this_form`.** A 1975 Form W-2 has no API number field
 anywhere on it, which is `not_on_this_form`. A 1983 Form G-1 has an API number
 box that somebody left empty, which is `blank`. The test is simple: **is there

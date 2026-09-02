@@ -61,6 +61,13 @@ status is one of:
 
 The distinctions matter and you must not collapse them.
 
+not_on_this_form is a fact about the form family and revision: it does not
+print this field anywhere. page_not_in_document is a fact about this document:
+the family prints the field, on a page you were not given. "This form" always
+means the form family, never the page in front of you, so a W-2 Section II
+separated from its face has page_not_in_document for the lease name, because
+Form W-2 prints one even though Section II does not.
+
 A 1975 Form W-2 has no API number field anywhere on it. That is
 not_on_this_form, not blank.
 

@@ -40,6 +40,32 @@ above unchanged. Full working: `docs/modules/classify.md`.
 
 The distance between those two paragraphs is most of what this repository is for.
 
+**Extraction accuracy is reported by form revision, never blended.** The first
+measured run, scored against 405 hand-keyed fields over 15 documents:
+
+| Form revision | Fields | Status correct | Value correct |
+|---|---|---|---|
+| Rev. 4/1/83 | 108 | 100% | 86% |
+| Rev. 6/30/75 | 54 | 78% | 90% |
+| Rev. 7/5/66 | 108 | 77% | 86% |
+| Revision unreadable | 63 | 92% | 65% |
+
+A single blended figure would read 87% and would hide the thing that matters: the
+pipeline is close to perfect on 1983 paper and materially worse on 1966 and 1975
+paper, and worse again on the documents too degraded to date. The archive spans
+those decades, so an era-blind accuracy number describes a corpus nobody has.
+
+The comparison is stated rather than tuned. "Status correct" is agreement on
+whether a value is present and, when it is not, on why; on whether a value is
+simply there, agreement is 98%. "Value correct" counts dates as dates and depths
+as numbers.
+
+**The held-out document was worth fifteen points.** One of the 15 documents was
+the one the schema was designed against, and it was excluded from the headline
+before the labelling started, on a rule written down in advance. It scores 96%
+against the headline's 81%. Pre-registration is not a ceremony here; the
+difference between those two numbers is what it bought.
+
 **Era coverage is recovered by the model, not by the text layer.** These are microfilm scans of
 paper filed from the 1950s onward, and the form revision printed beside the form number is what
 dates a document. The embedded OCR recovers that revision on 62 of 238 completion faces, and every
@@ -110,6 +136,20 @@ iterate against. Tier 3 gates the merge and is the only tier that sees the held-
 
 The working rule is that a bug fix opens with a failing regression test. The commit history shows
 this in order, which is the only way to check it.
+
+### The commit habit turned out to be the backup
+
+A generator in this repo rewrites a labelling template at the end of every run. The run was
+repeated after the sheet had been keyed by hand, and it replaced 405 hand-keyed rows with blanks.
+
+They came back with one `git checkout`, because the labels had been committed as their own change
+the moment they validated, before anything else was touched. Nothing else was tangled up in that
+commit, so recovery was one command rather than an afternoon.
+
+The habit exists for reviewability: small commits in sequence are how somebody checks that the
+failing test really did come before the fix. That it also functions as a backup is not why it is
+there, and is the sort of thing you only find out once. The defect log records it, and the
+generator now refuses to overwrite a sheet that has any filled row rather than warning about it.
 
 ## What the history shows
 
