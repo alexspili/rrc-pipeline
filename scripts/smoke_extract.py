@@ -174,6 +174,13 @@ def main() -> None:
             out.write(json.dumps({
                 "page_id": doc["page_id"], "stratum": doc["stratum"],
                 "pages": list(doc["pages"]),
+                # Which prompt produced this. Without it a result file cannot
+                # be re-read once the prompt moves on, because the cache is
+                # keyed on (document, prompt) and the reader would look under
+                # the wrong key. Scoring and validation are meant to be
+                # repeatable for free; that only holds if they can find the
+                # run they are describing.
+                "prompt_hash": extractor.PROMPT_HASH,
                 "predicted_class": doc["predicted"],
                 "form_class": report.form_class if report else None,
                 "form_revision": (report.form_revision.raw
@@ -236,11 +243,14 @@ def write_template(written) -> None:
     TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
     with TEMPLATE.open("w", newline="") as fh:
         writer = csv.writer(fh)
-        writer.writerow(["seq", "record_id", "pages", "field", "value",
-                         "status", "note"])
+        # file_index because a record can hold five files and page 9 of one
+        # has nothing to do with page 9 of another. Absent from the first
+        # sheet, which had to be joined back to the run to recover it.
+        writer.writerow(["seq", "record_id", "file_index", "pages", "field",
+                         "value", "status", "note"])
         for seq, (doc, _) in enumerate(sorted(picked, key=lambda p: p[0]["page_id"]), 1):
             for name in fields:
-                writer.writerow([seq, doc["record_id"],
+                writer.writerow([seq, doc["record_id"], doc["file_index"],
                                  " ".join(map(str, doc["pages"])),
                                  name, "", "", ""])
     print(f"template: {TEMPLATE}  "

@@ -105,6 +105,25 @@ def truth():
     return docs
 
 
+def file_indexes() -> dict[tuple[str, tuple[int, ...]], int]:
+    """(record, pages) -> file index, from the run that produced the results.
+
+    The ground-truth sheet carries a record id and page numbers but not a file
+    index, and a record can hold five files. Records drawn from file 1 would
+    otherwise be hashed against file 0 and quietly miss the cache. The sheet
+    should carry the index; until it is redrawn, the run is the source.
+    """
+    smoke = ROOT / "data" / "extract" / "smoke.jsonl"
+    out = {}
+    if smoke.exists():
+        for line in smoke.open():
+            if line.strip():
+                row = json.loads(line)
+                record, index, _ = row["page_id"].rsplit("-", 2)
+                out[(record, tuple(row["pages"]))] = int(index)
+    return out
+
+
 def files_of(record_id: str):
     for line in MANIFEST.open():
         if line.strip() and json.loads(line)["record_id"] == record_id:
@@ -112,12 +131,30 @@ def files_of(record_id: str):
     sys.exit(f"{record_id} not in the manifest")
 
 
+def run_prompt_hash() -> str:
+    """The prompt the scored run used, not whatever the prompt is today.
+
+    The result cache is keyed on (document, prompt). Once the prompt changes,
+    reading the cache with the current hash looks under a key nothing was
+    written to, and scoring a finished run would demand a fresh paid run.
+    """
+    smoke = ROOT / "data" / "extract" / "smoke.jsonl"
+    if smoke.exists():
+        for line in smoke.open():
+            if line.strip():
+                recorded = json.loads(line).get("prompt_hash")
+                if recorded:
+                    return recorded
+    return extractor.PROMPT_HASH
+
+
 def extracted(doc) -> ex.CompletionReport | None:
-    pdf = RAW / doc["record_id"] / files_of(doc["record_id"])[0]["name"]
-    cache = classify.ResultCache(CACHE, prompt_hash=extractor.PROMPT_HASH)
+    index = file_indexes().get((doc["record_id"], doc["pages"]), 0)
+    pdf = RAW / doc["record_id"] / files_of(doc["record_id"])[index]["name"]
+    cache = classify.ResultCache(CACHE, prompt_hash=run_prompt_hash())
     result = extractor.extract_document(
-        None, pdf, doc["pages"], record_id=doc["record_id"], file_index=0,
-        cache=cache)
+        None, pdf, doc["pages"], record_id=doc["record_id"],
+        file_index=index, cache=cache)
     if not result.cached:
         sys.exit("a document was not in the cache; run `make smoke` first")
     return result.report

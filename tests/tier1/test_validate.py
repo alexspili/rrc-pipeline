@@ -261,3 +261,54 @@ def test_a_finding_reads_as_a_sentence():
                       "is not Brazoria (039)", ("identity.api_number",))
     assert str(finding).startswith("error: api.county_prefix: ")
     assert "identity.api_number" in str(finding)
+
+
+# ------------------------------------------- the archive's own index
+
+from pipeline.validate import (check_api_against_index, county_codes,  # noqa: E402
+                               parse_api_ft)
+
+
+def test_the_index_tsvector_yields_a_county_and_a_well():
+    """Real value from record 1501720's manifest entry."""
+    assert parse_api_ft("'03931674':2 '1l':3 'api':1") == ("039", "31674")
+    assert parse_api_ft("'api':1") is None
+    assert parse_api_ft("") is None
+    assert parse_api_ft(None) is None
+
+
+def test_the_county_map_is_learned_from_the_index():
+    assert county_codes([("BRAZORIA", "'03931674':2"),
+                         ("Brazoria", "'03900001':2"),
+                         ("CHAMBERS", "'07100002':2")]) == {
+        "BRAZORIA": "039", "CHAMBERS": "071"}
+
+
+def test_a_county_the_index_maps_two_ways_is_dropped():
+    """A map that quietly picks a winner produces confident false findings,
+    which is worse than producing none.
+    """
+    assert county_codes([("BRAZORIA", "'03931674':2"),
+                         ("BRAZORIA", "'30931674':2")]) == {}
+
+
+def test_the_transposition_is_caught_against_the_index_with_no_labels():
+    """The same catch as the county-name rule, from a different direction and
+    needing nothing but the archive's own metadata: no labels, no second form,
+    no model call.
+    """
+    findings = check_api_against_index(
+        doc(identity={"api_number": val("42-309-31674")}), "'03931674':2 '1l':3")
+    assert [f.rule for f in findings] == ["api.index_county"]
+    assert findings[0].severity is Severity.ERROR
+
+
+def test_the_matching_api_passes_against_the_index():
+    assert check_api_against_index(
+        doc(identity={"api_number": val("42-039-31674")}),
+        "'03931674':2 '1l':3") == []
+
+
+def test_a_record_with_no_indexed_api_yields_nothing():
+    assert check_api_against_index(
+        doc(identity={"api_number": val("42-039-31674")}), "'api':1") == []

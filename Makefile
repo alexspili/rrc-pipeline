@@ -2,7 +2,7 @@
 # requirements.txt are installed there (see SETUP.md step 5).
 PY := .venv/bin/python
 
-.PHONY: fetch test eval label label2 workbook truthbook arms probe census smoke score
+.PHONY: fetch test eval label label2 workbook truthbook arms probe census smoke score findings
 fetch:
 	@set -a; . ./.env; set +a; $(PY) fetch.py $(ARGS)
 test:
@@ -36,3 +36,6 @@ smoke:
 
 score:
 	$(PY) scripts/score_extract.py $(ARGS)
+
+findings:
+	$(PY) scripts/validate_extract.py $(ARGS)

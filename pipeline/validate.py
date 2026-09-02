@@ -146,6 +146,80 @@ def parse_date(raw: str | None) -> date | None:
     return None
 
 
+# ------------------------------------------- the archive's own index
+
+#: The searchable API number the archive keeps beside each record, as a
+#: Postgres tsvector: "'03931674':2 '1l':3 'api':1" is county 039, well
+#: 31674. Present on 202 of 202 records; the 8-digit token is on 176.
+_TSVECTOR_TOKEN = re.compile(r"'(\d{8})'")
+
+
+def parse_api_ft(raw: str | None) -> tuple[str, str] | None:
+    """(county code, unique) from the archive's index, or None.
+
+    This is metadata the archive typed independently of the paper, so it is a
+    cross-check the pipeline gets for nothing: no labels, no second form, no
+    model call. It is the machine-reproducible version of noticing by eye that
+    a G-5 reads 42-309-31674 where the G-1 reads 42-039-31674.
+    """
+    if not raw:
+        return None
+    match = _TSVECTOR_TOKEN.search(str(raw))
+    if not match:
+        return None
+    digits = match.group(1)
+    return digits[:3], digits[3:]
+
+
+def county_codes(records) -> dict[str, str]:
+    """County name to 3-digit code, learned from the archive's own index.
+
+    `records` is an iterable of (county name, api_ft). A county that the index
+    maps to more than one code is dropped rather than guessed at: a map that
+    quietly picks a winner would produce confident false findings, which is
+    worse than no finding at all.
+    """
+    seen: dict[str, set[str]] = {}
+    for county, api_ft in records:
+        parsed = parse_api_ft(api_ft)
+        if not parsed or not (county or "").strip():
+            continue
+        seen.setdefault(county.strip().upper(), set()).add(parsed[0])
+    return {name: next(iter(codes))
+            for name, codes in seen.items() if len(codes) == 1}
+
+
+def check_api_against_index(report: CompletionReport,
+                            api_ft: str | None) -> list[Finding]:
+    """The extracted API number against the archive's indexed one.
+
+    Label-free and available on every extracted document, which is what makes
+    the transposed-digit catch a pipeline output rather than something a human
+    happened to notice.
+    """
+    indexed = parse_api_ft(api_ft)
+    raw = _read(report.identity, "api_number")
+    if indexed is None or raw is None:
+        return []
+    api = parse_api(raw)
+    if api is None:
+        return []
+    findings = []
+    if api.county != indexed[0]:
+        findings.append(Finding(
+            "api.index_county", Severity.ERROR,
+            f"county code {api.county} on the page, {indexed[0]} in the "
+            "archive index",
+            ("identity.api_number",)))
+    if api.unique.lstrip("0") != indexed[1].lstrip("0"):
+        findings.append(Finding(
+            "api.index_unique", Severity.WARNING,
+            f"well number {api.unique} on the page, {indexed[1]} in the "
+            "archive index",
+            ("identity.api_number",)))
+    return findings
+
+
 # ------------------------------------------------------------------- access
 
 def _read(group: dict[str, Value], name: str) -> str | None:
@@ -311,9 +385,11 @@ def check_depths(report: CompletionReport) -> list[Finding]:
 
 
 def validate(report: CompletionReport,
-             county_codes: dict[str, str] | None = None) -> list[Finding]:
+             counties: dict[str, str] | None = None,
+             api_ft: str | None = None) -> list[Finding]:
     """Every rule, worst first. An empty list means nothing was checkable."""
-    findings = (check_api_number(report, county_codes or {})
+    findings = (check_api_number(report, counties or {})
+                + check_api_against_index(report, api_ft)
                 + check_dates(report) + check_depths(report))
     return sorted(findings, key=lambda f: (f.severity is Severity.WARNING,
                                            f.rule))

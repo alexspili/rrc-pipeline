@@ -1165,3 +1165,47 @@ protocol needs a sentence defining "this form" as the form family, and the
 prompt needs the same sentence, before the next run.
 **Pin:** none in code; this is a definition. The guard is that both numbers are
 always reported together.
+
+---
+
+## #28 — 2026-09-01 — Two readers assumed a record has one file
+
+**What happened:** wiring the validation rules over the extracted documents,
+two of the twenty missed the result cache. Records 1494847 and 1510666 were
+drawn from **file index 1**, and both `scripts/validate_extract.py` and
+`scripts/score_extract.py` opened `files["files"][0]`.
+
+The cache key is (document hash, prompt hash), so hashing the wrong PDF looks
+under a key nothing was written to. The reader would then have demanded a fresh
+paid run, or, with an API client in hand, quietly extracted and validated a
+document nobody had scored.
+
+**Why it was wrong:** the corpus has been documented since the recon session as
+202 records over 249 files, with one record holding five. The page id format,
+`record-file-page`, exists precisely because a record has files. Both scripts
+parsed the record out of that id and dropped the field beside it.
+
+**Measured footprint:** 2 of 20 documents in the validation pass. **Zero in the
+scoring pass**, because none of the fifteen ground-truth documents happens to
+come from a second file. That is luck, not design, and it is the kind of luck
+that turns into a wrong headline number the first time a redraw goes
+differently.
+
+**A related gap it exposed:** the ground-truth sheet carries a record id and
+page numbers and no file index, so the sheet alone does not identify its own
+documents. Page 9 of one file has nothing to do with page 9 of another.
+Recovering it meant joining the sheet back to the run that produced it.
+
+**Resolution:** both readers take the file index from the page id. The template
+generator now writes a `file_index` column, so the next sheet identifies its
+documents without needing the run. The current sheet is keyed and stays as it
+is; scoring joins back to the run to recover the index.
+
+Same commit fixed a second reader problem with the same shape: a results file
+that did not record which prompt produced it. The prompt changed after the run,
+and scoring a finished run then looked under the current prompt's key and found
+nothing. Results now carry their own `prompt_hash` and readers use the recorded
+one, so a finished run stays readable for free after the prompt moves on.
+**Pin:** pending. Both are script-level and the honest pin is a tier-2 test that
+reads a two-file record end to end, which needs the extraction fixtures that do
+not exist yet.
