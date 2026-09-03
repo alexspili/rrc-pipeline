@@ -47,7 +47,8 @@ sys.path.insert(0, str(ROOT))
 from pipeline import classify                     # noqa: E402
 from pipeline import extractor                    # noqa: E402
 from pipeline import pageclass as pc              # noqa: E402
-from pipeline.textlayer import fold, norm, page_words   # noqa: E402
+from pipeline.textlayer import (fold, line_run, norm,   # noqa: E402
+                                page_words)
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
 RAW = ROOT / "data" / "raw"
@@ -133,9 +134,9 @@ def main() -> None:
             for name, value in result.report.named_values():
                 if value.region is None:
                     continue
+                layer = words.get(value.region.page, [])
                 outcome, hit = classify_snap(
-                    value.raw or value.value or "", value.region.box,
-                    words.get(value.region.page, []))
+                    value.raw or value.value or "", value.region.box, layer)
                 counts[outcome] += 1
                 by_outcome[outcome] += 1
                 by_era[era][outcome] += 1
@@ -145,7 +146,13 @@ def main() -> None:
                     "record_id": record_id, "pages": doc["pages"],
                     "field": name, "raw": value.raw, "outcome": outcome,
                     "snapped_box": list(hit[:4]) if hit else None,
-                    "snapped_word": hit[4] if hit else None}) + "\n")
+                    "snapped_word": hit[4] if hit else None,
+                    # The matched word is the evidence; the printed run
+                    # around it is what a reviewer is shown. Written beside
+                    # snapped_box and never over it, and computed strictly
+                    # after the outcome is decided, so no counter can see it.
+                    "display_box": (list(line_run(layer, tuple(hit[:4])))
+                                    if hit else None)}) + "\n")
             per_doc.append((record_id, doc["pages"], era, counts))
 
     def rate(counts: Counter) -> str:

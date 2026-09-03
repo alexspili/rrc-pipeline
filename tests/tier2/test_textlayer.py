@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.textlayer import page_words
+from pipeline.textlayer import line_run, page_words
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw"
@@ -105,3 +105,121 @@ def test_the_ocr_drops_one_of_two_printed_instances_of_frio():
     assert 0.28 < centre_y < 0.33, (
         f"the surviving 'Frio' is at y {centre_y:.3f}; #32 recorded it in "
         "field 12 near 0.30, not in field 1 near 0.17")
+
+
+# ---------------------------------------------- the display band, on paper
+
+def _snapped(page: int):
+    """The graded text-layer boxes on one page of record 1493608."""
+    import csv
+    key = (ROOT / "data" / "labelset" / "overlay_probe"
+           / "KEY_do_not_open_until_graded.csv")
+    if not key.exists():
+        pytest.skip("answer key is git-ignored output, not present here")
+    rows = [r for r in csv.DictReader(key.open(encoding="utf-8-sig"))
+            if r["source"] == "text_layer" and int(r["page"]) == page]
+    return {r["field"]: tuple(float(v) for v in r["box"].split())
+            for r in rows}
+
+
+def _band_text(pdf, page, box):
+    words = page_words(pdf, page)
+    band = line_run(words, box)
+    inside = [w[4] for w in words
+              if band[0] <= (w[0] + w[2]) / 2 <= band[2]
+              and band[1] <= (w[1] + w[3]) / 2 <= band[3]]
+    return band, " ".join(inside)
+
+
+def test_the_display_band_contains_its_snapped_word_on_every_graded_box():
+    pdf = _pdf("1493608", 0)
+    if not pdf.exists():
+        pytest.skip(f"{pdf} is git-ignored corpus, not present here")
+    for page in (5, 6):
+        for field, box in _snapped(page).items():
+            band, _ = _band_text(pdf, page, box)
+            assert band[0] <= box[0] and band[2] >= box[2], field
+            assert band[1] <= box[1] and band[3] >= box[3], field
+
+
+def test_the_four_recoverable_partial_captures_are_now_whole():
+    """The grader wrote "only part of it is captured" five times. Four of the
+    five are recoverable from this text layer."""
+    pdf = _pdf("1493608", 0)
+    if not pdf.exists():
+        pytest.skip(f"{pdf} is git-ignored corpus, not present here")
+    page5, page6 = _snapped(5), _snapped(6)
+    _, operator = _band_text(pdf, 5, page5["identity.operator_name"])
+    assert "COMPANY" in operator                      # was SKELLY alone
+    _, address = _band_text(pdf, 5, page5["identity.operator_address"])
+    assert "Houston" in address                       # was 1938 alone
+    _, survey = _band_text(pdf, 5, page5["identity.location_survey"])
+    assert "Blk" in survey                            # was Maria alone
+    _, contractor = _band_text(pdf, 6,
+                               page6["completion.drilling_contractor"])
+    assert "INC" in contractor                        # was SERVICE alone
+
+
+def test_a_value_printed_on_two_lines_gets_one_lines_worth_of_band():
+    """Standing rule 9: the residue is pinned, not omitted.
+
+    `logs_run` reads "Cement Bond Log & Neutron" and then "Lifetime Log" on
+    the line below. The band recovers the first line and stops.
+
+    The reason matters and I got it wrong once before this test caught it. It
+    is not that "Lifetime" is missing from the text layer; it is there, at
+    cy 0.3308 against "Neutron" at cy 0.3154. That is 1.9 median word heights
+    apart, comfortably outside the same-line window, so the band is doing
+    exactly what it is specified to do.
+
+    This is a boundary of the single-line rule rather than a gap in the data,
+    and the two are worth telling apart: a data gap is unfixable from this
+    layer, while a multi-line value is a rule that could be extended and
+    deliberately was not. Extending it is out of scope permanently, and the
+    cost of not extending it is recorded here.
+    """
+    pdf = _pdf("1493608", 0)
+    if not pdf.exists():
+        pytest.skip(f"{pdf} is git-ignored corpus, not present here")
+    words = page_words(pdf, 5)
+    band, logs = _band_text(pdf, 5, _snapped(5)["identity.logs_run"])
+    assert "Neutron" in logs
+    assert "Lifetime" not in logs
+
+    lifetime = next(w for w in words if "ifetime" in w[4])
+    neutron = next(w for w in words if "Neutron" in w[4])
+    apart = abs((lifetime[1] + lifetime[3]) / 2
+                - (neutron[1] + neutron[3]) / 2)
+    assert apart > tl_line_tolerance(words), (
+        "the second line is now within the same-line window, so this is no "
+        "longer a two-line value and the entry needs revisiting")
+
+
+def tl_line_tolerance(words):
+    from pipeline.textlayer import LINE_TOL, line_height
+    return LINE_TOL * line_height(words)
+
+
+def test_the_wrong_field_snap_now_shows_a_reader_that_it_is_wrong():
+    """DEFECTS #32. The band cannot fix the match, and is not meant to. It
+    puts enough of the page around it that the caption disagrees visibly."""
+    pdf = _pdf("1493608", 0)
+    if not pdf.exists():
+        pytest.skip(f"{pdf} is git-ignored corpus, not present here")
+    _, text = _band_text(pdf, 5, _snapped(5)["identity.field_name"])
+    assert "8400" in text and "Frio" in text
+    assert "Bay City" not in text
+
+
+def test_the_band_never_sweeps_the_page_width():
+    """A band that runs into the next field is worse than the word it
+    replaced, because it looks like it knows something. Measured maximum on
+    this document is the survey field at 0.627, which is genuinely that wide.
+    """
+    pdf = _pdf("1493608", 0)
+    if not pdf.exists():
+        pytest.skip(f"{pdf} is git-ignored corpus, not present here")
+    for page in (5, 6):
+        for field, box in _snapped(page).items():
+            band, _ = _band_text(pdf, page, box)
+            assert band[2] - band[0] < 0.70, field
