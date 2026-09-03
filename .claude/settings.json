@@ -21,7 +21,18 @@
       "Bash(pnpm lint)",
       "Bash(git worktree list)",
       "Bash(gh run list *)",
-      "Bash(gh run view *)"
+      "Bash(gh run view *)",
+"Bash(python *)",
+"Bash(cd /Users/alex/Projects/rrc-pipeline; .venv/bin/python *)",
+"Bash(cd /Users/alex/Projects/rrc-pipeline; python3 *)",
+"Bash(make smoke)",
+"Bash(make score)",
+"Bash(make findings)",
+"Bash(make overlay)",
+"Bash(make snap)",
+"Bash(make gradebook)",
+"Bash(make truthbook)",
+"Bash(make label2)"
     ]
   }
 }
