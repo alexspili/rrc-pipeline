@@ -3,7 +3,9 @@
 Groups the pages of one completion report together, so extraction is given a
 document rather than a page.
 
-**Not built.** This file is the design record and the evidence for it, written
+**Built 2026-09-03**, pure domain in `pipeline/reassemble.py` with 21
+tier-1 tests. The identity reader that fills its input is not built and its
+corpus run is gated. This file is the design record and the evidence for it, written
 2026-09-01 after three defect entries converged on the same conclusion. It
 replaces the recommendation in classify.md, which was written before the
 evidence and got one word wrong.
@@ -124,23 +126,33 @@ one document and pages 7 and 9 do not. That case is the first test to write.
 All pins are pending: this module is designed and not built, and the pending
 marker is replaced with a test path in the commit that builds it.
 
+R0. Comparison is exact after normalising, never fuzzy.
+    Origin: approved 2026-09-03 on the physical argument that variance
+    within one document is rare, because a face and its section were typed
+    by the same person in one sitting. That is a hypothesis, and the
+    contradicted-but-agreeing list is the measurement that tests it. Fuzzy
+    matching stays out permanently: cross-document name drift is the
+    disagreement detector's job, and a similarity judgement that pairs two
+    different wells is the one failure this module must never make.
+    Pinned by: tests/tier1/test_reassemble.py::test_comparison_is_exact_after_normalising_and_never_fuzzy
+
 R1. Pairing looks in both directions.
     Origin: DEFECTS #25. The placeholder looked only forward, and three of
     the fifteen ground-truth documents turned out to be sections whose face
     precedes them. A forward-only heuristic has no way to notice.
-    Pinned by: pending, on record 1495193 pages 7 and 8.
+    Pinned by: tests/tier1/test_reassemble.py::test_a_section_before_its_face_groups_with_it_and_not_with_the_next
 
 R2. Position narrows the candidate list. Agreement decides.
     Origin: DEFECTS #25, and the stage-2 measurement behind it: roughly two
     in five predicted faces are not faces, so "start from a face and look
     forward" starts from the wrong page a large fraction of the time.
-    Pinned by: pending, on record 1511465, three faces and one section.
+    Pinned by: tests/tier1/test_reassemble.py::test_agreement_decides_and_position_does_not
 
 R3. Candidates never cross a file boundary within a record.
     Origin: DEFECTS #28. Two readers assumed a record has one file; the
     corpus is 202 records over 249 files and one record holds five. Page 3 of
     one file has nothing to do with page 3 of another.
-    Pinned by: pending.
+    Pinned by: tests/tier1/test_reassemble.py::test_candidates_never_cross_a_file_boundary
 
 R4. A page below the agreement threshold stays unmatched, and unmatched pages
     are reported rather than dropped.
@@ -148,17 +160,34 @@ R4. A page below the agreement threshold stays unmatched, and unmatched pages
     classifier and at the geometry layer. A page forced onto the nearest face
     is the extraction-layer version of guessing between G-1 and W-2 on an
     unreadable form number.
-    Pinned by: pending.
+    Pinned by: tests/tier1/test_reassemble.py::test_an_unmatched_page_is_reported_and_never_dropped
 
 R5. One page attaches to at most one face.
-    Pinned by: pending.
+    Pinned by: tests/tier1/test_reassemble.py::test_one_page_never_attaches_to_two_faces
 
 R6. The count of unattached pages is reported output, never a number to
     minimise.
     Origin: a wrong attachment puts one well's casing record under another
     well's identity, and every downstream check would then be validating a
     document that never existed.
-    Pinned by: pending.
+    Pinned by: tests/tier1/test_reassemble.py::test_an_unmatched_page_is_reported_and_never_dropped
+
+R7. A contradiction rejects a pair, and a tie attaches to nothing.
+    Origin: approved 2026-09-03. Two pages naming different operators are
+    not one document whatever else agrees, and breaking a tie by nearness
+    would put position back in as the decider, which R2 forbids.
+    Pinned by: tests/tier1/test_reassemble.py::test_a_contradiction_rejects_a_pair_however_much_else_agrees
+    and ::test_a_tie_between_two_faces_attaches_to_neither
+
+R8. Two agreeing fields are required, and total depth may raise a score but
+    never reject a pair.
+    Origin: one agreement is ordinary coincidence, since every well on a
+    lease shares a lease name and well numbers repeat across leases. Total
+    depth is a completion field a section repeats, and a face and its
+    section can legitimately differ where one carries a correction. The
+    threshold of two is pre-registered and measured, not settled.
+    Pinned by: tests/tier1/test_reassemble.py::test_one_agreeing_field_is_not_enough
+    and ::test_total_depth_can_never_reject_a_pair
 
 ## RETIRED
 
