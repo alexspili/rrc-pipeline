@@ -407,3 +407,79 @@ snaps.
 Document 2's completion date and document 1's type of completion stay open
 and close in this hour, on a separate sheet. They are a reading question and
 this sheet is blinded; folding them together would break the blind.
+
+## Box grading, stage four: does a region land when it is asserted
+
+Written 2026-09-03, before any box was drawn, after the template probe was
+already decided DEAD on coverage. This sitting does not reopen that verdict.
+It answers the one question the coverage gate could not: **when a mechanism
+does assert a region, is the region on the field?**
+
+Two mechanisms are graded and they are judged by different rules, because
+they claim different things.
+
+### The 33 boxes
+
+Record 1493608, pages 5 and 6, the same document as stage two.
+
+- **18 template regions**, every box the Rev. 7/5/66 template asserts. 12
+  scalars and 6 table cells.
+- **15 snap boxes**, the ones the layered join counts as located on this
+  document. These have never been graded. The join's 54.3% has rested on the
+  assumption that a unique text match is a correct one, and this is the first
+  time that assumption is checked by eye.
+
+Sheet at `tests/fixtures/box_grades_probe.csv`, overlays under
+`data/labelset/overlay_probe/`. Grades unchanged: `hit`, `near`, `miss`,
+same definitions as stage two, and `handwritten` and `note` as before.
+
+### The blinding, and exactly how far it goes
+
+Rows are shuffled and the sheet does not name the mechanism. The field name
+and the extracted value are shown, because "does this box land on its field"
+is unanswerable without them.
+
+**Two things leak the source and are stated rather than hidden.** A snap box
+is a single word box and a template region is a form cell, so they differ in
+size systematically. And 7 of the 33 fields appear twice, once from each
+mechanism, so a repeated field is visibly a pair. What the blind still buys
+is that within a pair, and across the sheet, the grader cannot tell which of
+two boxes is the template's. That is the bias the shuffle is for.
+
+### Rule one, the template: hit + near, over 18
+
+`near` counts, as it did in stage two, because the region is a locator for a
+viewer that zooms to it.
+
+| Outcome | Verdict |
+|---|---|
+| 14 or more of 18 | The cell rule lands. The template's failure is anchor inventory only, which is the Textract escalation's trigger signature, and the escalation opens for decision. |
+| 10 or fewer of 18 | The layout assumption fails too. Textract stays shut permanently on this argument and the template direction is closed rather than parked. |
+| 11 to 13 | Inconclusive at this n. Stays shut. No escape. |
+
+14 of 18 is 77.8%, Wilson 95% [54.8%, 91.0%]. At n = 18 the interval is wide
+and the instrument is coarse on purpose: it has to separate "mostly lands"
+from "mostly misses", not measure a rate.
+
+**Reported beside the pooled verdict, and fixed here before grading: the
+scalar rate over 12 and the table-cell rate over 6, separately.** The even-row
+band is the one declared guess in the mechanism. Scalars landing while cells
+miss is a different finding from a uniform miss, and pooling the two would
+hide which of them happened.
+
+### Rule two, the snap tier: hit alone, over 15
+
+**`near` is failure for a snap.** The other tiers offer an approximate
+locator and say so. A snapped box claims a measured word position, so a box
+that sits near the value is a box on the wrong word, and grading it the same
+way as a region locator would credit it for the thing it claims not to need.
+
+- **12 or more hits of 15**: the snap tier stands as measured geometry.
+- **Fewer than 12**: snap demotes to a disambiguation prior only, it stops
+  being a source of asserted geometry pending diagnosis, and the 54.3%
+  comparator on this document is restated with the snapped boxes counted at
+  their measured hit rate rather than at 100%.
+
+That second branch would move a number this repo has been quoting, which is
+why the restatement is written down before the grades exist rather than
+argued about afterwards.

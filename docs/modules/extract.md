@@ -313,6 +313,39 @@ would not fix it. That question is answerable in one small sitting on
 33 boxes, and it needs its own pre-registered rule before anybody looks.
 Until it is answered, the escalation stays shut.
 
+### Registration residual identifies a revision, and it outlives the template
+
+**Measured 2026-09-03, and recorded as a live finding rather than as a piece
+of the dead mechanism.** It was built to find template fuel and it turned out
+to answer a different question.
+
+Take a seed page of a known revision. For every candidate page, match the
+tokens that are unique on both, fit an affine, and take the median residual.
+Same-revision pages fit. Other revisions do not, because their fields are in
+different places.
+
+On the Rev. 7/5/66 W-2 face, over 165 census-classified candidate pages:
+
+- 24 pages sit at a median residual **under 0.005** page-fractions.
+- The next candidate is at **0.040**, nearly an order of magnitude away.
+- Of the 12 whose record the smoke run recorded a revision for, **11 agree**.
+
+The gap is the finding. This is not a score that needs a tuned threshold; it
+is two populations with clear air between them.
+
+**Why it matters after the template died.** The largest bucket in the graded
+set is the one with no revision at all: 45 of the 110 stage-two boxes, 41%,
+are the era-unreadable document, and 6 of the 20 smoke documents, 30%, carry
+no `form_revision`. That bucket exists because the model could not read a form
+number off degraded paper. Reading a form number is not the only way to know
+which form you are holding. The layout is also an identifier, it is measured
+rather than transcribed, and it does not care that the masthead is illegible.
+
+Not built, and not proposed here. Recorded because it is cheap, it addresses
+the bucket nothing else addresses, and it survives independently of every
+geometry mechanism in this file. The same measurement would also give the
+classifier a second opinion that costs no tokens.
+
 ### What the probe leaves
 
 Standing rule 9, on the probe's own work.
@@ -378,8 +411,28 @@ is, unless Textract also runs at runtime, which is the thing being refused.
 Better templates do not fix unreadable pages.
 
 The comparison it now has to win has also moved. Textract's case was against
-the snap residue. If the template probe passes, its case is against the
-**template** residue, which is smaller.
+the snap residue. After the template probe, its case is against the
+**template** residue.
+
+### The escalation's own gate, pre-committed 2026-09-03
+
+Fixed before the stage-four grading, so that a decision to open an AWS
+account cannot be made by whoever is enthusiastic on the day.
+
+If and only if stage four returns 14 or more of 18, the escalation runs as
+**another ceiling-gated step, not as an adoption**:
+
+1. `DetectDocumentText` on a few clean instances of Rev. 7/5/66 **only**.
+   Not the corpus, not other revisions, not a full pass.
+2. Rebuild the canonical anchor table from those words.
+3. Recompute the assertable ceiling on the same 35 graded boxes, which costs
+   nothing and needs nobody's eyes.
+4. **Grading follows only if the new ceiling clears the original bar of 26 of
+   35.** Below that, the step ends there and the account never opens.
+
+The account opens on that number or not at all. The same shape as the probe
+that killed the template: the cheap gate runs first, and human time is spent
+only on an outcome that is still live.
 
 ## Cost is output, not pixels
 

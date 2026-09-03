@@ -89,6 +89,13 @@ must be defensible line by line in an interview.
    all 147 were still leaks; #15's "actual" counts were still over, which
    #16 found the same day; and the general form of the W-15 header rule
    was caught only because its residue was measured before it shipped.
+10. An abstention rate is not evidence until the abstentions are read one
+   by one. "The paper will not support this" and "my rule is wrong" produce
+   identical output, and only one of them is a finding. Origin: DEFECTS #30.
+   The mirror of #29: there the model was confidently wrong and the shape
+   check called it well-formed, here the mechanism was wrongly silent and
+   the silence looked like integrity. Confidently wrong and wrongly silent
+   are one pair, and a measurement is defended against both.
 
 ## Commit message format
 
