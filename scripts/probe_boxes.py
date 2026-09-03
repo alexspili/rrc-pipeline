@@ -302,6 +302,12 @@ def write_sheet(pdf, rows, asserted, snaps, seed: int) -> None:
         entries.append((page, tuple(snap["snapped_box"]), field,
                         snap.get("raw") or "", "text_layer"))
 
+    # First statement of the destructive half, not the last one (DEFECTS
+    # #34). The unlink loop below removes the answer key, which lives under
+    # data/ and is git-ignored, so unlike the sheet it has no commit to come
+    # back from. A guard belongs at the top of the operation it protects.
+    refuse_if_filled(PROBE_SHEET, "grade")
+
     random.Random(seed).shuffle(entries)
     PROBE_OUT.mkdir(parents=True, exist_ok=True)
     for stale in PROBE_OUT.glob("*"):
@@ -353,7 +359,6 @@ def write_sheet(pdf, rows, asserted, snaps, seed: int) -> None:
             + "\n".join(legend) + "\n")
         print(f"  {stem}.png  {len(items):3d} boxes")
 
-    refuse_if_filled(PROBE_SHEET, "grade")
     with PROBE_SHEET.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(sheet_rows[0]))
         writer.writeheader()
