@@ -390,10 +390,19 @@ def score_sheet() -> None:
         return
 
     buckets = defaultdict(Counter)
+    notes = defaultdict(Counter)
     for row in key:
-        grade = graded[row["box_num"]]["grade"].strip()
+        entry = graded[row["box_num"]]
+        grade = entry["grade"].strip()
         source = row["source"]
         buckets[source][grade] += 1
+        note = entry.get("note", "").lower()
+        if grade == "hit" and "on label" in note:
+            notes[source]["on_label"] += 1
+        if "x outside" in note:
+            notes[source]["x_outside"] += 1
+        if "unsure" in note:
+            notes[source]["unsure"] += 1
         if source.startswith("template"):
             buckets["template_all"][grade] += 1
 
@@ -427,6 +436,9 @@ def score_sheet() -> None:
     else:
         verdict = "inconclusive at this n. Stays shut. No escape."
     print(f"  -> {verdict}")
+    flags = notes["template"] + notes["template_row"]
+    if flags:
+        print(f"  notes: " + ", ".join(f"{k} {v}" for k, v in flags.items()))
 
     snap = buckets["text_layer"]
     hits = snap["hit"]
@@ -434,6 +446,16 @@ def score_sheet() -> None:
     print("\nRULE TWO, the snap tier: hit alone over 15")
     print(f"  {hits:2d}/{total_snap:2d} hits  "
           f"(near {snap['near']}, miss {snap['miss']})")
+    on_label = notes["text_layer"]["on_label"]
+    if on_label:
+        print(f"  of those hits, {on_label} landed on the printed label "
+              f"rather than the value.")
+        print(f"  A snap claims a measured word position, so that is a "
+              f"different kind of hit: {hits - on_label}/{total_snap} are on "
+              f"the value itself.")
+        print("  Reported, not applied: the threshold was pre-registered "
+              "against stage two's definition and is not moved after the "
+              "fact.")
     if hits >= 12:
         print("  -> the snap tier stands as measured geometry")
     else:

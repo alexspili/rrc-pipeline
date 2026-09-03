@@ -439,6 +439,56 @@ Sheet at `tests/fixtures/box_grades_probe.csv`, overlays under
 git-ignored, and is read by the scorer and not by you. Grades unchanged: `hit`, `near`, `miss`,
 same definitions as stage two, and `handwritten` and `note` as before.
 
+### How to grade this sitting
+
+Written 2026-09-03, before any grade exists. Stage two's definitions still
+govern and are not restated; this covers what stage two does not.
+
+**The loop.** Open both overlay PNGs. Each has a `.txt` sidecar listing
+`number  field  value`, and the sheet's `box_num` is that same number. Work
+page by page off the image, find the row with that number, fill `grade`.
+Order does not matter and the sheet is shuffled on purpose, so do not try to
+read a pattern out of the sequence.
+
+**The three grades are stage two's, unchanged:** `hit` if the box overlaps
+the written value **or its printed field label**, `near` if it misses but
+sits within about one field-row, `miss` anywhere else. Do not apply a
+different standard to a big box than to a small one. Some of these regions
+are much larger than a stage-two box and the difference is measured and
+handled in the reporting below, not by you tightening your eye.
+
+**Grade each box on its own.** Seven fields appear twice, once per mechanism.
+They are two independent judgements about two different rectangles. Do not
+reconcile them and do not carry your first answer to the second.
+
+**A box that lands on the printed label rather than on the value is still a
+`hit`,** because that is what stage two's definition says and the threshold
+was pre-registered against that definition. But **write `on label` in the
+note** when it happens. For one of the two mechanisms that distinction
+matters a great deal and for the other it does not, and the note is what lets
+the scorer report it without the threshold having been moved after the fact.
+The rule is not being changed here; a second number is being collected
+alongside it.
+
+**Checkboxes.** `type_of_completion` and `purpose_of_filing` are option rows.
+`hit` if the box covers the ticked option or the option labels. If the region
+covers the options but the X itself falls outside it, that is still a `hit`
+by the definition, and write `X outside` in the note. Stage two saw one
+missed X and it was recorded rather than fixed at n=1; this is how the second
+instance would be visible.
+
+**`handwritten`.** Every value on this document is typed, so expect `n`
+throughout. Put `y` if you find otherwise; it would be a finding, since the
+whole era gradient has been argued on typed print.
+
+**If you cannot tell,** grade your best call and write `unsure` in the note.
+Accuracy gets reported with and without noted rows, same as everywhere else
+in this protocol.
+
+**Finish the sheet or leave it empty.** The scorer refuses a partly graded
+sheet and a tier-2 test fails on one, because a rule applied to 20 of 33
+boxes is not the rule that was pre-registered.
+
 ### The blinding, and exactly how far it goes
 
 Rows are shuffled and the sheet does not name the mechanism. The field name
