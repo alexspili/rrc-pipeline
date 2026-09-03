@@ -246,3 +246,10 @@ def test_a_document_records_which_fields_bought_each_attachment():
     documents, _ = ra.group([face, section])
     assert documents[0].evidence == (
         (8, ("operator_name", "lease_name", "completion_date")),)
+
+
+def test_the_identity_reader_reads_exactly_the_fields_reassembly_compares():
+    """Two modules, one vocabulary. A field added to one and not the other
+    would be compared as unknown forever and nobody would see it."""
+    from pipeline.identity import FIELDS
+    assert set(FIELDS) == set(ra.IDENTITY_FIELDS) | set(ra.BONUS_FIELDS)

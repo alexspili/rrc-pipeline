@@ -342,7 +342,24 @@ first fix for it was defeated by one space in the OCR. 16 is open.
      guarded. Limitations with measured rates: extract.md.
    - Nothing on this thread is open. Do not reopen it without a new
      measurement and a new gate.
-7. Reassembly is unbuilt and is now the biggest known gap. It must pair in
+7. Reassembly BUILT 2026-09-03, pure domain, `pipeline/reassemble.py`, 22
+   tier-1 tests, DEFECTS #25's pin discharged. Pairs in both directions and
+   settles by agreement on identity fields, never by position. Exact after
+   normalising, never fuzzy; a contradiction rejects a pair; a tie attaches
+   to nothing; candidates never cross a file boundary. Threshold is 2
+   agreeing fields, PRE-REGISTERED not settled: the measurement that decides
+   it is docs/labeling-protocol-reassemble.md, against the 15 ground-truth
+   documents and the 5 worked cases, with the contradicted-but-agreeing list
+   read by eye before the semantics are called final.
+   The census number behind the design: of the 249 files, 112 hold a
+   completion face and 64 of those hold more than one; the largest holds
+   fifteen. So "which report does this page belong to" is the ordinary case
+   and nothing based on nearness can answer it.
+   `pipeline/identity.py` reads the six fields it compares. Cost MEASURED
+   2026-09-03: $0.0074/page, 166 output tokens, so $2.01 standard or $1.01
+   batched over the 274 candidate pages. That run is GATED and lands with
+   the full extraction run as one spend decision.
+   Superseded by the above, kept for its reasoning: reassembly is unbuilt and is now the biggest known gap. It must pair in
    BOTH directions and settle candidates by identity-field agreement, not
    by position: the smoke pairing looked only forward and three of fifteen
    ground-truth documents turned out to be sections without their face.

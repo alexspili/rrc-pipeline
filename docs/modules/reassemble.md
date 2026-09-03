@@ -121,6 +121,41 @@ count of unattached pages is a reported metric, not a defect to be minimised.
 DEFECTS #25 carries the pending pin: record 1495193, pages 7 and 8 resolve to
 one document and pages 7 and 9 do not. That case is the first test to write.
 
+## Cost, MEASURED 2026-09-03
+
+`scripts/probe_identity.py`, three pages on `claude-sonnet-5` at $2/$10 per
+1M tokens. Approved as a probe; the full run is gated.
+
+| | |
+|---|---|
+| input | 2,846 tokens per page |
+| output | **166 tokens per page** |
+| cost | $0.0074 per page standard, $0.0037 batched |
+| 274 candidate pages | **$2.01 standard, $1.01 batched** |
+
+The output figure is the point. The full extractor averages 5,114 output
+tokens on a document and 85% of its cost is output, so a six-field read is
+roughly thirty times smaller on the half of the bill that matters. That is
+the whole argument for a separate reader rather than the v1 schema with
+fields switched off, and it is now measured rather than argued.
+
+The run stays gated and lands with the full extraction run as one spend
+decision, after reassembly passes the ground-truth measurement.
+
+**One observation from the three probe pages, recorded because it is the
+first evidence about the exact-matching hypothesis and not because it settles
+anything.** Two pages of record 1493399 came back with the operator as
+`Crawford Energy, Inc.` and `Crawford Energy. Inc.`, a comma against a full
+stop, which normalisation folds to one string as designed. Their lease names
+came back as `TRIOLO # 1` and `C.A. Triola Unit`, which normalisation does
+not fold and which the veto would reject as a contradiction.
+
+Whether those two pages are one document is unknown; they may be two wells on
+one lease, which is the veto working. That is exactly the ambiguity the
+contradicted-but-agreeing list exists to put in front of a human, and at n=1
+it is an observation to watch rather than a finding. It does say the list
+will not be empty.
+
 ## Rules
 
 All pins are pending: this module is designed and not built, and the pending
