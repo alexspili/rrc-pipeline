@@ -14,6 +14,13 @@ of letting a FileNotFoundError surface from three frames down.
 The downscale converts to grayscale before resizing. The source is 1-bit; a
 nearest-neighbour resample at ~0.48x drops whole strokes off a scanned form,
 and the failure looks like a bad classification rather than a bad image.
+
+It has a second job, added 2026-09-03: drawing numbered provenance boxes on a
+page so a human can grade whether each one landed on its field. That is a
+diagnostic rather than a model input, but it starts from the same page image
+and it belongs beside it. It lives here rather than in the two scripts that
+need it because it was in both of them, separately, and a defect in one copy
+(DEFECTS #33) is a defect in a copy nobody is looking at.
 """
 
 from __future__ import annotations
@@ -25,7 +32,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from pipeline import pageclass as pc
 
@@ -145,6 +152,116 @@ def render_page_png(pdf: Path, page: int,
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
     return buf.getvalue(), (img.width, img.height)
+
+
+# --------------------------------------------------------------------- overlay
+
+#: Outline colours, cycled by the number printed on the box. Red is first, so
+#: a page whose boxes do not collide looks exactly as it did before.
+BOX_COLOURS = ((220, 0, 0), (0, 90, 220), (0, 150, 60),
+               (200, 110, 0), (140, 0, 190))
+
+#: Label positions, tried in this order. The first is the old behaviour, so
+#: an uncontested label does not move and the diff against existing overlays
+#: is empty wherever nothing collided.
+LABEL_CANDIDATES = ("above_left", "below_left", "above_right", "below_right",
+                    "left_outside", "right_outside", "inside_left")
+
+
+def box_colour(number: int) -> tuple[int, int, int]:
+    """Keyed to the number a grader sees, and to nothing else.
+
+    Never to size, source or draw order. On a blinded sheet a text-layer box
+    is one word and a template region is a form cell, so a colour keyed to
+    size would encode the mechanism and end the blind through the back door.
+    """
+    return BOX_COLOURS[(number - 1) % len(BOX_COLOURS)]
+
+
+def overlay_order(boxes):
+    """Largest first, ties by number, so a nested small box lands on top.
+
+    Origin: DEFECTS #33. Box 1 was a word inside box 15's form cell, drawn
+    first and then painted over, and the grader said he could not see it and
+    graded it on an assumption.
+    """
+    def area(box):
+        # Rounded, or the tie-break never fires: two boxes built to be the
+        # same size differ in the seventeenth decimal and the number ordering
+        # is silently unreachable. Nine places is far finer than a pixel on
+        # any page this draws.
+        return round((box[2] - box[0]) * (box[3] - box[1]), 9)
+
+    return sorted(boxes, key=lambda item: (-area(item[1]), item[0]))
+
+
+def _overlap(a, b) -> bool:
+    return not (a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1])
+
+
+def place_label(box, size, canvas, taken, pad: int = 2):
+    """Top-left pixel for one number chip. Always inside the canvas.
+
+    Pure integer rectangle arithmetic, no PIL, so the decision this defect
+    was about is tier-1 testable while the painting is not. The caller
+    measures the glyph and passes the size in.
+    """
+    width, height = size
+    canvas_w, canvas_h = canvas
+    left, top, right, bottom = box
+    options = {
+        "above_left": (left, top - height - pad),
+        "below_left": (left, bottom + pad),
+        "above_right": (right - width, top - height - pad),
+        "below_right": (right - width, bottom + pad),
+        "left_outside": (left - width - pad, top),
+        "right_outside": (right + pad, top),
+        "inside_left": (left + pad, top + pad),
+    }
+    first = None
+    for name in LABEL_CANDIDATES:
+        x, y = options[name]
+        x = min(max(x, 0), max(0, canvas_w - width))
+        y = min(max(y, 0), max(0, canvas_h - height))
+        chip = (x, y, x + width, y + height)
+        if first is None:
+            first = (x, y)
+        if not any(_overlap(chip, other) for other in taken):
+            return x, y
+    return first
+
+
+def draw_numbered_boxes(image, boxes, *, font=None, stroke=None):
+    """Draw numbered rectangles on a page image, in place.
+
+    `boxes` is (number, box in page fractions). Returns the chip rectangle
+    actually used for each number, so a caller can assert on placement.
+    """
+    width, height = image.size
+    if font is None:
+        try:
+            font = ImageFont.load_default(size=max(22, width // 60))
+        except TypeError:                      # older Pillow
+            font = ImageFont.load_default()
+    if stroke is None:
+        stroke = max(2, width // 700)
+    draw = ImageDraw.Draw(image)
+    taken, placed = [], []
+    for number, box in overlay_order(boxes):
+        pixels = (int(box[0] * width), int(box[1] * height),
+                  int(box[2] * width), int(box[3] * height))
+        colour = box_colour(number)
+        draw.rectangle(pixels, outline=colour, width=stroke)
+        label = str(number)
+        left, top, right, bottom = font.getbbox(label)
+        size = (right - left + 6, bottom - top + 4)
+        x, y = place_label(pixels, size, (width, height), taken)
+        chip = (x, y, x + size[0], y + size[1])
+        draw.rectangle(chip, fill=(255, 255, 255), outline=colour)
+        draw.text((x + 3 - left, y + 2 - top), label, fill=colour, font=font)
+        taken.append(chip)
+        placed.append((number, chip))
+    return placed
 
 
 # ------------------------------------------------------------------------ text

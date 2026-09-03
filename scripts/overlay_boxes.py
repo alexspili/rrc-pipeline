@@ -29,8 +29,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from PIL import ImageDraw, ImageFont               # noqa: E402
-
 from pipeline import classify                     # noqa: E402
 from pipeline import extractor                    # noqa: E402
 from pipeline import pageclass as pc              # noqa: E402
@@ -124,22 +122,11 @@ def main() -> None:
                 cap = round(max(width, height) * MIN_SHORT_EDGE / short)
             image = render.downscale_image(image, cap=cap)
             width, height = image.size
-            draw = ImageDraw.Draw(image)
-            try:
-                font = ImageFont.load_default(size=max(22, width // 60))
-            except TypeError:            # older Pillow
-                font = ImageFont.load_default()
-
-            legend = []
-            for number, name, value in entries:
-                left, top, right, bottom = value.region.box
-                box = (int(left * width), int(top * height),
-                       int(right * width), int(bottom * height))
-                draw.rectangle(box, outline=(220, 0, 0),
-                               width=max(2, width // 700))
-                draw.text((box[0] + 3, max(0, box[1] - font.size - 2)),
-                          str(number), fill=(220, 0, 0), font=font)
-                legend.append(f"{number:3d}  {name:36s} {value.raw!r}")
+            render.draw_numbered_boxes(
+                image, [(number, value.region.box)
+                        for number, _, value in entries])
+            legend = [f"{number:3d}  {name:36s} {value.raw!r}"
+                      for number, name, value in entries]
 
             mark = "GRADED_" if graded else ""
             stem = f"{mark}{record_id}_f{file_index}_p{page:03d}"

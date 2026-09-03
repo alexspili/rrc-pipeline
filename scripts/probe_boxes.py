@@ -41,8 +41,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from PIL import ImageDraw, ImageFont              # noqa: E402
-
 from pipeline import classify                     # noqa: E402
 from pipeline import extractor                    # noqa: E402
 from pipeline import formlabels as fl             # noqa: E402
@@ -338,20 +336,11 @@ def write_sheet(pdf, rows, asserted, snaps, seed: int) -> None:
             cap = round(max(width, height) * MIN_SHORT_EDGE / short)
         image = render.downscale_image(image, cap=cap)
         width, height = image.size
-        draw = ImageDraw.Draw(image)
-        try:
-            font = ImageFont.load_default(size=max(22, width // 60))
-        except TypeError:
-            font = ImageFont.load_default()
-        legend = []
-        for number, box, field, raw in sorted(items):
-            pixels = (int(box[0] * width), int(box[1] * height),
-                      int(box[2] * width), int(box[3] * height))
-            draw.rectangle(pixels, outline=(220, 0, 0),
-                           width=max(2, width // 700))
-            draw.text((pixels[0] + 3, max(0, pixels[1] - font.size - 2)),
-                      str(number), fill=(220, 0, 0), font=font)
-            legend.append(f"{number:3d}  {field:44s} {raw!r}")
+        render.draw_numbered_boxes(
+            image, [(number, box) for number, box, _, _ in
+                    [(n, b, f, r) for n, b, f, r in sorted(items)]])
+        legend = [f"{number:3d}  {field:44s} {raw!r}"
+                  for number, box, field, raw in sorted(items)]
         stem = f"PROBE_{TARGET[0]}_f{TARGET[1]}_p{page:03d}"
         image.save(PROBE_OUT / f"{stem}.png")
         (PROBE_OUT / f"{stem}.txt").write_text(

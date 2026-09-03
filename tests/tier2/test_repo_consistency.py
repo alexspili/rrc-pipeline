@@ -232,3 +232,18 @@ def test_no_stage_decides_an_outcome_outside_a_marked_rule():
     assert not offenders, (
         "a sentence decides an outcome outside a marked DECISION RULE:\n"
         + "\n".join(f"  stage {s}: {l}" for s, l in offenders))
+
+
+def test_the_overlay_scripts_carry_no_draw_loop_of_their_own():
+    """Origin: DEFECTS #33. The bug lived in two near-identical copies of a
+    drawing loop, so fixing it in one would have left it in the other. This
+    is the test that stops the copies coming back."""
+    offenders = []
+    for name in ("overlay_boxes.py", "probe_boxes.py"):
+        body = (ROOT / "scripts" / name).read_text(encoding="utf-8")
+        for symbol in ("ImageDraw", "ImageFont"):
+            if symbol in body:
+                offenders.append(f"{name} imports or uses {symbol}")
+    assert not offenders, (
+        "drawing belongs in pipeline.render.draw_numbered_boxes:\n  "
+        + "\n  ".join(offenders))
