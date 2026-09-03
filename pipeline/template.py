@@ -48,9 +48,25 @@ MIN_ANCHOR_CHARS = 4
 #: three; a loose threshold would match anything.
 LABEL_RATIO = 0.80
 
-#: Two anchors resolved from one label must agree within this distance, in
-#: page fractions, or the label is ambiguous and the field abstains.
-LABEL_AGREEMENT = 0.15
+#: A printed label is a phrase, so agreement between the anchors resolved
+#: from it is anisotropic. Its tokens share a printed line, which is tight,
+#: and they can run a long way along it, which is loose. One threshold for
+#: both was wrong in both directions at once: too tight for "6. LOCATION
+#: (Section, Block, and Survey)", which spans 0.16 of the page, and loose
+#: enough to call two anchors 0.137 apart in y, nineteen line-heights, the
+#: same label. The line tolerance is about one and a half line-heights on
+#: this corpus, which is tight enough that two consecutive printed labels do
+#: not merge into one; checkbox stacks are handled as columns rather than by
+#: loosening it until they fit.
+LABEL_LINE_Y = 0.011
+LABEL_LINE_X = 0.35
+
+#: A checkbox label runs down the page instead: "11. Purpose of Test" over
+#: Initial Potential, Retest, Reclass. So a checkbox spec is also clustered
+#: as a column, and whichever grouping accounts for more of the label's
+#: distinct tokens wins.
+LABEL_COLUMN_X = 0.06
+LABEL_COLUMN_Y = 0.15
 
 #: Registration gates. A page below either is declared unregistered and the
 #: template asserts nothing about it, which is an outcome rather than a
@@ -70,8 +86,19 @@ TRIM_MULTIPLE = 3.0
 TRIM_FLOOR = 0.005
 
 #: The value band's vertical padding, in multiples of the page's median line
-#: height. Declared before the template was built, not tuned afterwards.
+#: height, and the tolerance for "on the same printed line".
 BAND_LINES = 0.6
+
+#: Caps on an asserted region, in page fractions. A cell rule that ran to the
+#: next printed text could hand back half a page, and a big box scores `hit`
+#: for reasons that have nothing to do with locating anything: the grading
+#: protocol was written against model boxes, which were small, so it does not
+#: guard against winning by drawing large. A region over the cap is clipped
+#: back to the cap at the label's top-left corner, because that corner is
+#: where the value starts. Region areas are reported beside the grades so the
+#: two mechanisms can be compared on size as well as on landing.
+MAX_REGION_WIDTH = 0.45
+MAX_REGION_HEIGHT = 0.075
 
 #: Right edge used when no anchor follows the label on its line.
 PAGE_RIGHT = 0.98
@@ -349,54 +376,124 @@ def shared_label_tokens(specs) -> set[str]:
     return {token for token, n in counts.items() if n > 1}
 
 
-def resolve_label(anchors: dict[str, Anchor], tokens, banned: set[str]):
+def _cluster(found, axis: int, tol: float, span: float):
+    """Group resolved anchors into label candidates along one axis."""
+    ordered = sorted(found, key=lambda item: item[1].centre[axis])
+    groups, current = [], []
+    for token, anchor in ordered:
+        if current and (anchor.centre[axis]
+                        - current[-1][1].centre[axis]) > tol:
+            groups.append(current)
+            current = []
+        current.append((token, anchor))
+    if current:
+        groups.append(current)
+    other = 1 - axis
+    return [g for g in groups
+            if max(a.centre[other] for _, a in g)
+            - min(a.centre[other] for _, a in g) <= span]
+
+
+def _best(groups):
+    """The group accounting for most of the label's distinct tokens.
+
+    A tie is an abstention, not a coin toss. `operator` pools at field 3 and
+    again at "if Operator has changed, give former Operator", one distinct
+    token each, and picking either would be the nearest-guess.
+    """
+    if not groups:
+        return None
+    # A checkbox label is clustered both ways, and for a one-anchor label the
+    # line and the column are the same group. Left in, that identity looked
+    # like a tie and abstained on a field the template had actually found.
+    seen, unique = set(), []
+    for group in groups:
+        key = frozenset(id(anchor) for _, anchor in group)
+        if key not in seen:
+            seen.add(key)
+            unique.append(group)
+    ranked = sorted(unique, key=lambda g: -len({token for token, _ in g}))
+    if len(ranked) > 1 and (len({t for t, _ in ranked[0]})
+                            == len({t for t, _ in ranked[1]})):
+        return None
+    return ranked[0]
+
+
+def resolve_label(anchors: dict[str, Anchor], tokens, banned: set[str],
+                  checkbox: bool = False):
     """The anchor box a printed label resolves to, or None.
 
-    Unique or decisively agreeing, never nearest.
+    Unique, or decisively disambiguated by position. Never nearest.
+
+    "Decisively disambiguated" earns its place. The pool holds `lease` and
+    `leasp` for one printed word the OCR read two ways, and `wildcat` beside
+    `widcat`; those are one label, not two candidates. It also holds `field`
+    twice in genuinely different places, and `well` against `wells` half a
+    page apart, which are two candidates and abstain. The test that separates
+    them is whether the anchors share a printed line, and the tie-break is
+    which line accounts for more of the label's own distinct tokens.
     """
     found = []
     for token in tokens:
         if token in banned:
             continue
-        matches = [a for name, a in anchors.items()
-                   if _ratio(token, name) >= LABEL_RATIO]
-        if len(matches) == 1:
-            found.append(matches[0])
+        for name, anchor in anchors.items():
+            if _ratio(token, name) >= LABEL_RATIO:
+                found.append((token, anchor))
     if not found:
         return None
-    xs = [a.centre[0] for a in found]
-    ys = [a.centre[1] for a in found]
-    if (max(xs) - min(xs) > LABEL_AGREEMENT
-            or max(ys) - min(ys) > LABEL_AGREEMENT):
+    groups = _cluster(found, 1, LABEL_LINE_Y, LABEL_LINE_X)
+    if checkbox:
+        groups = groups + _cluster(found, 0, LABEL_COLUMN_X, LABEL_COLUMN_Y)
+    best = _best(groups)
+    if best is None:
         return None
-    return (min(a.box[0] for a in found), min(a.box[1] for a in found),
-            max(a.box[2] for a in found), max(a.box[3] for a in found))
+    boxes = [a.box for _, a in best]
+    return (min(b[0] for b in boxes), min(b[1] for b in boxes),
+            max(b[2] for b in boxes), max(b[3] for b in boxes))
 
 
 def value_region(anchors: dict[str, Anchor], label_box, height: float,
                  checkbox: bool = False):
     """Where the value sits, given where its printed label sits.
 
-    The rule, declared before the template was built and not tuned after:
-    the band runs from the label's right edge to the next printed anchor on
-    the same line, or to the page's right margin, and is the label's own
-    height padded by BAND_LINES line-heights above and below. A checkbox
-    field spans its options instead, from the label's left edge, because the
-    ticked box can be beside any of them.
+    The rule as first declared put the value to the right of its label. That
+    is wrong for this form family and the fuel pages said so before any
+    grading: Rev. 7/5/66 prints the label in the top-left corner of a ruled
+    cell and the operator types the value **underneath** it. "6. LOCATION
+    (Section, Block, and Survey)" sits at y 0.272 and its value at y 0.287.
+    A right-of-label band returned slivers 0.02 wide that contained nothing.
+
+    So the region is the cell the label corners: from the label's left edge
+    to the next printed anchor on its line, and from the label's top down to
+    the next printed anchor below inside that column. That covers a value
+    written to the right and a value written below with one rule rather than
+    a choice between two, and choosing between two would be the nearest-guess
+    the design rules forbid.
+
+    Changed after reading the fuel pages and before any box was graded. The
+    graded document is sealed, so this is engineering against the mechanism
+    rather than tuning against the outcome, but it is a change to a declared
+    rule and it is recorded as one.
     """
-    top = max(0.0, label_box[1] - BAND_LINES * height)
-    bottom = min(1.0, label_box[3] + BAND_LINES * height)
+    left = label_box[0]
+    top = label_box[1]
     centre_y = (label_box[1] + label_box[3]) / 2
     same_line = [a for a in anchors.values()
                  if abs(a.centre[1] - centre_y) <= BAND_LINES * height
                  and a.box[0] >= label_box[2]]
     right = min([a.box[0] for a in same_line], default=PAGE_RIGHT)
     if checkbox:
-        right = max([a.box[2] for a in same_line], default=PAGE_RIGHT)
-        left = label_box[0]
-    else:
-        left = label_box[2]
+        right = max([a.box[2] for a in same_line] + [label_box[2]])
+    below = [a for a in anchors.values()
+             if a.box[1] > label_box[3] + 0.2 * height
+             and a.centre[0] >= left - 0.02 and a.centre[0] <= right + 0.02]
+    bottom = min([a.box[1] for a in below],
+                 default=label_box[3] + 3.0 * height)
     right = min(max(right, left + 0.02), 1.0)
+    bottom = min(max(bottom, label_box[3] + 0.4 * height), 1.0)
+    right = min(right, left + MAX_REGION_WIDTH)
+    bottom = min(bottom, top + MAX_REGION_HEIGHT)
     if right <= left or bottom <= top:
         return None
     return (left, top, right, bottom)

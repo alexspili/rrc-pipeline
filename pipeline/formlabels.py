@@ -78,9 +78,11 @@ LABELS: dict[Key, dict[str, LabelSpec]] = {
         "identity.location_survey": LabelSpec(("location", "block",
                                                "survey")),
         "identity.well_number": LabelSpec(("well", "number")),
+        # "Workover" is a G-1 option and is NOT one of this form's: on
+        # Rev. 7/5/66 the word prints at field 12, "If Workover give former
+        # Field", a third of a page away from the purpose checkboxes.
         "identity.purpose_of_filing": LabelSpec(
-            ("purpose", "initial", "retest", "reclass", "workover"),
-            checkbox=True),
+            ("purpose", "initial", "retest", "reclass"), checkbox=True),
         "identity.completion_date": LabelSpec(("date",)),
         "identity.logs_run": LabelSpec(("electric",)),
         "test.date_of_test": LabelSpec(("date",)),

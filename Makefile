@@ -2,7 +2,7 @@
 # requirements.txt are installed there (see SETUP.md step 5).
 PY := .venv/bin/python
 
-.PHONY: fetch test eval label label2 workbook truthbook arms probe census smoke score findings overlay snap gradebook
+.PHONY: fetch test eval label label2 workbook truthbook arms probe census smoke score findings overlay snap gradebook template probebox
 fetch:
 	@set -a; . ./.env; set +a; $(PY) fetch.py $(ARGS)
 test:
@@ -48,3 +48,9 @@ snap:
 
 gradebook:
 	$(PY) scripts/make_grades_workbook.py
+
+template:
+	$(PY) scripts/build_template.py $(ARGS)
+
+probebox:
+	$(PY) scripts/probe_boxes.py $(ARGS)

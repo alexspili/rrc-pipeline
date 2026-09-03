@@ -177,13 +177,35 @@ def test_shared_tokens_are_stripped_from_every_spec():
 
 # ------------------------------------------------------------------ regions
 
-def test_the_value_band_runs_to_the_next_anchor_on_the_line():
-    anchors = {"lease": anchor("lease", 0.10, 0.20, 0.16, 0.21),
-               "county": anchor("county", 0.50, 0.20, 0.56, 0.21)}
-    box = tpl.value_region(anchors, anchors["lease"].box, 0.012)
-    assert box[0] == pytest.approx(0.16)
-    assert box[2] == pytest.approx(0.50)
-    assert box[1] < 0.20 and box[3] > 0.21
+def test_the_region_is_the_cell_the_label_corners():
+    """Rev. 7/5/66 prints the label in a cell's top-left corner and the value
+    underneath it, so the region starts at the label's LEFT edge and runs
+    down to the next printed line, not rightwards from the label's end."""
+    anchors = {"lease": anchor("lease", 0.10, 0.200, 0.16, 0.210),
+               "county": anchor("county", 0.50, 0.200, 0.56, 0.210),
+               "next": anchor("next", 0.10, 0.260, 0.16, 0.270)}
+    box = tpl.value_region(anchors, anchors["lease"].box, 0.010)
+    assert box[0] == pytest.approx(0.10)      # the cell, not the label's end
+    assert box[2] == pytest.approx(0.50)      # to the next label on the line
+    assert box[1] == pytest.approx(0.200)
+    assert box[3] == pytest.approx(0.260)     # down to the next printed line
+
+
+def test_a_cell_with_nothing_under_it_still_gets_a_bounded_region():
+    anchors = {"lease": anchor("lease", 0.10, 0.200, 0.16, 0.210)}
+    box = tpl.value_region(anchors, anchors["lease"].box, 0.010)
+    assert box is not None and box[3] > box[1]
+    assert box[3] - box[1] <= tpl.MAX_REGION_HEIGHT + 1e-9
+
+
+def test_a_region_is_capped_so_a_template_cannot_win_by_drawing_big():
+    """The grading protocol was written against model boxes, which were
+    small. Nothing in it stops a mechanism scoring `hit` with half a page."""
+    anchors = {"lease": anchor("lease", 0.10, 0.200, 0.16, 0.210),
+               "far": anchor("far", 0.95, 0.900, 0.98, 0.910)}
+    box = tpl.value_region(anchors, anchors["lease"].box, 0.010)
+    assert box[2] - box[0] == pytest.approx(tpl.MAX_REGION_WIDTH)
+    assert box[3] - box[1] <= tpl.MAX_REGION_HEIGHT + 1e-9
 
 
 def test_a_label_at_the_right_margin_yields_a_valid_box_not_an_exception():
@@ -195,11 +217,11 @@ def test_a_label_at_the_right_margin_yields_a_valid_box_not_an_exception():
 
 def test_a_checkbox_field_spans_its_options():
     anchors = {"purpose": anchor("purpose", 0.10, 0.20, 0.18, 0.21),
-               "initial": anchor("initial", 0.30, 0.20, 0.38, 0.21),
-               "retest": anchor("retest", 0.50, 0.20, 0.57, 0.21)}
+               "initial": anchor("initial", 0.25, 0.20, 0.33, 0.21),
+               "retest": anchor("retest", 0.40, 0.20, 0.47, 0.21)}
     box = tpl.value_region(anchors, anchors["purpose"].box, 0.012,
                            checkbox=True)
-    assert box[0] == pytest.approx(0.10) and box[2] == pytest.approx(0.57)
+    assert box[0] == pytest.approx(0.10) and box[2] == pytest.approx(0.47)
 
 
 def test_row_bands_split_a_block_evenly_and_refuse_a_bad_index():
@@ -245,3 +267,70 @@ def test_trimming_cannot_rescue_a_page_below_the_anchor_floor():
     pairs += [((0.10, 0.20), (0.40, 0.20)), ((0.20, 0.60), (0.80, 0.10))]
     _, _, kept, trimmed = tpl.robust_fit(pairs)
     assert trimmed == 0 and kept == 8
+
+
+def test_two_ocr_spellings_of_one_word_in_one_place_are_one_label():
+    """The pool holds both `lease` and `leasp` for the same printed word.
+    That is one label read twice, not two candidate positions."""
+    anchors = {"lease": anchor("lease", 0.48, 0.166, 0.53, 0.176),
+               "leasp": anchor("leasp", 0.481, 0.167, 0.531, 0.177)}
+    box = tpl.resolve_label(anchors, ("lease",), set())
+    assert box is not None
+    assert box[0] == pytest.approx(0.48)
+
+
+def test_two_spellings_in_different_places_still_abstain():
+    """`well` heads field 9 and `wells` sits in "Number of Producing Wells"
+    much further down. Resolving that by proximity is the nearest-guess."""
+    anchors = {"well": anchor("well", 0.38, 0.136, 0.42, 0.146),
+               "wells": anchor("wells", 0.30, 0.520, 0.35, 0.530)}
+    assert tpl.resolve_label(anchors, ("well",), set()) is None
+
+
+def test_a_long_printed_phrase_resolves_along_its_line():
+    """"6. LOCATION (Section, Block, and Survey)" spans 0.16 of the page."""
+    anchors = {"location": anchor("location", 0.12, 0.278, 0.16, 0.288),
+               "btock": anchor("btock", 0.22, 0.277, 0.25, 0.287),
+               "survey": anchor("survey", 0.28, 0.278, 0.31, 0.288)}
+    box = tpl.resolve_label(anchors, ("location", "block", "survey"), set())
+    assert box is not None
+    assert box[0] == pytest.approx(0.12) and box[2] == pytest.approx(0.31)
+
+
+def test_the_same_token_on_two_lines_is_settled_by_the_rest_of_the_label():
+    """`field` pools twice. The line that also carries `wildcat` is the one
+    that is label 1; the other is a lone token and loses."""
+    anchors = {"ffeld": anchor("ffeld", 0.12, 0.170, 0.16, 0.180),
+               "wildcat": anchor("wildcat", 0.30, 0.170, 0.34, 0.180),
+               "fied": anchor("fied", 0.25, 0.305, 0.28, 0.315)}
+    box = tpl.resolve_label(anchors, ("field", "records", "wildcat"), set())
+    assert box is not None and box[1] == pytest.approx(0.170)
+
+
+def test_two_lines_carrying_one_token_each_abstain():
+    anchors = {"operatar": anchor("operatar", 0.13, 0.250, 0.18, 0.260),
+               "opertor": anchor("opertor", 0.20, 0.388, 0.25, 0.398)}
+    assert tpl.resolve_label(anchors, ("operator",), set()) is None
+
+
+def test_a_checkbox_label_may_run_down_the_page():
+    anchors = {"purpose": anchor("purpose", 0.77, 0.224, 0.81, 0.232),
+               "initial": anchor("initial", 0.76, 0.239, 0.80, 0.247),
+               "retest": anchor("retest", 0.77, 0.266, 0.80, 0.274),
+               "recloss": anchor("recloss", 0.77, 0.293, 0.81, 0.301)}
+    flat = tpl.resolve_label(
+        anchors, ("purpose", "initial", "retest", "reclass"), set())
+    assert flat is None                       # no two share a printed line
+    column = tpl.resolve_label(
+        anchors, ("purpose", "initial", "retest", "reclass"), set(),
+        checkbox=True)
+    assert column is not None
+    assert column[1] == pytest.approx(0.224) and column[3] == pytest.approx(0.301)
+
+
+def test_a_one_anchor_checkbox_label_is_not_a_tie_with_itself():
+    """Clustered as a line and as a column it is the same single group."""
+    anchors = {"type": anchor("type", 0.14, 0.111, 0.17, 0.119)}
+    box = tpl.resolve_label(anchors, ("type", "deepening"), set(),
+                            checkbox=True)
+    assert box is not None and box[0] == pytest.approx(0.14)
