@@ -118,3 +118,48 @@ count of unattached pages is a reported metric, not a defect to be minimised.
 
 DEFECTS #25 carries the pending pin: record 1495193, pages 7 and 8 resolve to
 one document and pages 7 and 9 do not. That case is the first test to write.
+
+## Rules
+
+All pins are pending: this module is designed and not built, and the pending
+marker is replaced with a test path in the commit that builds it.
+
+R1. Pairing looks in both directions.
+    Origin: DEFECTS #25. The placeholder looked only forward, and three of
+    the fifteen ground-truth documents turned out to be sections whose face
+    precedes them. A forward-only heuristic has no way to notice.
+    Pinned by: pending, on record 1495193 pages 7 and 8.
+
+R2. Position narrows the candidate list. Agreement decides.
+    Origin: DEFECTS #25, and the stage-2 measurement behind it: roughly two
+    in five predicted faces are not faces, so "start from a face and look
+    forward" starts from the wrong page a large fraction of the time.
+    Pinned by: pending, on record 1511465, three faces and one section.
+
+R3. Candidates never cross a file boundary within a record.
+    Origin: DEFECTS #28. Two readers assumed a record has one file; the
+    corpus is 202 records over 249 files and one record holds five. Page 3 of
+    one file has nothing to do with page 3 of another.
+    Pinned by: pending.
+
+R4. A page below the agreement threshold stays unmatched, and unmatched pages
+    are reported rather than dropped.
+    Origin: the abstention principle this pipeline already applies at the
+    classifier and at the geometry layer. A page forced onto the nearest face
+    is the extraction-layer version of guessing between G-1 and W-2 on an
+    unreadable form number.
+    Pinned by: pending.
+
+R5. One page attaches to at most one face.
+    Pinned by: pending.
+
+R6. The count of unattached pages is reported output, never a number to
+    minimise.
+    Origin: a wrong attachment puts one well's casing record under another
+    well's identity, and every downstream check would then be validating a
+    document that never existed.
+    Pinned by: pending.
+
+## RETIRED
+
+Nothing yet. The module is not built.

@@ -6,6 +6,23 @@ values, each carrying where on the page it came from.
 Not yet built. This file currently records the decisions taken before any code
 exists, so that they are not silently revisited later.
 
+## Provenance: CLOSED 2026-09-03
+
+Everything from here to "Cost is output, not pixels" is the provenance
+thread, and it is finished. **The shipped mechanism is snap, then the widened
+model band, then the page with its raw text**, every region carrying a source
+tag, rendered as click-to-zoom with the printed field label as its caption.
+
+Six candidates, two killed by gates that were written before the numbers
+existed. What was not fixed is listed under "Limitations, with their measured
+rates" and stays not fixed: anchor-inventory recovery, cell-boundary tuning
+and degraded tiers are out of scope permanently. AWS Textract is shut
+permanently on this argument, and the section below records that its trigger
+condition fired and a second gate refused it anyway.
+
+A reader arriving later should not have to infer any of that from an absence
+of open questions.
+
 ## Provenance is region-level, from the model, from v1
 
 **Settled 2026-08-31, before any extraction code.**
@@ -120,31 +137,31 @@ human did. Recorded at n=2, with the missed checkbox X, as an observation to
 watch, not a fix. Nothing was relabelled; scoring already reports with and
 without such rows.
 
-### The mechanism decision is OPEN
+### The mechanism decision, CLOSED 2026-09-03
 
-Five candidates were analysed, measured where a free measurement existed, and
-**none adopted**: Alex is trying a different approach next, and this section
-is what that attempt is measured against.
+**The thread is closed. The shipped mechanism is snap, then the widened model
+band, then the page with its raw text.** Six candidates were analysed and
+measured; two were killed by pre-registered gates and the rest never earned a
+trial. Nothing further on this thread is open: anchor-inventory recovery,
+cell-boundary tuning and degraded tiers are all out of scope permanently and
+appear below as limitations with their measured rates.
 
-6. **Per-revision templates**: MEASURED and dead, 2026-09-03. Ceiling 18 of
-   35 on the graded 1966 document against a bar of 26 and a comparator of
-   19. Registration works and the anchor inventory does not; see "The probe
-   result" below.
-1. **Layered** (drafted in full, shelved): snap where the text layer matches
-   uniquely, model box as an upward-widened band where it lands, page + raw
-   text otherwise. Measured coverage 77.3% overall, 100% on 1983 paper,
-   54.3% on 1966.
-2. **Label anchor**: the model transcribes the printed field label beside
-   each value. Untested; a $0.25 three-document probe was specced, and its
-   pre-registered trigger fired (old-paper snap poor, old-paper drift
-   unbandable). Transcription is what the model measurably does well;
-   coordinates are what it does not.
-3. **Textract**: measured ceiling 23 points of coverage, concentrated on
-   exactly the degraded typed print it is good at. Stays shut per the road
-   not taken below unless a number argues it open.
-4. **Page + raw text only**: the floor; never wrong; discards the measured
-   77.3%.
-5. **Model boxes alone**: ruled out by the grading. Not a field locator.
+1. **Layered, and it ships.** Snap where the text layer matches uniquely, the
+   model box as an upward-widened band where it lands, page plus raw text
+   otherwise. Measured coverage 77.3% overall, 100% on 1983 paper, 54.3% on
+   1966. Its snap tier was graded for the first time on 2026-09-03 and hits
+   14 of 15.
+2. **Label anchor**, the model transcribing the printed label beside each
+   value. Never tested and now never will be. Superseded by the template
+   probe, which took the labels from the measured text layer instead and
+   removed the model from the loop entirely.
+3. **Textract.** Shut permanently on this argument; see below.
+4. **Page plus raw text only.** The floor. Never wrong, and discards the
+   measured 77.3%.
+5. **Model boxes alone.** Killed 2026-09-01. Not a field locator: hit+near
+   60.9% overall, 11.4% on 1966 paper.
+6. **Per-revision templates.** Killed 2026-09-03 on two separate gates. See
+   the probe result below.
 
 Design rules already settled for whichever mechanism wins, and binding on any
 new approach too: geometry is snapped or asserted only on a unique or
@@ -366,6 +383,89 @@ Standing rule 9, on the probe's own work.
   100% on 1983 paper, 54.3% on 1966. Nothing here changes it, and nothing
   here has been adopted.
 
+### The landing result, 2026-09-03: 13 of 18, and the thread closes
+
+The coverage gate killed the template before anybody graded anything. A
+second, smaller sitting then asked the question coverage cannot answer:
+**when a mechanism does assert a region, is the region on the field?** 33
+boxes, blinded and shuffled, two mechanisms judged by two rules that were
+both fixed before the sheet was drawn.
+
+**The template: 13 of 18, which is inside the pre-registered inconclusive
+zone of 11 to 13. Stays shut. No escape.** One box short of the 14 that
+would have opened the AWS escalation.
+
+| | hit | near | miss | landed |
+|---|---|---|---|---|
+| scalars | 3 | 7 | 2 | 10/12 |
+| table row bands | 3 | 0 | 3 | 3/6 |
+| pooled | 6 | 7 | 5 | **13/18** |
+
+Wilson 95% on the pooled figure is [49.1%, 87.5%], which is what n = 18 buys
+and why the instrument was declared coarse in advance.
+
+**The snap tier: 14 of 15 hits, against a bar of 12. It stands as measured
+geometry** and the 54.3% comparator is not restated. Judged on `hit` alone,
+because a snapped box claims a measured word position rather than an
+approximate locator, so a box near the value is a box on the wrong word.
+
+**Two things about the pooled 13 that cut against my own framing**, recorded
+in DEFECTS #31 and repeated here because the number is quoted here. The
+protocol contained a second decision clause saying the twelve-scalar rate
+decides; on that reading 10 of 12 passes. The numbered clause governs and the
+verdict is the failing one. And the oversized row bands were predicted to be
+biased toward `hit`; they graded 3 hit, 0 near, 3 miss, worse than the
+scalars and with no middle, so the pooled figure was not inflated by them.
+
+### The shipped experience is better than the raw grades suggest
+
+Seven fields carried a box from both mechanisms, so for those seven the
+value's true position is known from the snap box, and the template's error is
+measurable rather than eyeballed.
+
+| | count |
+|---|---|
+| template region contains the value | 3 |
+| falls short by 0.001 to 0.002 | 3 |
+| 0.096 away | 1 |
+
+Page 6's median line height is 0.0073, so **0.002 is under a third of a
+line** and 0.001 is under a seventh. Three of the seven are boxes that stop a
+fraction of a line short of the value they name.
+
+That is why the viewer decision below is not cosmetic. A `near` seen on a
+full page and a `near` seen inside a zoomed, captioned viewport are not the
+same experience, and this is the number that says so. It does not change any
+verdict: the bar was fixed in advance, the grades are the grades, and the
+mechanism is dead either way.
+
+The one field 0.096 away is `identity.field_name`, which is also the field
+the wrong-field snap of DEFECTS #32 landed on.
+
+### Limitations, with their measured rates
+
+Everything here is out of scope permanently. It is recorded so that a reader
+can see the size of what was not fixed.
+
+- **A highlight can be shown for 77.3% of extracted values**, at two honesty
+  tiers the viewer renders distinctly. 100% on 1983 paper, **54.3% on 1966**.
+  The remaining 22.7% get the page and the raw text, and nothing finer.
+- **At least 1 snap in 15 lands on the wrong field** (DEFECTS #32). A floor,
+  not a point estimate: that box was graded `near` rather than `miss` only
+  because the overlay hid it, and six other fields carried the same risk.
+- **A value printed on two lines gets one line of band.** `logs_run` reads
+  "Cement Bond Log & Neutron" and then "Lifetime Log" beneath it; the band
+  recovers the first line. Not a gap in the text layer, which does contain
+  the second line, but a boundary of a deliberately single-line rule.
+- **Model-box bands land 60.9% of the time overall and 11.4% on 1966 paper.**
+  That tier is the weakest thing that ships and it is tagged as such.
+- **30% of smoke documents and 41% of graded boxes carry no readable form
+  revision**, so nothing keyed to a revision can serve them.
+- **Per-revision templates: ceiling 18 of 35, landing 13 of 18.** Dead.
+- **Table geometry is the weakest region of all.** The row-band rule was the
+  one declared guess in the template, its bands ran to a median 0.075 of a
+  page, and it graded 3 of 6.
+
 ## The viewer decision, settled 2026-09-03, mechanism-independent
 
 Whatever wins, the viewer clicks through to the region **zoomed to readable
@@ -414,10 +514,27 @@ The comparison it now has to win has also moved. Textract's case was against
 the snap residue. After the template probe, its case is against the
 **template** residue.
 
-### The escalation's own gate, pre-committed 2026-09-03
+### The escalation's own gate: fired, and refused. CLOSED 2026-09-03
 
-Fixed before the stage-four grading, so that a decision to open an AWS
-account cannot be made by whoever is enthusiastic on the day.
+**Outcome first. Stage four returned 13 of 18. The gate did not open, and
+Textract is shut permanently on this argument.**
+
+That is the whole value of having written the gate down beforehand, so it is
+worth being explicit about how close this came. The trigger condition was
+met: the template's failure was anchor poverty and label garbling, exactly
+the signature named here before any number existed, and explicitly not the
+layout-assumption failure that Textract cannot fix. Registration worked, on
+96 anchors at a median residual of 0.0014. The escalation had a real opening.
+
+It was refused by the second gate, one box short, and by one further margin
+that is only visible in DEFECTS #31: the protocol also contained an
+unnumbered clause under which the scalar rate of 10 of 12 passes. Two
+readings, and the one with a threshold attached governs.
+
+**No further Textract argument is live.** Reopening it needs a new
+measurement and a new gate, not an appeal to this one.
+
+The gate as it was written, kept for the record:
 
 If and only if stage four returns 14 or more of 18, the escalation runs as
 **another ceiling-gated step, not as an adoption**:
@@ -603,3 +720,102 @@ Same posture as the classifier's three-arm competition: the cheap default runs,
 the expensive alternative is a measured comparison arm, and it is turned on only
 if a measurement says the gain justifies the dependency. Not a backlog item. A
 choice, recorded with its reason so that reversing it has to be argued.
+
+## Rules
+
+R1. A value that is not `present` carries no region.
+    Origin: the Sonnet probe returned `[0, 0, 0, 0]` for a field the form
+    does not have, which is a box that locates nothing and would draw a
+    highlight in the page's top-left corner.
+    Pinned by: tests/tier1/test_extract.py::test_a_non_present_value_must_not_carry_a_region
+
+R2. A status is never inferred from emptiness.
+    Origin: DEFECTS #24. `blank`, `illegible`, `not_on_this_form` and
+    `page_not_in_document` are four different facts and the enum exists so
+    that scoring cannot mix them. 90 of 405 ground-truth rows are the fourth.
+    Pinned by: tests/tier1/test_extract.py
+
+R3. Every region carries a source tag from a fixed vocabulary.
+    Origin: DEFECTS #29. Region quality is a steep function of which
+    mechanism asserted the box, so a viewer that renders a snapped box and a
+    modelled one identically claims a confidence it does not have.
+    Pinned by: tests/tier1/test_extract.py::test_a_region_refuses_a_source_outside_the_vocabulary
+
+R4. Geometry is asserted only on a unique or decisively disambiguated basis,
+    never a nearest match.
+    Origin: DEFECTS #29, and sharpened by #32, where uniqueness measured
+    against the OCR's word list turned out not to be uniqueness on the paper.
+    A wrong box that looks grounded is worse than an honest band.
+    Pinned by: tests/tier1/test_template.py::test_two_lines_carrying_one_token_each_abstain
+
+R5. A model-box band widens upward.
+    Origin: DEFECTS #29. The measured drift is downward by one to two field
+    rows, so the band is widened against the bias rather than symmetrically.
+    Pinned by: docs only; the band tier ships as measured, at 60.9%.
+
+R6. A truncated model response is an error and is never cached.
+    Origin: `max_tokens` at 8,000 truncated 4 of 14 documents mid-string and
+    each surfaced as malformed JSON rather than as truncation.
+    Pinned by: tests/tier1/test_extract.py
+
+R7. A cache key covers everything that shapes a response, or the cache
+    refuses to store that response.
+    Origin: the same truncation, plus DEFECTS #14 from the other direction.
+    Anything that changes an answer without changing its key is a way for a
+    fixed bug to keep returning.
+    Pinned by: tests/tier1/test_extract.py
+
+R8. `form_class` is validated against the whole `PageClass` vocabulary, not
+    against the two values the prompt asks for.
+    Origin: DEFECTS #22. The same run answered `w15` on a page the stage-2
+    labels confirm is a W-15; narrowing the check would have discarded it.
+    Pinned by: tests/tier1/test_extract.py
+
+R9. A field that is `blank`, `illegible` or `not_on_this_form` produces no
+    validation finding.
+    Origin: a 1975 Form W-2 has no API number, and manufacturing a defect out
+    of a form revision is the failure the status enum exists to prevent.
+    Pinned by: tests/tier1/test_validate.py
+
+R10. A rule checked against two documents is a WARNING, not an ERROR.
+    Origin: DEFECTS #10 and #11. Rules written from the handful of documents
+    somebody happened to read do not survive a corpus spanning 1950s to 2008
+    paper, so every rule names the documents it was checked against.
+    Pinned by: tests/tier1/test_validate.py
+
+R11. A generator may not overwrite a sheet that has any filled row.
+    Origin: DEFECTS #26. 405 hand-keyed rows were replaced with blanks. One
+    filled row is enough; a threshold would be a judgement about whose work
+    is worth keeping.
+    Pinned by: tests/tier1/test_template_guard.py
+
+R12. A guard runs as the first statement of the operation it protects.
+    Origin: DEFECTS #34. R11's guard was placed correctly beside the write it
+    protects and thirty lines after the directory wipe that would have
+    destroyed a sealed answer key. A guard protects the statement it
+    precedes, not the function it lives in.
+    Pinned by: tests/tier2/test_probe_sheet_guard.py
+
+R13. An overlay's colour is keyed to the number a grader sees, never to size,
+    source or draw order.
+    Origin: DEFECTS #33. On a blinded sheet a text-layer box is one word and
+    a template region is a form cell, so colour keyed to size would encode
+    the mechanism and end the blind through the back door.
+    Pinned by: tests/tier1/test_label_placement.py::test_the_colour_does_not_depend_on_size_source_or_draw_order
+
+R14. An abstention is read individually before its rate is reported.
+    Origin: DEFECTS #30. "The paper will not support this" and "my rule is
+    wrong" produce identical output, and three rules were declining fields
+    for reasons that were not facts about the paper.
+    Pinned by: scripts/probe_boxes.py prints every abstaining field by name
+    with its snap outcome and model-box grade beside it.
+
+R15. A grading stage carries exactly one marked decision rule.
+    Origin: DEFECTS #31. A second decision clause, written while documenting
+    a caveat, disagreed with the first when the grades came in.
+    Pinned by: tests/tier2/test_repo_consistency.py::test_each_grading_stage_marks_its_decision_rules
+
+## RETIRED
+
+Nothing yet. R1 and R2 are already enforced by the `Value` constructor and R3
+by `Region`, so they move here once no other path can build one.

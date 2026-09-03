@@ -75,12 +75,32 @@ sample, 14 carried a readable revision, including 7 of the 12 documents whose te
 form number at all, and the years span **1966, 1975 and 1983**. Accuracy is reported per era
 bucket rather than blended, and the buckets come from the paper.
 
+**A highlight can be shown for 77.3% of extracted values, and the era
+gradient is steeper than the accuracy gradient.** Measured over 562 values in
+a 20-document run, at two tiers a viewer renders differently: a word box
+measured off the page's own text layer, and an approximate band from the
+model. On 1983 forms it is 100%; on 1966 forms it is 54.3%. The remaining
+22.7% get the page and the raw text and nothing finer, and that is reported
+rather than filled in with a guess. Three mechanisms were measured against
+this and two were killed by thresholds written before the numbers existed:
+the model's own boxes land on the field 60.9% of the time overall and 11.4%
+on 1966 paper, and per-revision form templates failed a coverage gate at 18
+of 35 and a landing gate at 13 of 18.
+
 ## Roads not taken
 
 - **Reading the form number instead of abstaining on it.** A targeted OCR or vision read of the
   top-right corner would recover the illegible slice rather than abstaining on it. Deferred: it
   reopens an AWS Textract dependency the pipeline does not currently need, for a gain bounded by
   the illegible share of completion faces, and abstention already handles that slice honestly.
+- **AWS Textract for word-level geometry.** It would supply the word
+  inventory the form templates lacked. Its trigger condition was written down
+  before the measurement that would fire it: open only on anchor poverty or
+  garbled labels, never on a layout-assumption failure, which better OCR
+  cannot repair. The measurement fired it exactly. A second gate, also
+  pre-committed, then refused it by one box. The escalation had a real
+  opening and was still not taken, and reopening it now needs a new
+  measurement rather than an appeal to that one.
 - **A hosted backend for the viewer.** Rejected on cost, prompt-injection surface and uptime; the
   viewer is static and does no inference.
 
@@ -102,8 +122,9 @@ codebase stops being read, by the agent and by people. Line count over time is i
 
 ### Rules come from defects, and carry their origin
 
-Each file in `docs/modules/` ends in a numbered rule section. Every rule names the defect that
-produced it and the test that pins it:
+Each file in `docs/modules/` carries a numbered rule section and a `RETIRED` section. Every rule
+names the defect that produced it and the test that pins it, and a test asserts that all three of
+those claims are true of every module file, because for a while two of them were not:
 
 ```
 R4. Never construct a FieldResult without a source span.
@@ -150,6 +171,32 @@ The habit exists for reviewability: small commits in sequence are how somebody c
 failing test really did come before the fix. That it also functions as a backup is not why it is
 there, and is the sort of thing you only find out once. The defect log records it, and the
 generator now refuses to overwrite a sheet that has any filled row rather than warning about it.
+
+### A pre-registration with two rules in it has already failed
+
+I wrote a decision rule before a measurement: a mechanism passes at 14 of 18
+graded boxes. Later the same day, while writing up a caveat about how to read
+one of the numbers, I wrote a sentence saying a different figure was the one
+that decided. I did not notice I had written a second decision rule. Both
+went in before any grading happened.
+
+The grades split them. On the rule with a threshold the mechanism scored 13
+and failed. On the sentence in the caveat it scored 10 of 12 and passed, and
+passing would have opened a cloud dependency I had spent two sessions
+arguing against adding.
+
+The numbered rule governs, so the answer is the failing one. Not because it
+is the better metric, which I do not know, but because it was the only one of
+the two with a number attached, so it was the only one that could produce a
+verdict rather than a preference. Picking the other one after seeing which
+way each fell is the whole of what pre-registration exists to stop.
+
+The offending paragraph is still in the protocol, verbatim, with a correction
+under it. Deleting it would have made the record tidier and worth less. The
+part that is now enforced rather than intended: each grading stage carries
+exactly one clause marked as its decision rule, and a test counts them, so
+the next second rule is a build failure instead of a discovery made at the
+worst possible moment.
 
 ## What the history shows
 

@@ -247,3 +247,42 @@ def test_the_overlay_scripts_carry_no_draw_loop_of_their_own():
     assert not offenders, (
         "drawing belongs in pipeline.render.draw_numbered_boxes:\n  "
         + "\n  ".join(offenders))
+
+
+MODULES = ROOT / "docs" / "modules"
+
+
+def test_every_module_file_meets_the_convention_the_readme_claims():
+    """The README tells a reader that every module file carries a numbered
+    rule section and a RETIRED section. Two of the three did not.
+
+    A README claiming a convention the files do not meet is the drift this
+    repo already logs elsewhere, and it is worse here than in code, because
+    the claim is the thing being shown to a reader who cannot check it
+    quickly. So the claim is a test.
+    """
+    import re
+    missing = []
+    for path in sorted(MODULES.glob("*.md")):
+        body = path.read_text(encoding="utf-8")
+        if not re.search(r"^## Rules\s*$", body, re.M):
+            missing.append(f"{path.name}: no '## Rules' section")
+        elif not re.search(r"^R\d+\. ", body, re.M):
+            missing.append(f"{path.name}: Rules section has no numbered rule")
+        if not re.search(r"^## RETIRED\s*$", body, re.M):
+            missing.append(f"{path.name}: no '## RETIRED' section")
+    assert not missing, "\n  ".join([""] + missing)
+
+
+def test_every_numbered_rule_names_what_pins_it():
+    """A rule with no pin is a note. The README's example carries one, so
+    every rule has to."""
+    import re
+    orphans = []
+    for path in sorted(MODULES.glob("*.md")):
+        body = path.read_text(encoding="utf-8")
+        blocks = re.split(r"^(R\d+\.)", body, flags=re.M)[1:]
+        for head, text in zip(blocks[::2], blocks[1::2]):
+            if "Pinned by:" not in text:
+                orphans.append(f"{path.name} {head}")
+    assert not orphans, "rules with no pin:\n  " + "\n  ".join(orphans)

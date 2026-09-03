@@ -318,21 +318,30 @@ first fix for it was defeated by one space in the OCR. 16 is open.
 6b. Provenance boxes MEASURED 2026-09-03 and the pre-registered rule fired:
    model boxes are not field locators (hit+near 60.9% overall, 11.4% on
    1966 paper; values grounded, geometry confabulated, DEFECTS #29).
-6c. Per-revision templates PROBED and DEAD 2026-09-03, sixth candidate.
-   Ceiling 18 of the 35 graded 1966 boxes against a pre-registered bar of
-   26 and the layered join's 19, so the DEAD zone was reached on a free
-   coverage gate and nothing was graded. `make template`, `make probebox`.
-   The two halves came apart: registration works (96 anchors, residual
-   0.0014, and the residual separates revisions with an order-of-magnitude
-   gap) and the anchor inventory does not (80 pooled tokens on Section II,
-   holding no `elevation`, `contractor`, `total` or `directional`, all of
-   them printed on the paper). That is the anchor-poverty signature the
-   Textract escalation names, not a layout-assumption failure, so the
-   trigger condition as written is MET. It stays shut until one more
-   number exists: whether the 18 regions the template does assert actually
-   land, which coverage does not say and nobody has graded.
-   The mechanism decision is still OPEN and the layered join is still the
-   measured baseline: 77.3% overall, 100% on 1983, 54.3% on 1966.
+6c. Provenance CLOSED 2026-09-03. Six candidates, two killed by gates
+   written before the numbers existed.
+   - Per-revision templates: dead on both gates. Coverage ceiling 18 of the
+     35 graded 1966 boxes against a bar of 26; landing 13 of 18 against a
+     bar of 14. `make template`, `make probebox`.
+   - Snap tier graded for the first time and PASSES: 14 of 15 hits against a
+     bar of 12, judged on hit alone. The 54.3% comparator stands.
+   - SHIPPED: snap, then the widened model band, then page plus raw text.
+     Source tags on every region; click-to-zoom with the printed field label
+     as caption.
+   - Textract shut PERMANENTLY on this argument. Its trigger condition fired
+     and the second gate refused it anyway (DEFECTS #31 and extract.md).
+   - Registration residual identifies a revision from layout rather than
+     from a masthead: 24 candidates sit under a residual of 0.005 and the
+     next one is at 0.040, with 11 of 12 agreeing with the recorded
+     revision. Not built. It outlives the template and is
+     the only idea on the table for the 41% of graded boxes whose revision
+     the model could not read.
+   - Four defects: #31 two decision clauses in one pre-registration, #32 a
+     unique text match is not a correct match, #33 the overlay could not
+     display what it measured, #34 a guard standing after the deletion it
+     guarded. Limitations with measured rates: extract.md.
+   - Nothing on this thread is open. Do not reopen it without a new
+     measurement and a new gate.
 7. Reassembly is unbuilt and is now the biggest known gap. It must pair in
    BOTH directions and settle candidates by identity-field agreement, not
    by position: the smoke pairing looked only forward and three of fifteen
