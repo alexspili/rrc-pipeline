@@ -56,10 +56,53 @@ era gradient the value accuracy follows: 48-75% on 1983 forms, under 21% on
 1966-1975 paper, tables worse than scalars. The residue is what any fallback
 must carry, and it is also Textract's ceiling.
 
-The sufficiency sentence returns here as a measured claim once the box
-grading (protocol in docs/labeling-protocol-extract.md) is done. Until then
-the region is a hint, not a locator, and nothing downstream may present it as
-more.
+### The grading, 2026-09-03: the rule fired
+
+110 boxes over four documents, graded by Alex against whole-page overlays
+under the pre-registered protocol. The decision rule needed hit+near of at
+least 90% overall and a miss rate of at most 20% in every era bucket.
+
+| Era | hit | near | miss | hit+near |
+|---|---|---|---|---|
+| 1983 | 5 | 11 | 0 | **100%** |
+| 1975 | 4 | 7 | 3 | 78.6% |
+| era unreadable | 18 | 18 | 9 | 80.0% |
+| 1966 | 0 | 4 | 31 | **11.4%** |
+| overall | 27 | 40 | 43 | 60.9% |
+
+**Model boxes are not field locators.** On 1966 paper they are close to
+uncorrelated with the fields they name. This is the era gradient a fourth
+time, and the steepest instance yet. Every graded value is typed, so none of
+this is handwriting.
+
+Joining each graded box to its snap outcome gives the layered picture: snap
+where the text layer matches uniquely, the widened band where the model box
+lands, page-level for the rest.
+
+| Era | snapped | band | page-only | field-locatable |
+|---|---|---|---|---|
+| 1966 | 15 | 4 | 16 | 54.3% |
+| 1975 | 5 | 6 | 3 | 78.6% |
+| 1983 | 10 | 6 | 0 | 100% |
+| era unreadable | 11 | 28 | 6 | 86.7% |
+| overall | 41 | 44 | 25 | **77.3%** |
+
+The two mechanisms complement precisely: the text layer is strongest exactly
+where the boxes are worst. The 25-box residue is typed print on degraded
+paper that neither the model nor the embedded layer can place, which is both
+the page-level tier's load and the measured ceiling for anything stronger.
+
+Two singleton observations from the grading, recorded rather than lost: one
+value was attached to the wrong field name outright (a `purpose_of_filing`
+value filed under another field), and one checkbox value missed the X that
+marked it. Field misattribution is a different defect class from bad
+geometry and gets watched, not fixed, at n=1.
+
+**The measured claim that replaces the withdrawn sentence:** a highlight can
+be shown for 77.3% of extracted values, at two honesty tiers that the viewer
+must render distinctly, and the remaining 22.7% get the page and the raw
+text. On 1983 paper the figure is 100%; on 1966 paper it is 54.3%. Any
+stronger claim awaits a decision on the residue.
 
 ## Cost is output, not pixels
 
