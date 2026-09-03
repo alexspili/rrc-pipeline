@@ -16,8 +16,12 @@ If the ceiling is below the bar, the bar cannot be met and a grading sitting
 would be spent on a foregone conclusion. Reporting that is cheaper and more
 honest than grading anyway.
 
-**Sheet.** With --sheet, and only if the ceiling clears the bar, writes the
-blinded shuffled grading sheet and the overlays that go with it.
+**Sheet.** With --sheet, writes the blinded shuffled stage-four sheet and its
+overlays: the 18 regions the template asserts and the 15 boxes the layered
+join counts as snapped, mixed together. That sitting does NOT reopen the
+coverage verdict, which is closed. It asks the one question coverage cannot
+answer, whether a region lands when a mechanism asserts one, and its two rules
+are pre-registered in the protocol under "Box grading, stage four".
 
 No API calls. Reads the finished run's cache under the prompt hash the run
 recorded.
@@ -26,6 +30,7 @@ recorded.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import math
 import random
@@ -36,10 +41,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from PIL import ImageDraw, ImageFont              # noqa: E402
+
 from pipeline import classify                     # noqa: E402
 from pipeline import extractor                    # noqa: E402
 from pipeline import formlabels as fl             # noqa: E402
 from pipeline import template as tpl              # noqa: E402
+from pipeline import render                       # noqa: E402
+from pipeline.guard import refuse_if_filled       # noqa: E402
 from pipeline.textlayer import page_words         # noqa: E402
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
@@ -49,6 +58,11 @@ CACHE = ROOT / "data" / "extract" / "cache_smoke.jsonl"
 SNAP = ROOT / "data" / "extract" / "snap_coverage.jsonl"
 GRADES = ROOT / "tests" / "fixtures" / "box_grades.csv"
 TEMPLATES = ROOT / "data" / "extract" / "templates"
+PROBE_SHEET = ROOT / "tests" / "fixtures" / "box_grades_probe.csv"
+PROBE_OUT = ROOT / "data" / "labelset" / "overlay_probe"
+
+CAP = 2000
+MIN_SHORT_EDGE = 700
 
 #: The graded 1966 document and the role of each of its pages.
 TARGET = ("1493608", 0, {5: "face", 6: "sec_ii"})
@@ -133,8 +147,7 @@ def wilson(k: int, n: int, z: float = 1.96):
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--sheet", action="store_true",
-                    help="write the blinded grading sheet, if the ceiling "
-                         "clears the bar")
+                    help="write the blinded stage-four grading sheet")
     ap.add_argument("--seed", type=int, default=20260903)
     args = ap.parse_args()
 
@@ -235,17 +248,13 @@ def main() -> None:
         print(f"  the ceiling is {ceiling}/{len(rows)}, below the bar of "
               f"{BAR_COUNT}. Every unasserted box is a miss by construction,")
         print("  so no grading of the asserted ones can reach the bar. The "
-              "bar CANNOT be met and the grading sitting is not owed.")
-        best_b = max(0, ceiling - len(join))
-        print(f"  best case if every asserted box were graded hit: "
-              f"{ceiling}/{len(rows)} = {ceiling / len(rows):.1%}, "
-              f"b-c at most {best_b}")
+              "bar CANNOT be met and that verdict needs no grading.")
+        print(f"  zone: {'DEAD (21 or fewer)' if ceiling <= 21 else 'see the protocol'}"
+              f"; the elected middle-zone escape does not fire.")
     else:
         low, high = wilson(BAR_COUNT, BAR_TOTAL)
         print(f"  ceiling {ceiling}/{len(rows)} clears it; grading decides. "
               f"Wilson at the bar: [{low:.1%}, {high:.1%}]")
-        if args.sheet:
-            print("  --sheet: writing the blinded grading sheet")
 
     print("\nWHERE THE TEMPLATE ABSTAINS (the residue any fix must carry)")
     for row in rows:
@@ -253,6 +262,104 @@ def main() -> None:
             outcome = snaps.get(row["field"], {}).get("outcome", "-")
             print(f"  p{row['page']} {row['field']:44s} "
                   f"snap={outcome:14s} model_grade={row['grade']}")
+
+    if args.sheet:
+        print("\nSTAGE FOUR SHEET (does a region land when it is asserted?)")
+        write_sheet(pdf, rows, asserted, snaps, args.seed)
+
+
+def write_sheet(pdf, rows, asserted, snaps, seed: int) -> None:
+    """The blinded stage-four sheet: template regions and snap boxes mixed.
+
+    Blinding hides the mechanism, not the field: "does this box land on its
+    field" cannot be answered without knowing the field. Two things still
+    leak the source and the protocol says so rather than pretending
+    otherwise. A snap box is one word and a template region is a form cell,
+    so they differ in size. And 7 of the 33 fields appear once from each
+    mechanism, so a repeated field is visibly a pair. What the shuffle still
+    buys is that the grader cannot tell which box of a pair is which.
+    """
+    entries = []
+    for row in rows:
+        key = (int(row["page"]), row["box_num"])
+        if key in asserted:
+            box, source, field = asserted[key]
+            entries.append((int(row["page"]), box, field, row["raw"], source))
+    for field, snap in snaps.items():
+        if snap["outcome"] not in ("unique", "disambiguated"):
+            continue
+        if not snap.get("snapped_box"):
+            continue
+        page = next((int(r["page"]) for r in rows if r["field"] == field),
+                    None)
+        if page is None:
+            continue
+        entries.append((page, tuple(snap["snapped_box"]), field,
+                        snap.get("raw") or "", "text_layer"))
+
+    random.Random(seed).shuffle(entries)
+    PROBE_OUT.mkdir(parents=True, exist_ok=True)
+    for stale in PROBE_OUT.glob("*"):
+        stale.unlink()
+    render.preflight()
+
+    numbered = [(i, *entry) for i, entry in enumerate(entries, 1)]
+    sheet_rows = [{
+        "record_id": TARGET[0], "file_index": TARGET[1],
+        "pages": "5 6", "page": page, "box_num": number,
+        "field": field, "raw": (raw or "")[:60],
+        "grade": "", "handwritten": "", "note": ""}
+        for number, page, box, field, raw, source in numbered]
+    key_rows = [{"box_num": number, "page": page, "field": field,
+                 "source": source,
+                 "box": " ".join(f"{v:.4f}" for v in box)}
+                for number, page, box, field, raw, source in numbered]
+
+    by_page = {}
+    for number, page, box, field, raw, source in numbered:
+        by_page.setdefault(page, []).append((number, box, field, raw))
+    for page, items in sorted(by_page.items()):
+        image = render.extract_page_image(pdf, page).convert("RGB")
+        width, height = image.size
+        cap = CAP
+        short = min(width, height)
+        if short and round(max(width, height) * MIN_SHORT_EDGE / short) > cap:
+            cap = round(max(width, height) * MIN_SHORT_EDGE / short)
+        image = render.downscale_image(image, cap=cap)
+        width, height = image.size
+        draw = ImageDraw.Draw(image)
+        try:
+            font = ImageFont.load_default(size=max(22, width // 60))
+        except TypeError:
+            font = ImageFont.load_default()
+        legend = []
+        for number, box, field, raw in sorted(items):
+            pixels = (int(box[0] * width), int(box[1] * height),
+                      int(box[2] * width), int(box[3] * height))
+            draw.rectangle(pixels, outline=(220, 0, 0),
+                           width=max(2, width // 700))
+            draw.text((pixels[0] + 3, max(0, pixels[1] - font.size - 2)),
+                      str(number), fill=(220, 0, 0), font=font)
+            legend.append(f"{number:3d}  {field:44s} {raw!r}")
+        stem = f"PROBE_{TARGET[0]}_f{TARGET[1]}_p{page:03d}"
+        image.save(PROBE_OUT / f"{stem}.png")
+        (PROBE_OUT / f"{stem}.txt").write_text(
+            f"{TARGET[0]} page {page}: {len(items)} boxes\n"
+            + "\n".join(legend) + "\n")
+        print(f"  {stem}.png  {len(items):3d} boxes")
+
+    refuse_if_filled(PROBE_SHEET, "grade")
+    with PROBE_SHEET.open("w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(sheet_rows[0]))
+        writer.writeheader()
+        writer.writerows(sheet_rows)
+    key_path = PROBE_OUT / "KEY_do_not_open_until_graded.csv"
+    with key_path.open("w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(key_rows[0]))
+        writer.writeheader()
+        writer.writerows(sorted(key_rows, key=lambda r: r["box_num"]))
+    print(f"\n  sheet: {PROBE_SHEET}  ({len(sheet_rows)} boxes)")
+    print(f"  key:   {key_path}  (the blind; scoring reads it, you do not)")
 
 
 if __name__ == "__main__":

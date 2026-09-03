@@ -483,3 +483,31 @@ way as a region locator would credit it for the thing it claims not to need.
 That second branch would move a number this repo has been quoting, which is
 why the restatement is written down before the grades exist rather than
 argued about afterwards.
+
+### Measured before grading: the six cell bands are too big to be informative
+
+The scalar region rule is capped, at 0.45 of the page in width and 0.075 in
+height, specifically so that a mechanism cannot score `hit` by drawing large.
+**That cap was never applied to the table-row tier.** Measured on the sheet as
+drawn:
+
+| source | n | median area | max |
+|---|---|---|---|
+| snap word box | 15 | 0.00041 | 0.00067 |
+| template scalar | 12 | 0.00466 | 0.01343 |
+| template row band | 6 | **0.07505** | **0.14468** |
+
+A row band is 180 times the area of a snap box and 16 times a template
+scalar. One of them covers 14% of the page. A `hit` on a region that size is
+close to unearned, and pooling those six with the twelve scalars would carry
+that into the headline.
+
+This is standing rule 9 arriving on my own work: the residue of the cap was
+never characterised, and the tier the cap does not cover is exactly the tier
+that needed it.
+
+**The consequence for reading the result, fixed here before grading:** the
+twelve-scalar rate is the number that decides the Textract question. The
+six-cell rate is reported beside it and is weak evidence in the `hit`
+direction whatever it says. The pooled 18 is reported because it was
+pre-registered, and it is read with this table beside it.
