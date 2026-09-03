@@ -369,3 +369,16 @@ def test_the_missing_page_status_is_not_the_missing_field_status():
     """
     assert Status.PAGE_NOT_IN_DOCUMENT is not Status.NOT_ON_THIS_FORM
     assert Status.PAGE_NOT_IN_DOCUMENT is not Status.BLANK
+
+
+def test_a_region_defaults_to_the_provenance_it_actually_had():
+    """Everything recorded before the tag existed came from the model."""
+    assert Region(page=1, box=(0.1, 0.2, 0.3, 0.4)).source == "model"
+
+
+def test_a_region_refuses_a_source_outside_the_vocabulary():
+    from pipeline.extract import SOURCES
+    for source in sorted(SOURCES):
+        assert Region(page=1, box=(0.1, 0.2, 0.3, 0.4), source=source)
+    with pytest.raises(ValueError):
+        Region(page=1, box=(0.1, 0.2, 0.3, 0.4), source="textract")

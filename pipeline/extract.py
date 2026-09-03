@@ -51,6 +51,19 @@ class Status(str, Enum):
 #: Only a value that is actually on the page can be pointed at.
 LOCATABLE = frozenset({Status.PRESENT})
 
+#: Where a region's coordinates came from. Ordered strongest to weakest, and
+#: the order is the honesty ordering the viewer renders:
+#:
+#:   text_layer   a word box measured off the page by pdftotext
+#:   template     a per-revision form template, registered onto this page
+#:   template_row an even row band inside a template's table block, which is
+#:                the one place the mechanism guesses at a boundary
+#:   model        the vision model's own report of where it read something,
+#:                measured at hit+near 60.9% overall and 11.4% on 1966 paper
+#:   page         no geometry at all: here is the page and the raw text
+SOURCES = frozenset({"text_layer", "template", "template_row", "model",
+                     "page"})
+
 
 @dataclass(frozen=True)
 class Region:
@@ -61,12 +74,28 @@ class Region:
 
     Approximate by construction. A vision model reports roughly where it read
     something; this is a locator for a human reviewer, not a measurement.
+
+    `source` says which mechanism asserted the box, and it is not decoration.
+    The grading of 2026-09-03 measured region quality as a steep function of
+    where the coordinates came from, so a viewer that renders a snapped box
+    and a modelled one identically is claiming a confidence it does not have.
+    The tag travels all the way into the viewer and stays visually distinct
+    there (DEFECTS #29, and the design rule that came out of it).
+
+    It defaults to `model` so that every region already on disk keeps the
+    provenance it actually had. Nothing recorded before this field existed
+    came from anywhere else.
     """
 
     page: int
     box: tuple[float, float, float, float]
+    source: str = "model"
 
     def __post_init__(self) -> None:
+        if self.source not in SOURCES:
+            raise ValueError(
+                f"unknown region source {self.source!r}, expected one of "
+                f"{sorted(SOURCES)}")
         if self.page < 1:
             raise ValueError(f"page is 1-based, got {self.page}")
         if len(self.box) != 4:

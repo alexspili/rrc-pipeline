@@ -23,7 +23,13 @@ No API calls. Reads the run's cache under the prompt hash the run recorded.
 Coordinate caveat, stated rather than hidden: word boxes are fractions of the
 PDF page box; model boxes are fractions of the embedded scan image. On this
 corpus the scan fills the page, so the spaces align; a page where they did
-not would shear every distance in the disambiguation step.
+not would shear every distance in the disambiguation step. That assumption is
+now pinned by tests/tier2/test_textlayer.py rather than left as a comment.
+
+The word-box reader moved to pipeline/textlayer.py when the template probe
+became its second caller. Two copies of the parser would have been free to
+drift, and the snap tier and the template tier have to agree about what a
+word box is or their numbers are not comparable.
 """
 
 from __future__ import annotations
@@ -31,7 +37,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -42,6 +47,7 @@ sys.path.insert(0, str(ROOT))
 from pipeline import classify                     # noqa: E402
 from pipeline import extractor                    # noqa: E402
 from pipeline import pageclass as pc              # noqa: E402
+from pipeline.textlayer import fold, norm, page_words   # noqa: E402
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
 RAW = ROOT / "data" / "raw"
@@ -49,19 +55,10 @@ SMOKE = ROOT / "data" / "extract" / "smoke.jsonl"
 CACHE = ROOT / "data" / "extract" / "cache_smoke.jsonl"
 OUT = ROOT / "data" / "extract" / "snap_coverage.jsonl"
 
-_WORD = re.compile(
-    r'<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)"'
-    r'>([^<]*)</word>')
-_PAGE = re.compile(r'<page width="([\d.]+)" height="([\d.]+)">')
-
 #: An anchor word is selective enough to match on: four or more characters,
 #: or three or more digits. "of", "3" and "N/A" match half a page each.
 _MIN_ALPHA = 4
 _MIN_DIGITS = 3
-
-#: OCR digit confusions folded on BOTH sides before comparing. Narrow on
-#: purpose; a wide table would merge words that are genuinely different.
-_FOLD = str.maketrans({"o": "0", "l": "1", "i": "1"})
 
 #: The model box is trusted only this far as a tiebreak: a candidate within
 #: this centre distance, in page fractions, with the measured downward bias
@@ -69,35 +66,10 @@ _FOLD = str.maketrans({"o": "0", "l": "1", "i": "1"})
 _PRIOR_RADIUS = 0.30
 
 
-def norm(text: str) -> str:
-    return re.sub(r"[^0-9a-z]", "", text.casefold())
-
-
-def fold(text: str) -> str:
-    return norm(text).translate(_FOLD)
-
-
 def is_anchor(word: str) -> bool:
     cleaned = norm(word)
     digits = sum(c.isdigit() for c in cleaned)
     return len(cleaned) >= _MIN_ALPHA or digits >= _MIN_DIGITS
-
-
-def page_words(pdf: Path, page: int):
-    """(x0, y0, x1, y1, text) in page fractions, from the embedded layer."""
-    html = subprocess.run(
-        ["pdftotext", "-bbox", "-f", str(page), "-l", str(page),
-         str(pdf), "-"], capture_output=True, text=True).stdout
-    size = _PAGE.search(html)
-    if not size:
-        return []
-    width, height = float(size.group(1)), float(size.group(2))
-    words = []
-    for m in _WORD.finditer(html):
-        x0, y0, x1, y1 = (float(m.group(i)) for i in range(1, 5))
-        words.append((x0 / width, y0 / height, x1 / width, y1 / height,
-                      m.group(5)))
-    return words
 
 
 def classify_snap(raw: str, box, words):
