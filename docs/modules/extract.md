@@ -104,6 +104,58 @@ must render distinctly, and the remaining 22.7% get the page and the raw
 text. On 1983 paper the figure is 100%; on 1966 paper it is 54.3%. Any
 stronger claim awaits a decision on the residue.
 
+### The disputes closed, 2026-09-03: zero inventions
+
+Every disputed value checked by eye against full-resolution paper was really
+there. Document 1's type of completion reads `New Well (X)`, correctly, below
+the resolution of the labelling thumbnails: the third confirmed case of the
+model out-reading the thumbnails, with document 8's operator and document 2's
+date. Document 2's completion date is genuinely two-way on the paper, `4-1948`
+or plausibly `4-19-68`; the model resolved a real ambiguity to one confident
+reading.
+
+That names a failure mode distinct from fabrication: **unreported ambiguity**.
+The model had `illegible` in its vocabulary and did not use it where a careful
+human did. Recorded at n=2, with the missed checkbox X, as an observation to
+watch, not a fix. Nothing was relabelled; scoring already reports with and
+without such rows.
+
+### The mechanism decision is OPEN
+
+Five candidates were analysed, measured where a free measurement existed, and
+**none adopted**: Alex is trying a different approach next, and this section
+is what that attempt is measured against.
+
+1. **Layered** (drafted in full, shelved): snap where the text layer matches
+   uniquely, model box as an upward-widened band where it lands, page + raw
+   text otherwise. Measured coverage 77.3% overall, 100% on 1983 paper,
+   54.3% on 1966.
+2. **Label anchor**: the model transcribes the printed field label beside
+   each value. Untested; a $0.25 three-document probe was specced, and its
+   pre-registered trigger fired (old-paper snap poor, old-paper drift
+   unbandable). Transcription is what the model measurably does well;
+   coordinates are what it does not.
+3. **Textract**: measured ceiling 23 points of coverage, concentrated on
+   exactly the degraded typed print it is good at. Stays shut per the road
+   not taken below unless a number argues it open.
+4. **Page + raw text only**: the floor; never wrong; discards the measured
+   77.3%.
+5. **Model boxes alone**: ruled out by the grading. Not a field locator.
+
+Design rules already settled for whichever mechanism wins, and binding on any
+new approach too: geometry is snapped or asserted only on a unique or
+decisively disambiguated basis, never a nearest-guess, because a wrong box
+that looks grounded is worse than an honest band; every region carries a
+source tag that stays visually distinct into the viewer; model-box bands
+widen upward, against the measured downward bias.
+
+**The measurement bar for any new approach is already built**: the
+pre-registered hit/near/miss protocol with its thresholds
+(docs/labeling-protocol-extract.md), `scripts/score_boxes.py`, `make snap`
+for the text-layer comparison, `make overlay` for whole-page evidence, and
+the `geometry.schematic_grid` detector that runs on every document. A new
+mechanism is graded the same way the old one was killed.
+
 ## Cost is output, not pixels
 
 **Measured 2026-08-31, `scripts/probe_sonnet.py`, one two-page completion

@@ -38,14 +38,17 @@ must be defensible line by line in an interview.
   with each number: docs/modules/classify.md.
 - Extraction: schema, extractor and validation rules built. Ground truth DONE
   2026-09-01, 405 rows over 15 documents, keyed blind from page images.
-- NEXT, in order: (1) re-run the 20-doc smoke, ~$1.41, since the prompt
-  changed when `page_not_in_document` was added and the cache is invalidated;
-  (2) score against the ground truth. Reporting rules fixed in advance:
-  exclude document 1 from the headline (DEFECTS #23, the schema was designed
-  on it) and report documents 6/8/9 separately as absence detection
-  (DEFECTS #25, they are sections without their face).
-- Then validation -> cross-form disagreement -> eval (`make eval`) ->
-  TypeScript span viewer -> optional Postgres projection.
+- Extraction SCORED 2026-09-01: headline (excl. doc 1 per DEFECTS #23)
+  status 87.4%, value 82.5% where both present, reported BY ERA, never
+  blended: 1983 near-perfect, 1966/1975 far worse. `make score`.
+- Provenance boxes MEASURED 2026-09-03: not field locators (hit+near 60.9%
+  vs the pre-registered 90%; 1966 bucket 11.4%). Values grounded, geometry
+  confabulated (DEFECTS #29). **Mechanism decision OPEN** — five candidates
+  measured and recorded, none adopted; a new approach is being tried next
+  and is graded by the same instruments. docs/modules/extract.md → "The
+  mechanism decision is OPEN".
+- Then validation output review -> cross-form disagreement -> eval
+  (`make eval`) -> TypeScript span viewer -> optional Postgres projection.
 - Biggest known gap, unbuilt: page reassembly. Pair in both directions and
   settle by identity-field agreement, never by position.
   docs/modules/reassemble.md.

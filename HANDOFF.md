@@ -312,10 +312,17 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    the stage-2 labels. Deferred on purpose: a targeted OCR/vision read of
    the form-number region, which would reopen Textract. See
    docs/modules/classify.md → The decided fix, and Era drift.
-6. Extraction: re-run the smoke (~$1.41; the prompt changed with the fifth
-   status so the result cache is invalidated), then score against the
-   ground truth. Headline excludes document 1 (DEFECTS #23) and reports
-   documents 6, 8 and 9 separately (DEFECTS #25).
+6. ~~Extraction smoke + scoring~~ DONE 2026-09-01: status 87.4%, value
+   82.5%, by era and never blended. Validation runs on every document
+   (`make findings`) and caught real errors with no labels.
+6b. Provenance boxes MEASURED 2026-09-03 and the pre-registered rule fired:
+   model boxes are not field locators (hit+near 60.9% overall, 11.4% on
+   1966 paper; values grounded, geometry confabulated, DEFECTS #29). The
+   mechanism decision is OPEN: five candidates recorded with measured
+   numbers in docs/modules/extract.md, none adopted; Alex is trying a new
+   approach, to be proposed under rule 5 and graded by the instruments
+   already in the repo (box-grading protocol + score_boxes, snap coverage,
+   overlays, the schematic-grid detector).
 7. Reassembly is unbuilt and is now the biggest known gap. It must pair in
    BOTH directions and settle candidates by identity-field agreement, not
    by position: the smoke pairing looked only forward and three of fifteen
