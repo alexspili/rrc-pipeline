@@ -72,3 +72,36 @@ def test_every_word_box_is_a_fraction_with_positive_area(
         assert 0.0 <= x0 <= 1.0 and 0.0 <= y0 <= 1.0
         assert 0.0 <= x1 <= 1.0 and 0.0 <= y1 <= 1.0
         assert x1 > x0 and y1 > y0
+
+
+# --------------------------------------------------------------- DEFECTS #32
+
+def test_the_ocr_drops_one_of_two_printed_instances_of_frio():
+    """Pins a known limitation, not desired behaviour.
+
+    Record 1493608 page 5 prints the word "Frio" twice: in field 1, the field
+    name, as `Bay City (8000' Frio)` near y 0.17, and in field 12, the
+    workover remark, as `8400' Frio now isolated` near y 0.30.
+
+    The OCR reads only the second one. So a uniqueness test run against this
+    text layer sees one match and asserts geometry on it, and the snap for
+    `identity.field_name` lands two thirds of a page below its field. The
+    safety rule that only unique matches may assert geometry is satisfied by
+    a word that is not unique on the paper: the layer's omissions manufacture
+    uniqueness.
+
+    This is out of scope permanently, so the test exists to make the
+    limitation visible and to fail loudly if the layer ever changes. Anyone
+    who improves the OCR must change this test on purpose.
+    """
+    pdf = _pdf("1493608", 0)
+    if not pdf.exists():
+        pytest.skip(f"{pdf} is git-ignored corpus, not present here")
+    frio = [w for w in page_words(pdf, 5) if "frio" in w[4].casefold()]
+    assert len(frio) == 1, (
+        "the text layer now carries a second 'Frio'; DEFECTS #32's premise "
+        f"has changed and the entry needs revisiting: {frio}")
+    centre_y = (frio[0][1] + frio[0][3]) / 2
+    assert 0.28 < centre_y < 0.33, (
+        f"the surviving 'Frio' is at y {centre_y:.3f}; #32 recorded it in "
+        "field 12 near 0.30, not in field 1 near 0.17")

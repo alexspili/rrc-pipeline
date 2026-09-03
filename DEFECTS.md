@@ -1334,3 +1334,195 @@ it, so an abstention can never again be counted without being read.
 _corners`, `test_a_long_printed_phrase_resolves_along_its_line`,
 `test_two_lines_carrying_one_token_each_abstain`, and
 `test_a_one_anchor_checkbox_label_is_not_a_tie_with_itself`.
+
+---
+
+## #31 — 2026-09-03 — A pre-registration with two decision clauses is not a pre-registration
+
+**What happened:** the stage-four grading protocol was written before the
+sheet was drawn, which is the whole point of it. It contains a rule table
+saying the template passes at **14 or more of 18**. Later the same day, while
+recording a measurement caveat about oversized table bands, I wrote a second
+sentence: "the twelve-scalar rate is the number that decides the Textract
+question."
+
+Both were committed before any box was graded. Neither was written as a
+revision of the other. The result then split them:
+
+| | |
+|---|---|
+| pooled, the numbered clause | 13 of 18 — **fails** |
+| scalars, the unnumbered clause | 10 of 12 — **passes** |
+
+**Why it was wrong:** I did not notice I was writing a second decision rule.
+I thought I was writing a caveat about how to read a number. A sentence that
+names which figure decides an outcome is a decision rule whatever section it
+sits in and whatever else it is doing.
+
+**How it was resolved, and this is the part that matters.** The numbered
+clause governs, so the verdict is inconclusive and the AWS escalation stays
+shut. That is the failing reading. **The clause I discarded was the one that
+opened the door.**
+
+The reason is not that pooled is a better metric than scalars; it might well
+be worse, and the case for scalars was written down honestly before the
+result existed. The reason is that only one of the two clauses ever had a
+number attached to it, so only one of them could produce a verdict rather
+than a preference. Choosing the other one after seeing which way each fell is
+the exact failure the protocol exists to prevent, and no amount of being
+right about metrics would repair it.
+
+**A second thing, also against interest.** The same caveat predicted the
+oversized table bands would be biased **toward** `hit`, on the reasoning that
+a big box is easy to land. They graded 3 hit, 0 near, 3 miss: worse than the
+scalars, and with no middle at all. A band covering a seventh of a page
+either contains the value or is nowhere near it. So the prediction was wrong
+in direction, and the pooled 13 was not inflated by the big boxes. My caveat
+argued for discounting a number that turned out not to need discounting.
+
+**The general form.** Pre-registration is not a ceremony about writing things
+down early. It is a bet that you will accept a rule you no longer like. A
+pre-registration containing two rules has already failed at that, because it
+leaves a choice to be made at exactly the moment when you know which choice
+you want. **The only test of whether you meant it is which clause you pick
+when they disagree.**
+
+**Resolution:** every grading stage in the protocol now carries exactly one
+block marked `**DECISION RULE:**`, and a tier-2 test enforces that count. A
+second decision clause becomes a failing test instead of a discovery made
+after the result is in.
+**Pin:** tests/tier2/test_repo_consistency.py::test_each_grading_stage_has_exactly_one_decision_rule
+
+---
+
+## #32 — 2026-09-03 — A unique text match is not a correct match
+
+**What happened:** the snap tier locates a value by finding its text in the
+PDF's embedded text layer and boxing the word it matched. Its safety rule,
+settled after DEFECTS #29, is that it only asserts geometry when the match is
+unique, because a wrong box that looks grounded is worse than an honest band.
+
+On record 1493608 page 5, `identity.field_name` snapped to the word `Frio` at
+y 0.30. That is field 12, "If Workover give former Field", whose value reads
+`8400' Frio now isolated`. Field 1, the field name, is at y 0.17 and its value
+is `Bay City (8000' Frio)`.
+
+**`Frio` is printed twice on that page.** The OCR read one of the two
+cleanly. So the uniqueness test passed on a word that is not unique on the
+paper, and the tier asserted geometry on the surviving copy.
+
+**Why it was wrong:** uniqueness was tested against the OCR's word list and
+treated as a fact about the page. **The text layer's omissions manufacture
+uniqueness.** Every word the OCR drops makes some other word look
+unrepeated, and the degraded pages where the safety rule matters most are
+exactly the pages that drop the most words.
+
+**Measured footprint: at least 1 of 15** graded snap boxes on this document.
+Recorded as a floor and never as a point estimate. Two reasons. That box was
+graded `near` rather than `miss` only because the overlay hid it (#33), so
+the grader was reasoning about a rectangle he could not see. And six other
+fields carried a box from both mechanisms and the same occlusion risk, so an
+unknown number of wrong-field snaps may be sitting inside `hit` grades.
+
+**Resolution: none. Recorded as a measured limitation, not fixed.** The
+provenance thread is closed and inventory-level repairs are permanently out
+of scope. What does change is that the failure stops being silent: the
+displayed region becomes the whole printed run the matched word sits in, so a
+reader sees `8400' Frio` under a caption reading "Field name" and can tell it
+is wrong. A one-word box gave them nothing to notice with.
+
+Note what this does to a number the repo quotes. The snap tier passed its
+stage-four rule at 14 hits of 15, and the same sitting produced a confirmed
+wrong-field snap. Both travel together from here.
+**Pin:** tests/tier2/test_textlayer.py::test_the_ocr_drops_one_of_two_printed_instances_of_frio
+
+---
+
+## #33 — 2026-09-03 — The instrument for grading geometry could not display geometry
+
+**What happened:** Alex's note against box 1 of the stage-four sheet: "Can't
+really see where box 1 is, I assume it's matching the first digit from box 15
+and the boxes are identical." He graded it `near` on that assumption.
+
+Box 1 and box 15 are the same field from the two different mechanisms. Box 1
+is a single word; box 15 is a form cell that contains it. Drawn in the same
+colour with the number always at the top-left corner, the small one is
+invisible inside the large one.
+
+**Why it was wrong:** the overlay's entire job is to show a human where a
+rectangle is, so that they can judge whether it is in the right place. It
+could not do that for a nested pair, and it gave no sign that it had failed.
+The grader had to notice and say so.
+
+**Measured footprint:** 7 of the 33 boxes were fields carrying a rectangle
+from both mechanisms, so seven pairs were at risk. One is known to have
+failed, because the grader said so. The others cannot be ruled out, which is
+why #32's rate is recorded as a floor.
+
+**The class.** DEFECTS #29 was evidence generated by the thing under test:
+the crop check cropped to the model's own box and could only confirm it. This
+is the neighbouring failure and it is worth separating. Here the instrument
+did not generate the evidence, it **failed to display** it, and the grade
+came back looking exactly like a grade.
+
+**Resolution:** one shared drawing routine, used by both overlay scripts
+rather than copied into each. Larger boxes are drawn first so a nested small
+one lands on top. Each number label is placed at the first candidate position
+that collides with no label already placed. Outline colour cycles by the
+number printed on the box, and **never** by size, source or draw order: on a
+blinded sheet a snap box is a word and a template region is a cell, so a
+colour keyed to size would encode the mechanism and end the blind through the
+back door.
+**Pin:** tests/tier1/test_overlay.py, and
+tests/tier2/test_overlay.py::test_a_nested_box_is_still_visible_after_the_big_one_is_drawn,
+which asserts on pixels rather than on intent.
+
+---
+
+## #34 — 2026-09-03 — The guard fired after the deletion it was guarding against
+
+**What happened:** found by a design review while planning the fixes above,
+before it did any damage.
+
+`write_sheet` in `scripts/probe_boxes.py` empties its output directory and
+then, thirty lines later, calls `refuse_if_filled` to check whether the
+grading sheet already carries grades.
+
+    PROBE_OUT.mkdir(parents=True, exist_ok=True)
+    for stale in PROBE_OUT.glob("*"):
+        stale.unlink()                    # <- the answer key dies here
+    ...
+    refuse_if_filled(PROBE_SHEET, "grade")   # <- the guard runs here
+
+The sheet is fully graded right now. Re-running `--sheet` would therefore
+delete `KEY_do_not_open_until_graded.csv` and both graded overlay images, and
+only then raise `RefusedToOverwrite`. The key is the only record of which
+mechanism drew which box; without it the 33 committed grades cannot be
+scored, and a tier-2 test that reads it cannot run. The key lives under
+`data/`, which is git-ignored, so `git checkout` would not have brought it
+back the way it brought back the 405 rows in #26.
+
+**Why it was wrong:** `refuse_if_filled` was written for #26 and placed
+correctly there, immediately before the write it protects. Here it was placed
+immediately before the write it protects **again**, and the destructive act
+had been put somewhere else. A guard protects the statement it precedes, not
+the function it lives in, and the directory wipe was never anybody's idea of
+a write worth guarding.
+
+The near miss is the point. Alex's approved verification step for #33 was to
+redraw the overlays and check by eye that the two boxes are now both visible.
+Carrying out the approved plan would have destroyed the evidence the plan
+exists to protect.
+
+**Measured footprint:** none. Nothing was lost. The key and both overlays
+were copied to a scratch directory before anything ran, and the entry is
+being written before the fix rather than after a recovery.
+
+**Resolution:** `refuse_if_filled` moves to the first statement of
+`write_sheet`, before the directory is touched. The general form is the one
+#26 already paid for and this entry sharpens: **a guard belongs at the top of
+the operation it protects, not next to the last dangerous line somebody
+happened to think about.**
+**Pin:** tests/tier2/test_probe_sheet_guard.py::test_a_graded_sheet_refuses_before_the_output_directory_is_touched,
+which fills a sheet, populates the directory, calls `write_sheet`, and asserts
+the directory is intact after the raise.

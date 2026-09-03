@@ -293,6 +293,8 @@ for itself.
 
 ### The decision rule, fixed before you grade
 
+**DECISION RULE:**
+
 - If `hit + near` is at least **90% overall** and at least **80% in every
   era bucket**, the widened-band presentation is acceptable as the fallback
   tier and region provenance survives, with the measured figure replacing the
@@ -356,6 +358,8 @@ Grades are unchanged: `hit`, `near`, `miss`, same definitions, `near` still
 counts. `handwritten` and `note` unchanged.
 
 ### The bar, fixed before the template was built
+
+**DECISION RULE:**
 
 **Population:** the same 35 boxes on record 1493608 that the layered join
 scores. Table cells included, so failing to place one counts against the
@@ -504,6 +508,8 @@ two boxes is the template's. That is the bias the shuffle is for.
 
 ### Rule one, the template: hit + near, over 18
 
+**DECISION RULE:**
+
 `near` counts, as it did in stage two, because the region is a locator for a
 viewer that zooms to it.
 
@@ -524,6 +530,8 @@ miss is a different finding from a uniform miss, and pooling the two would
 hide which of them happened.
 
 ### Rule two, the snap tier: hit alone, over 15
+
+**DECISION RULE:**
 
 **`near` is failure for a snap.** The other tiers offer an approximate
 locator and say so. A snapped box claims a measured word position, so a box
@@ -562,8 +570,35 @@ This is standing rule 9 arriving on my own work: the residue of the cap was
 never characterised, and the tier the cap does not cover is exactly the tier
 that needed it.
 
+**SUPERSEDED by the correction below (DEFECTS #31). Kept verbatim, because a
+pre-registration that edits out the clause it failed to honour is worth
+nothing.**
+
 **The consequence for reading the result, fixed here before grading:** the
 twelve-scalar rate is the number that decides the Textract question. The
 six-cell rate is reported beside it and is weak evidence in the `hit`
 direction whatever it says. The pooled 18 is reported because it was
 pre-registered, and it is read with this table beside it.
+
+> **Correction appended 2026-09-03, after grading, DEFECTS #31.** The
+> paragraph above is left exactly as it was written. It should not have been
+> written. "The twelve-scalar rate is the number that decides" is a second
+> decision rule, in a section that was meant to record a measurement caveat,
+> and it disagreed with the rule table above when the grades came in: pooled
+> 13 of 18 fails, scalars 10 of 12 passes.
+>
+> **The numbered clause governs. The verdict is the failing one.** The clause
+> discarded here is the one that would have opened the AWS escalation. The
+> reason for discarding it is not that pooled is the better metric; it is
+> that only one of the two ever had a threshold attached, so only one could
+> produce a verdict rather than a preference.
+>
+> Its second claim was also wrong. The six cell bands were predicted to be
+> biased toward `hit`. They graded 3 hit, 0 near, 3 miss: worse than the
+> scalars and with no middle, because a band covering a seventh of a page
+> either contains the value or is nowhere near it. The pooled 13 was not
+> inflated by them.
+>
+> Stages two and three were audited for the same flaw and are clean. Stage
+> two goes further and explicitly disclaims a second metric: "`hit` alone
+> governs nothing". That is the discipline this stage dropped.

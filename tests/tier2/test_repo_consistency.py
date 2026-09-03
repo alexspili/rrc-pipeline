@@ -155,3 +155,80 @@ def test_every_page_in_the_corpus_gets_a_unique_batch_id():
     assert len(set(ids)) == len(ids), "page id collision"
     assert max(len(i) for i in ids) <= 64
     assert all(pc.parse_page_id(i) for i in ids)
+
+
+# --------------------------------------------------------------- DEFECTS #31
+
+PROTOCOL = ROOT / "docs" / "labeling-protocol-extract.md"
+
+#: Phrases that decide an outcome. A tripwire, not a parser: the list is
+#: short and curated, and it exists because the one time this went wrong the
+#: offending sentence used the first of them.
+DECIDING = ("is the number that decides", "the number that decides",
+            "decides the", "governs the", "is what decides")
+
+#: Every genuine decision rule carries this marker. Stage four has two
+#: because it grades two mechanisms against two different bars.
+MARKER = "**DECISION RULE:**"
+
+#: A clause kept verbatim as the record of a mistake, with its correction
+#: appended below it. Origin: DEFECTS #31.
+SUPERSEDED = "**SUPERSEDED"
+EXPECTED_MARKERS = {"two": 1, "three": 1, "four": 2}
+
+
+def _stages():
+    """Each '## Box grading, stage N' section, by its word-number."""
+    import re
+    text = PROTOCOL.read_text(encoding="utf-8")
+    heads = list(re.finditer(r"^## Box grading, stage (\w+)", text, re.M))
+    out = {}
+    for index, head in enumerate(heads):
+        end = heads[index + 1].start() if index + 1 < len(heads) else len(text)
+        out[head.group(1)] = text[head.start():end]
+    return out
+
+
+def test_each_grading_stage_marks_its_decision_rules():
+    """Origin: DEFECTS #31. A pre-registration with two decision clauses is
+    not a pre-registration, and the second one was written by accident while
+    documenting a caveat. Marking them makes the count checkable."""
+    stages = _stages()
+    assert set(stages) >= set(EXPECTED_MARKERS), sorted(stages)
+    for stage, expected in EXPECTED_MARKERS.items():
+        found = stages[stage].count(MARKER)
+        assert found == expected, (
+            f"stage {stage} carries {found} decision-rule markers, "
+            f"expected {expected}")
+
+
+def test_no_stage_decides_an_outcome_outside_a_marked_rule():
+    """The specific shape of DEFECTS #31: a sentence naming which figure
+    decides an outcome, sitting in a section meant to record a caveat.
+
+    Two things are allowed through, and both have to be. A blockquote, which
+    is where a correction is appended and which must be able to quote the
+    mistake it is correcting. And a paragraph explicitly marked SUPERSEDED,
+    because the offending sentence is kept verbatim on purpose: a
+    pre-registration that quietly edits out the clause it failed to honour
+    would be worth nothing.
+    """
+    offenders = []
+    for stage, body in _stages().items():
+        marked = superseded = False
+        for line in body.splitlines():
+            if MARKER in line:
+                marked = True
+                continue
+            if SUPERSEDED in line:
+                superseded = True
+                continue
+            if line.startswith("### "):
+                marked = superseded = False
+            if marked or superseded or line.lstrip().startswith(">"):
+                continue
+            if any(phrase in line.lower() for phrase in DECIDING):
+                offenders.append((stage, line.strip()))
+    assert not offenders, (
+        "a sentence decides an outcome outside a marked DECISION RULE:\n"
+        + "\n".join(f"  stage {s}: {l}" for s, l in offenders))
