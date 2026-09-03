@@ -126,6 +126,10 @@ Five candidates were analysed, measured where a free measurement existed, and
 **none adopted**: Alex is trying a different approach next, and this section
 is what that attempt is measured against.
 
+6. **Per-revision templates**: MEASURED and dead, 2026-09-03. Ceiling 18 of
+   35 on the graded 1966 document against a bar of 26 and a comparator of
+   19. Registration works and the anchor inventory does not; see "The probe
+   result" below.
 1. **Layered** (drafted in full, shelved): snap where the text layer matches
    uniquely, model box as an upward-widened band where it lands, page + raw
    text otherwise. Measured coverage 77.3% overall, 100% on 1983 paper,
@@ -219,6 +223,115 @@ tested here. Reverse-page fuel is thin: among non-graded 1966 documents there
 is exactly one reverse. And the equal-band rule for table rows is the one
 declared guess in the design, separately tagged and separately reported so it
 cannot inflate the headline.
+
+### The probe result, 2026-09-03: DEAD on coverage, not on landing
+
+**The pre-registered rule fired, and it fired on a free gate before anybody
+graded anything.**
+
+A box can only be graded `hit` if the template asserts a region for it at
+all, so coverage is an upper bound on the score, and coverage is computable
+without opening the grades. On record 1493608's 35 boxes:
+
+| | asserted | of |
+|---|---|---|
+| scalars | 12 | 24 |
+| table cells | 6 | 11 |
+| **overall** | **18** | **35 = 51.4%** |
+
+The layered join locates 19 of the same 35, 54.3%. The bar was 26. **18 is
+below 21, which the protocol fixed in advance as the DEAD zone**, so the
+verdict follows without a grading sitting and the elected middle-zone escape
+does not fire. That is what pre-registering three zones rather than one
+threshold bought: the outcome landed in a zone whose rule was already
+written.
+
+`make probebox` reproduces it. No API calls, no cost.
+
+**The verdict does not depend on my label table being complete.** Four of the
+35 graded fields never had a spec written. All four were checked against the
+canonical anchor table afterwards: `document.form_revision` has no anchor,
+only the false friends `former`, `forms` and `provision`; `identity.rrc_well_id`
+and `identity.well_number` need `number`, which has no anchor on the face at
+all; `completion.top_of_pay` and `completion.plug_back_depth` print as "Top of
+Pay" and "P.B. Depth", every token shorter than the four characters an anchor
+needs. Granting all four would put the ceiling at 22 of 35 at the most
+generous, still below the bar.
+
+Nor does it depend on the fuel threshold. Loosening it adds pages of the
+wrong revision rather than more anchors: at a residual gate of 0.03 the
+Section II pool grows to 34 pages, 6 of the 15 whose revision is known are
+not this revision, and the resulting template **fails to register onto the
+graded page at all**. The measured ceiling with that build is 8 of 35, worse
+than the honest one. The face template is stable at 337 anchors across gates
+from 0.01 to 0.03.
+
+### What failed, and what did not
+
+This is the part that matters more than the verdict, because the two halves
+of the mechanism came apart cleanly.
+
+**Registration works.** The graded face page registered on **96 shared
+anchors with a median residual of 0.0014** page-fractions, and the Section II
+page on 12 anchors at 0.0017. Discovery by registration also separates
+revisions on its own: 24 face pages sit under a residual of 0.005 and the
+next candidate is at 0.040, a gap of nearly an order of magnitude. Of the 12
+discovered face pages whose revision the smoke run recorded, 1 disagrees. The
+fixed-layout premise is not what failed. A page of this revision can be put
+into a common frame to within about a seventh of a line-height.
+
+**The anchor inventory fails.** The template cannot say where a field is
+because the field's printed label is not in the pooled table. The Section II
+table holds 80 tokens from 10 pages and contains no `elevation`, no
+`contractor`, no `total`, no `directional`, no `perforations`, no `screen`.
+Those words are all printed on the paper and legible to a human eye in the
+scan. They are absent because the OCR garbles each of them differently on
+every page, so no two pages agree and nothing pools.
+
+Of the 17 boxes the template cannot place: 13 are labels missing from the
+canonical table, 2 are labels whose every token is under four characters, and
+2 were checked individually and are not recoverable.
+
+**So the failure signature is anchor poverty and label garbling, and it is
+not a layout-assumption failure.** Those are the two signatures named in
+"Textract as calibration" above, and they were written down before this
+number existed. The trigger condition as stated is met.
+
+Two things must be said with that, and they cut in opposite directions.
+
+The limit recorded with the escalation does not bite here. Build-time OCR
+cannot rescue runtime registration of a page whose own text layer fails, but
+this page's text layer did not fail: it registered on 96 anchors. What is
+missing is in the pooled template, which is built once and committed, so this
+is exactly the case the build-time-versus-runtime distinction was drawn for.
+
+**And the case is still not complete.** Coverage is not landing. Nobody has
+graded whether the 18 regions the template does assert are on their fields.
+If they are not, then the cell rule is wrong too, the failure is *also* a
+layout-assumption failure, and Textract must stay shut because more words
+would not fix it. That question is answerable in one small sitting on
+33 boxes, and it needs its own pre-registered rule before anybody looks.
+Until it is answered, the escalation stays shut.
+
+### What the probe leaves
+
+Standing rule 9, on the probe's own work.
+
+- **The mechanism is dead on this document, not measured on the corpus.** One
+  revision, one document, 35 boxes.
+- **Nothing was graded.** Every number here is coverage and registration
+  quality. The probe never tested whether a template box lands, which is the
+  claim the bar was really about.
+- **The 1975 and 1983 templates were never built.** The 1966 bucket was
+  chosen because it is the worst, and a mechanism that dies there might still
+  serve where the text layer is good. It would also be redundant there: snap
+  already covers 100% of the graded 1983 boxes.
+- **Three of the abstentions were my own bugs, found by reading every
+  abstention by name before reporting the count.** DEFECTS #30. A mechanism
+  that can abstain has bugs that look like honesty.
+- **The layered join remains what the repo has measured**: 77.3% overall,
+  100% on 1983 paper, 54.3% on 1966. Nothing here changes it, and nothing
+  here has been adopted.
 
 ## The viewer decision, settled 2026-09-03, mechanism-independent
 

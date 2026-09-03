@@ -1266,3 +1266,71 @@ visually distinct all the way into the viewer.
 casing row, plus the pre-registered grading protocol. The detector is
 permanent output precisely because a regression into schematic geometry would
 otherwise be silent.
+
+---
+
+## #30 — 2026-09-03 — Three rules abstained for reasons that were not facts about the paper
+
+**What happened:** building the Rev. 7/5/66 template, three separate rules in
+`pipeline/template.py` declined to locate fields. Each looked like the
+mechanism honestly reporting that the paper would not support a box. None of
+them was.
+
+1. **The value-region rule ran the wrong way.** It was declared, before
+   building, as a band from the label's right edge to the next anchor on its
+   line. This form family prints the label in a ruled cell's top-left corner
+   and the operator types the value **underneath** it: "6. LOCATION (Section,
+   Block, and Survey)" sits at y 0.272 and its value at y 0.287. The rule
+   returned bands 0.02 page-fractions wide that contained nothing.
+2. **Label agreement was isotropic**, one threshold of 0.15 for both axes, so
+   it was wrong in both directions at once. Too tight for a printed phrase:
+   "6. LOCATION (Section, Block, and Survey)" spans 0.16 in x, so its own
+   three anchors were ruled to disagree and the field abstained. Too loose in
+   y: two anchors 0.137 apart, nineteen line-heights, were ruled to be one
+   label.
+3. **A one-anchor checkbox label tied with itself.** Checkbox specs are
+   clustered both as a line and as a column, and for a label resolving to a
+   single anchor those two groups are the same group. The tie-break, which
+   exists so that two genuinely competing lines abstain rather than being
+   settled by proximity, read that identity as a tie and abstained.
+   `completion.type_of_completion` was located, then silently dropped.
+
+**Why this is one entry and not three.** They share a cause: each rule was
+written from an idealized picture of a form rather than from the paper in
+front of me, and each failed in the direction that produces an abstention.
+Abstention is the safe direction for a wrong box and the dangerous direction
+for a measurement. All three were quietly lowering the probe's coverage,
+which is the probe's headline number.
+
+**Measured footprint:** the face template went from 6 of 12 fields located to
+8 of 12, and `completion.type_of_completion` came back on the Section II
+template. The ceiling the verdict is read from is 18 of 35. The verdict did
+not change, because 18 is below both the pre-registered bar of 26 and the
+comparator's 19. But these were moving the number the verdict is read from,
+and moving it in the direction that would have killed the idea for the wrong
+reason.
+
+**The general form, which is the reason this is logged.** A mechanism that
+can abstain has a failure mode a mechanism that always answers does not: its
+bugs look like honesty. "The paper does not support this" and "my rule is
+wrong" produce the same output, and only one of them is a finding. So an
+abstention rate is not evidence until the abstentions have been read
+individually. Every abstention in this probe was diagnosed by name before the
+ceiling was reported: 13 of the 17 are labels missing from the canonical
+anchor table, 2 are labels whose every token is shorter than the four
+characters an anchor needs ("Top of Pay", "P.B. Depth"), and 2 more were
+checked and are not recoverable.
+
+This is the mirror of DEFECTS #29. There the model was confidently wrong and
+the shape check called it well-formed. Here the mechanism was wrongly silent
+and the silence looked like integrity.
+
+**Resolution:** all three fixed, each with the tier-1 test that pins it,
+written from the real anchor positions that exposed it. The diagnosis loop is
+now permanent output rather than a one-off: `scripts/probe_boxes.py` prints
+every abstaining field with its snap outcome and its model-box grade beside
+it, so an abstention can never again be counted without being read.
+**Pin:** tests/tier1/test_template.py — `test_the_region_is_the_cell_the_label
+_corners`, `test_a_long_printed_phrase_resolves_along_its_line`,
+`test_two_lines_carrying_one_token_each_abstain`, and
+`test_a_one_anchor_checkbox_label_is_not_a_tie_with_itself`.
