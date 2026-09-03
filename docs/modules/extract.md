@@ -156,6 +156,118 @@ for the text-layer comparison, `make overlay` for whole-page evidence, and
 the `geometry.schematic_grid` detector that runs on every document. A new
 mechanism is graded the same way the old one was killed.
 
+### The template probe, pre-registered 2026-09-03
+
+The sixth candidate, and the one being tried. It is a direction change rather
+than a repair of the five above: the per-document localization framing is
+what is being questioned. These are forms. A revision's layout is fixed. The
+corpus is evidence about roughly twelve templates, not about 839 independent
+boxes.
+
+**What the probe measures is a ceiling, not a mechanism.** The question it
+asks is the prior and cheaper one: does a fixed-layout assumption locate
+fields on 1966 paper at all. If the ceiling is under the bar, template
+induction is not worth building and the direction dies for nothing.
+
+Three facts found before building it, from read-only diagnostics over
+artifacts that already existed. They changed the design.
+
+- **The 1966 text layer is dense, not absent.** The four Rev. 7/5/66 pages
+  carry 470 to 573 words each from `pdftotext -bbox`. The `no_match`
+  outcomes in snap coverage are OCR garbling of the values, not a missing
+  layer. Printed labels come through partially readable.
+- **Printed text is positionally stable across documents of a revision.**
+  Pooling normalised tokens of four or more characters across the 1966 face
+  pages: 96 tokens are shared by three or more documents, and 75 of the 96
+  sit within 0.03 page-fractions on both axes, with typical spreads of 0.001
+  to 0.010. Excluding the graded document and restricting to the top half
+  where the identity block lives, 18 tight anchors remain.
+- **Pooling snapped value positions is dead as template fuel.** Snap rates on
+  the four 1966 documents are 43% on 1493608 and 3%, 15% and 8% on the other
+  three. The graded document is the only one with a usable rate. Pooling from
+  the other three would give a median of n=1 per field; pooling from all four
+  would put the target's own positions into the template that scores it.
+
+The third fact has a consequence for the comparator that is stated rather
+than hidden: **the join's 54.3% on 1966 was measured on the single most
+text-layer-favourable 1966 document in the set**, at three to fourteen times
+its revision-mates' snap rate. The bar is set against a generous baseline.
+
+So the template's field regions come from the printed labels in the measured
+text layer, pooled across the revision, mapped to fields through the label
+table in docs/labeling-protocol-extract.md that was written before any box
+was drawn. No coordinate is placed by eye. Placing one by eye would be the
+same localization DEFECTS #29 calls confabulated, and the probe would be one
+model checking another.
+
+This is close to candidate 2 above and is not it. Candidate 2 has the model
+transcribe the printed label. This takes the label from the text layer with
+the model out of the loop entirely. Candidate 2 stays on hold.
+
+**The bar, the population, the paired test and the elected escape are in
+docs/labeling-protocol-extract.md under "Box grading, stage three".** They
+were fixed before the template was built. In one line: at least 26 of the
+same 35 boxes, and McNemar exact one-sided at or below 0.05, or the idea
+dies.
+
+**What a pass would still leave.** One revision, one document, 35 boxes.
+Templates cannot touch unknown-revision pages at all, and that is the largest
+graded bucket: 45 of the 110 stage-two boxes, 41%, are the era-unreadable
+document, and 6 of the 20 smoke documents, 30%, carry no revision. Revision
+identification is what the mechanism would have to solve next, and is not
+tested here. Reverse-page fuel is thin: among non-graded 1966 documents there
+is exactly one reverse. And the equal-band rule for table rows is the one
+declared guess in the design, separately tagged and separately reported so it
+cannot inflate the headline.
+
+## The viewer decision, settled 2026-09-03, mechanism-independent
+
+Whatever wins, the viewer clicks through to the region **zoomed to readable
+scale, with the printed field label as the caption**.
+
+Near-in-a-zoomed-captioned-viewport is acceptable. Anything at full-page zoom
+is not. A region that puts the eye within one field-row of the value is
+useful when the viewport is tight enough that one field-row is a large
+fraction of it, and useless when the reader is looking at a whole page.
+
+This is half of the complaint that opened DEFECTS #29 and it costs nothing.
+It is recorded now precisely because it does not depend on which mechanism
+wins, and so must not wait on that decision.
+
+## Textract as calibration: a named contingent escalation
+
+Not a live option and not a backlog item. This section names the number that
+would open AWS, so that reversing the road-not-taken below has to be argued
+against a measurement rather than against taste.
+
+**Build time is not runtime.** The escalation is roughly 50 pages of
+`DetectDocumentText`, once, on the developer's machine, to build templates
+that are then committed as static artifacts. Users of the pipeline get the
+templates in the repo. The laptop-with-one-API-key property that keeps
+Textract out is a property of the runtime, and this does not touch it.
+
+**It triggers on exactly one failure signature: anchor poverty or label
+garbling.** That is a thin canonical anchor table, or field labels that the
+fuzzy match cannot find in the text layer. Those are word-inventory problems
+and word inventory is the only thing Textract adds, so it is the one failure
+it can actually fix.
+
+**It does not trigger on a layout-assumption failure.** If the template
+registers cleanly, the labels match, and the boxes still miss, then the form
+does not have the fixed layout the mechanism assumes. Better OCR cannot
+repair that, and reaching for Textract there would be spending a dependency
+on a diagnosis it does not address.
+
+**Its limit, stated with it.** Build-time OCR cannot rescue runtime
+registration. A page whose own embedded text layer fails to produce enough
+anchors cannot be registered onto a template no matter how good the template
+is, unless Textract also runs at runtime, which is the thing being refused.
+Better templates do not fix unreadable pages.
+
+The comparison it now has to win has also moved. Textract's case was against
+the snap residue. If the template probe passes, its case is against the
+**template** residue, which is smaller.
+
 ## Cost is output, not pixels
 
 **Measured 2026-08-31, `scripts/probe_sonnet.py`, one two-page completion
