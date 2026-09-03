@@ -1526,3 +1526,91 @@ happened to think about.**
 **Pin:** tests/tier2/test_probe_sheet_guard.py::test_a_graded_sheet_refuses_before_the_output_directory_is_touched,
 which fills a sheet, populates the directory, calls `write_sheet`, and asserts
 the directory is intact after the raise.
+
+---
+
+## #35 — 2026-09-03 — The same two-clause failure, in a document the fix did not look at
+
+**What happened:** DEFECTS #31 was logged at midday: a pre-registration
+containing two decision clauses is not a pre-registration, because it leaves a
+choice to be made at the moment you know which choice you want. The
+resolution was a `**DECISION RULE:**` marker and a tier-2 test counting them.
+
+Two hours later I wrote `docs/labeling-protocol-reassemble.md` and did it
+again.
+
+Its decision rule moves the threshold if either of two things fires, and the
+second is **"it fails to attach two or more of the three DEFECTS #25 read-out
+cases"**. The paragraph immediately below it reads **"Coverage is reported and
+decides nothing. A run that attaches nothing and is wrong about nothing is a
+legitimate outcome of this rule."**
+
+A run that attaches nothing fails the second bullet. The two statements
+cannot both be true, and Alex caught it by reading, not the test.
+
+**Why the fix for #31 did not catch it.** The test I wrote scans sections
+headed `## Box grading, stage N` in one file. The reassembly protocol is a
+different document with no stage sections, so the scan found nothing to
+check and passed. **The fix was scoped to the shape of the instance rather
+than to the shape of the failure.** A rule that only holds where the last
+example happened is not a rule, and this is the second time in one day that a
+guard turned out to be standing in the wrong place (#34 was the first).
+
+**A second error inside the first, and it is not a duplication.** The rule
+responds to *either* failure by moving the threshold from 2 to 3. Tightening
+is a coherent answer to attaching a page to the wrong face. It is an
+incoherent answer to failing to attach a page that belongs, which tightening
+makes worse. I wrote one response for two failures pointing in opposite
+directions.
+
+**What it would have cost.** Nothing yet: no measurement has run. Had it run,
+the module could have attached nothing at all and I could have reported that
+as a pass, quoting the sentence about coverage deciding nothing. Alex named
+the reason it matters in one line: precision alone cannot choose a threshold,
+because attach-nothing passes at any strictness.
+
+**Resolution:** the protocol is amended before any measurement, two-sided,
+with must-attach cases named individually and a response that depends on
+which direction the failure points. The offending sentence is kept verbatim
+and marked superseded, on the same reasoning as #31: a pre-registration that
+edits out the clause it failed to honour is worth nothing.
+
+The `**DECISION RULE:**` marker and its test now apply to **every** file
+matching `docs/labeling-protocol-*.md`, not to one file's section headings.
+**Pin:** tests/tier2/test_repo_consistency.py::test_every_protocol_marks_its_decision_rules
+and ::test_no_protocol_decides_an_outcome_outside_a_marked_rule
+
+---
+
+## #36 — 2026-09-03 — The ignore rule that protects the corpus removes the safety net from everything else
+
+**What happened:** raised by Alex as the structural lesson behind #34, which
+was a guard that would have deleted a sealed answer key before refusing.
+
+`.gitignore` excludes `data/` because the fetched PDFs carry surface owners'
+names, addresses and phone numbers, and that rule is not negotiable. But the
+answer key to a blinded grading sheet was also written under `data/`, and it
+is not corpus imagery. It is a hand-made artifact that took a sitting to
+produce and cannot be regenerated once the sheet it explains has been graded.
+
+So it inherited an exclusion written for a different reason, and with it lost
+the only recovery path this repo actually relies on. DEFECTS #26's 405 rows
+came back with one `git checkout`. The key would not have.
+
+**Why it was wrong:** the ignore rule answers "does this contain personal
+data". It was allowed to answer "is this worth keeping", which is a different
+question with a different answer, and nothing in the layout made the
+difference visible. Everything under `data/` looks equally disposable from
+the outside, and most of it genuinely is.
+
+**Resolution:** irreplaceable hand-made artifacts live in `tests/fixtures/`
+and are committed. The key carries field names, box coordinates and a source
+tag, and no corpus imagery or personal data, so it relocates. Anything that
+does carry imagery stays under `data/` and its tooling copies it out before
+any destructive operation, which is enforced by the guard ordering that #34
+established rather than by anybody remembering.
+
+The general form: **an exclusion written for one reason must not be allowed
+to decide a different question.** `data/` means "may contain personal data".
+It has never meant "safe to lose".
+**Pin:** tests/tier2/test_box_grades_probe.py::test_the_answer_key_is_committed_not_ignored

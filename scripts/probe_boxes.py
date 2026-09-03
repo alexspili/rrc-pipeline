@@ -57,6 +57,11 @@ SNAP = ROOT / "data" / "extract" / "snap_coverage.jsonl"
 GRADES = ROOT / "tests" / "fixtures" / "box_grades.csv"
 TEMPLATES = ROOT / "data" / "extract" / "templates"
 PROBE_SHEET = ROOT / "tests" / "fixtures" / "box_grades_probe.csv"
+#: Committed, not written under data/. The answer key is a hand-made artifact
+#: that cannot be regenerated once its sheet is graded, and it carries field
+#: names and coordinates rather than corpus imagery, so the exclusion that
+#: protects the corpus has no business covering it (DEFECTS #36).
+PROBE_KEY = ROOT / "tests" / "fixtures" / "box_grades_probe_key.csv"
 PROBE_OUT = ROOT / "data" / "labelset" / "overlay_probe"
 
 CAP = 2000
@@ -352,13 +357,15 @@ def write_sheet(pdf, rows, asserted, snaps, seed: int) -> None:
         writer = csv.DictWriter(fh, fieldnames=list(sheet_rows[0]))
         writer.writeheader()
         writer.writerows(sheet_rows)
-    key_path = PROBE_OUT / "KEY_do_not_open_until_graded.csv"
+    key_path = PROBE_KEY
     with key_path.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(key_rows[0]))
         writer.writeheader()
         writer.writerows(sorted(key_rows, key=lambda r: r["box_num"]))
     print(f"\n  sheet: {PROBE_SHEET}  ({len(sheet_rows)} boxes)")
     print(f"  key:   {key_path}  (the blind; scoring reads it, you do not)")
+    print("  committed, not under data/: it cannot be regenerated once the "
+          "sheet is graded (DEFECTS #36)")
 
 
 def score_sheet() -> None:
@@ -369,7 +376,7 @@ def score_sheet() -> None:
     snapped box claims a measured word position and a box near the value is a
     box on the wrong word.
     """
-    key_path = PROBE_OUT / "KEY_do_not_open_until_graded.csv"
+    key_path = PROBE_KEY
     if not PROBE_SHEET.exists() or not key_path.exists():
         print("\nnothing to score: run --sheet first")
         return

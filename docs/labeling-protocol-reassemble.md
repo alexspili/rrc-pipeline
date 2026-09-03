@@ -2,7 +2,8 @@
 
 Written 2026-09-03, before the identity reader exists and before any page has
 been grouped. The threshold it fixes is already in the code as
-`MIN_AGREEMENTS = 2`, and this file is what decides whether it stays there.
+`MIN_AGREEMENTS = 2`. Whether it stays there is settled by the rule below
+and by nothing else in this file.
 
 ## What is being measured, and what is not
 
@@ -10,8 +11,8 @@ Not accuracy of extraction. Whether **the pages this module groups together
 are the pages that belong together**, and whether the ones it declines to
 group are ones a human agrees should be declined.
 
-The anti-goal from docs/modules/reassemble.md governs the reading of every
-number here: **it must not improve by attaching more pages.** A wrong
+The anti-goal from docs/modules/reassemble.md is the frame for every number
+here: **it must not improve by attaching more pages.** A wrong
 attachment puts one well's casing record under another well's identity, and
 every downstream check would then validate a document that never existed. So
 the count of unattached pages is reported output and is never a number to
@@ -36,24 +37,79 @@ section between two of them, and one file supplying three documents.
 
 ## DECISION RULE:
 
-Fixed here before the identity reader is built.
+**Amended 2026-09-03, before any measurement ran.** The amendment is recorded
+as DEFECTS #35 and the superseded text is kept below rather than deleted.
 
-The threshold `MIN_AGREEMENTS` stays at **2** unless one of these fires:
+The rule is **two-sided**. Precision alone cannot choose a threshold, because
+a module that attaches nothing is wrong about nothing and passes at any
+strictness. So the measurement names the pairings that must be made as well
+as the ones that must not.
 
-- **It attaches a page to the wrong face, anywhere in either set.** One wrong
-  attachment is enough. This is the anti-goal and it is not traded against
-  coverage.
-- **It fails to attach two or more of the three DEFECTS #25 read-out cases.**
-  Those three are the reason the module exists.
+### Must-attach: pages known to belong together
 
-If either fires, the threshold moves to 3 and both sets are re-measured
-**once**. That result is final either way, and a threshold of 3 that also
-fails means the identity fields on section pages do not carry enough signal
-and the module is reported as such rather than tuned further.
+Each is graded individually and named in the result. Evidence grade is stated
+because it changes what a failure means.
 
-Coverage is reported and decides nothing. A run that attaches nothing and is
-wrong about nothing is a legitimate outcome of this rule, and would be a real
-finding about the paper rather than a failure of the code.
+| Case | Pairing | Evidence |
+|---|---|---|
+| A | record 1493495, page 10 attaches to page 9 | **Confirmed.** The worked case: a W-2 face and its Section II agreeing on operator (Sun Oil Company), lease (State Tract 130) and completion date (9-22-77) |
+| B | record 1495193, page 8 attaches to page 7 | **Confirmed.** DEFECTS #25's pin, read off the paper: page 8 is a section of the report whose face is page 7 |
+| C | record 1495195, page 6 attaches to the face before it | **Probable.** Recorded in the labelling protocol as "almost certainly", not read off the paper as a pairing |
+| D | record 1495195, page 38 attaches to the face before it | **Probable.** Same |
+
+### Must-not-attach
+
+| Case | Requirement |
+|---|---|
+| E | record 1495193, page 8 must **not** attach to page 9 |
+| F | no page anywhere in either set attaches to a face it does not belong to |
+
+### What each failure means, and it is not the same response
+
+**A wrong attachment (E or F fails).** One is enough; it is the module's
+anti-goal and is never traded against coverage. Response: the threshold
+tightens to 3 and both sets are re-measured **once**.
+
+**A confirmed must-attach fails (A or B).** Tightening cannot fix this and
+would make it worse, so the threshold does not move. Response: the identity
+fields on that page are inspected, and the outcome is one of two findings,
+both reported rather than tuned around. Either the identity reader did not
+read fields that are on the page, which is a reader problem, or the page
+genuinely does not carry two agreeing fields, which means **the identity
+fields on section pages do not carry enough signal and the module is reported
+as such**.
+
+**A probable must-attach fails (C or D).** This decides nothing on its own.
+It is a prompt to read the paper for that record, because the pairing was
+recorded as "almost certainly" and has never been confirmed. A failure here
+is as likely to be a wrong assumption in the protocol as a wrong answer from
+the module.
+
+**Both a wrong attachment and a missed confirmed pairing.** The threshold is
+not the problem. Reported as such, and neither number is quoted without the
+other.
+
+Coverage on the rest of the corpus is reported and decides nothing. That is
+about the pages with no known answer, and it is the only thing that sentence
+was ever entitled to mean.
+
+> **SUPERSEDED 2026-09-03, before any measurement, DEFECTS #35. Kept verbatim
+> because a pre-registration that edits out the clause it failed to honour is
+> worth nothing.**
+>
+> The original rule read: the threshold stays at 2 unless it attaches a page
+> to the wrong face, or it fails to attach two or more of the three DEFECTS
+> #25 read-out cases; if either fires, the threshold moves to 3.
+>
+> It then said: "Coverage is reported and decides nothing. A run that
+> attaches nothing and is wrong about nothing is a legitimate outcome of this
+> rule, and would be a real finding about the paper rather than a failure of
+> the code."
+>
+> Those two cannot both hold. A run that attaches nothing fails the second
+> bullet. And the single response of tightening to 3 was written for two
+> failures pointing in opposite directions: tightening answers a wrong
+> attachment and makes a missed pairing worse.
 
 ## The contradicted-but-agreeing list
 

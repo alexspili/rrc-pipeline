@@ -17,8 +17,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SHEET = ROOT / "tests" / "fixtures" / "box_grades_probe.csv"
-KEY = ROOT / "data" / "labelset" / "overlay_probe" / \
-    "KEY_do_not_open_until_graded.csv"
+KEY = ROOT / "tests" / "fixtures" / "box_grades_probe_key.csv"
 
 GRADES = {"hit", "near", "miss"}
 SOURCES = {"template", "template_row", "text_layer"}
@@ -57,9 +56,21 @@ def test_every_row_names_a_field_and_carries_a_value_to_look_for():
         assert row["raw"].strip(), row["field"]
 
 
+def test_the_answer_key_is_committed_not_ignored():
+    """Origin: DEFECTS #36. The key lived under data/, which is excluded
+    because the corpus carries personal data. It carries none: field names,
+    coordinates and a source tag. It inherited an exclusion written for a
+    different reason and lost the only recovery path this repo relies on."""
+    assert KEY.exists(), f"{KEY} is missing"
+    import subprocess
+    ignored = subprocess.run(["git", "check-ignore", str(KEY)],
+                             capture_output=True, cwd=ROOT).returncode == 0
+    assert not ignored, "the answer key is git-ignored and cannot be recovered"
+
+
 def test_the_key_matches_the_sheet_and_holds_the_pre_registered_mix():
     if not KEY.exists():
-        pytest.skip("key is git-ignored corpus output, not present here")
+        pytest.skip("key not present")
     key = list(csv.DictReader(KEY.open(encoding="utf-8-sig")))
     rows = _rows()
     assert {r["box_num"] for r in key} == {r["box_num"] for r in rows}

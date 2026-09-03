@@ -161,6 +161,14 @@ def test_every_page_in_the_corpus_gets_a_unique_batch_id():
 
 PROTOCOL = ROOT / "docs" / "labeling-protocol-extract.md"
 
+#: Every labelling protocol, not just the one whose failure prompted the
+#: check. Origin: DEFECTS #35. The first version of this test scanned one
+#: file's stage headings, so the reassembly protocol repeated the same defect
+#: two hours later and the test found nothing to look at. A rule scoped to
+#: the shape of the instance rather than the shape of the failure is not a
+#: rule.
+PROTOCOLS = sorted((ROOT / "docs").glob("labeling-protocol-*.md"))
+
 #: Phrases that decide an outcome. A tripwire, not a parser: the list is
 #: short and curated, and it exists because the one time this went wrong the
 #: offending sentence used the first of them.
@@ -286,3 +294,67 @@ def test_every_numbered_rule_names_what_pins_it():
             if "Pinned by:" not in text:
                 orphans.append(f"{path.name} {head}")
     assert not orphans, "rules with no pin:\n  " + "\n  ".join(orphans)
+
+
+def _decision_sections(body: str):
+    """Sections of a protocol that can carry a decision rule.
+
+    Either a stage heading, as the extraction protocol uses, or the whole
+    document, as the shorter protocols do.
+    """
+    import re
+    heads = list(re.finditer(r"^## Box grading, stage (\w+)", body, re.M))
+    if not heads:
+        return {"(whole document)": body}
+    out = {}
+    for index, head in enumerate(heads):
+        end = heads[index + 1].start() if index + 1 < len(heads) else len(body)
+        out[head.group(1)] = body[head.start():end]
+    return out
+
+
+def test_every_protocol_that_decides_something_marks_where():
+    """Origin: DEFECTS #35.
+
+    Not every protocol decides an outcome. Two of these are labelling
+    instructions and have nothing to decide, so requiring a marker of them
+    would be ceremony. The invariant is narrower and is the one that failed:
+    a protocol that decides an outcome says where.
+    """
+    missing = []
+    for path in PROTOCOLS:
+        body = path.read_text(encoding="utf-8")
+        decides = any(phrase in body.lower() for phrase in DECIDING)
+        if decides and MARKER not in body:
+            missing.append(path.name)
+    assert not missing, (
+        "protocols that decide an outcome with no marked rule: "
+        + ", ".join(missing))
+
+
+def test_no_protocol_decides_an_outcome_outside_a_marked_rule():
+    """The generalised form of DEFECTS #31's check, after #35 showed the
+    first version only looked where the first failure happened."""
+    offenders = []
+    for path in PROTOCOLS:
+        for name, body in _decision_sections(
+                path.read_text(encoding="utf-8")).items():
+            marked = superseded = False
+            for line in body.splitlines():
+                if MARKER in line:
+                    marked = True
+                    continue
+                if SUPERSEDED in line:
+                    superseded = True
+                    continue
+                if line.startswith("### ") and not marked:
+                    superseded = False
+                if line.startswith("## ") and MARKER not in line:
+                    marked = superseded = False
+                if marked or superseded or line.lstrip().startswith(">"):
+                    continue
+                if any(phrase in line.lower() for phrase in DECIDING):
+                    offenders.append((path.name, name, line.strip()))
+    assert not offenders, (
+        "a sentence decides an outcome outside a marked DECISION RULE:\n"
+        + "\n".join(f"  {f} [{s}]: {l}" for f, s, l in offenders))

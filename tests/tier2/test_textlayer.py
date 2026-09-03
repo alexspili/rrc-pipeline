@@ -112,10 +112,9 @@ def test_the_ocr_drops_one_of_two_printed_instances_of_frio():
 def _snapped(page: int):
     """The graded text-layer boxes on one page of record 1493608."""
     import csv
-    key = (ROOT / "data" / "labelset" / "overlay_probe"
-           / "KEY_do_not_open_until_graded.csv")
+    key = ROOT / "tests" / "fixtures" / "box_grades_probe_key.csv"
     if not key.exists():
-        pytest.skip("answer key is git-ignored output, not present here")
+        pytest.skip("answer key not present")
     rows = [r for r in csv.DictReader(key.open(encoding="utf-8-sig"))
             if r["source"] == "text_layer" and int(r["page"]) == page]
     return {r["field"]: tuple(float(v) for v in r["box"].split())

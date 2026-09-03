@@ -810,10 +810,24 @@ R14. An abstention is read individually before its rate is reported.
     Pinned by: scripts/probe_boxes.py prints every abstaining field by name
     with its snap outcome and model-box grade beside it.
 
+R16. An irreplaceable hand-made artifact is committed, never left only
+    under `data/`.
+    Origin: DEFECTS #36. The `data/` exclusion answers "may contain personal
+    data" and was allowed to answer "safe to lose", which is a different
+    question. A blinded sheet's answer key cannot be regenerated once the
+    sheet is graded, and it carries no imagery, so it belongs in
+    tests/fixtures. Anything that does carry imagery stays excluded and its
+    tooling copies out before any destructive operation, per R12.
+    Pinned by: tests/tier2/test_box_grades_probe.py::test_the_answer_key_is_committed_not_ignored
+
 R15. A grading stage carries exactly one marked decision rule.
     Origin: DEFECTS #31. A second decision clause, written while documenting
     a caveat, disagreed with the first when the grades came in.
-    Pinned by: tests/tier2/test_repo_consistency.py::test_each_grading_stage_marks_its_decision_rules
+    Origin sharpened by DEFECTS #35: the first version of this check scanned
+    one file's stage headings, so the same defect recurred two hours later
+    in a protocol with no stage headings and the test found nothing to look
+    at. It now applies to every labelling protocol.
+    Pinned by: tests/tier2/test_repo_consistency.py::test_no_protocol_decides_an_outcome_outside_a_marked_rule
 
 ## RETIRED
 
