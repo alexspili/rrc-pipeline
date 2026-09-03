@@ -429,8 +429,14 @@ Record 1493608, pages 5 and 6, the same document as stage two.
   assumption that a unique text match is a correct one, and this is the first
   time that assumption is checked by eye.
 
+    make probebox                       # ceiling, and the abstention list
+    make probebox ARGS=--sheet          # draw the sheet and the overlays
+    open data/labelset/overlay_probe    # the PROBE_ files are yours
+    make probebox ARGS=--score          # both rules, after you have graded
+
 Sheet at `tests/fixtures/box_grades_probe.csv`, overlays under
-`data/labelset/overlay_probe/`. Grades unchanged: `hit`, `near`, `miss`,
+`data/labelset/overlay_probe/`. The answer key sits beside the overlays, is
+git-ignored, and is read by the scorer and not by you. Grades unchanged: `hit`, `near`, `miss`,
 same definitions as stage two, and `handwritten` and `note` as before.
 
 ### The blinding, and exactly how far it goes

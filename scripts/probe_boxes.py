@@ -35,7 +35,7 @@ import json
 import math
 import random
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -148,6 +148,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--sheet", action="store_true",
                     help="write the blinded stage-four grading sheet")
+    ap.add_argument("--score", action="store_true",
+                    help="score the graded stage-four sheet against both "
+                         "pre-registered rules")
     ap.add_argument("--seed", type=int, default=20260903)
     args = ap.parse_args()
 
@@ -266,6 +269,8 @@ def main() -> None:
     if args.sheet:
         print("\nSTAGE FOUR SHEET (does a region land when it is asserted?)")
         write_sheet(pdf, rows, asserted, snaps, args.seed)
+    if args.score:
+        score_sheet()
 
 
 def write_sheet(pdf, rows, asserted, snaps, seed: int) -> None:
@@ -360,6 +365,85 @@ def write_sheet(pdf, rows, asserted, snaps, seed: int) -> None:
         writer.writerows(sorted(key_rows, key=lambda r: r["box_num"]))
     print(f"\n  sheet: {PROBE_SHEET}  ({len(sheet_rows)} boxes)")
     print(f"  key:   {key_path}  (the blind; scoring reads it, you do not)")
+
+
+def score_sheet() -> None:
+    """Apply both stage-four rules, which were fixed before the sheet existed.
+
+    The template is judged hit+near because its region is a locator for a
+    viewer that zooms to it. The snap tier is judged on hit alone, because a
+    snapped box claims a measured word position and a box near the value is a
+    box on the wrong word.
+    """
+    key_path = PROBE_OUT / "KEY_do_not_open_until_graded.csv"
+    if not PROBE_SHEET.exists() or not key_path.exists():
+        print("\nnothing to score: run --sheet first")
+        return
+    graded = {r["box_num"]: r for r in
+              csv.DictReader(PROBE_SHEET.open(encoding="utf-8-sig"))}
+    key = list(csv.DictReader(key_path.open(encoding="utf-8-sig")))
+    ungraded = [k["box_num"] for k in key
+                if not graded.get(k["box_num"], {}).get("grade", "").strip()]
+    if ungraded:
+        print(f"\nSTAGE FOUR: not scored, {len(ungraded)} of {len(key)} "
+              f"boxes are ungraded")
+        return
+
+    buckets = defaultdict(Counter)
+    for row in key:
+        grade = graded[row["box_num"]]["grade"].strip()
+        source = row["source"]
+        buckets[source][grade] += 1
+        if source.startswith("template"):
+            buckets["template_all"][grade] += 1
+
+    print("\nSTAGE FOUR RESULT, both rules pre-registered before the draw\n")
+    template = buckets["template_all"]
+    landed = template["hit"] + template["near"]
+    total = sum(template.values())
+    scalars = buckets["template"]
+    cells = buckets["template_row"]
+    print("RULE ONE, the template: hit + near over 18")
+    print(f"  scalars      {scalars['hit'] + scalars['near']:2d}/"
+          f"{sum(scalars.values()):2d}   "
+          f"(hit {scalars['hit']}, near {scalars['near']}, "
+          f"miss {scalars['miss']})   <- the number that decides")
+    print(f"  cell bands   {cells['hit'] + cells['near']:2d}/"
+          f"{sum(cells.values()):2d}   "
+          f"(hit {cells['hit']}, near {cells['near']}, miss {cells['miss']})"
+          f"   <- weak in the hit direction, median area 0.075 of the page")
+    low, high = wilson(landed, total) if total else (0, 0)
+    print(f"  pooled       {landed:2d}/{total:2d} = {landed / total:.1%}   "
+          f"Wilson [{low:.1%}, {high:.1%}]")
+    if landed >= 14:
+        verdict = ("the cell rule lands. The template's failure is anchor "
+                   "inventory only, which is the Textract trigger signature; "
+                   "the escalation opens for decision, gated on its own "
+                   "ceiling step.")
+    elif landed <= 10:
+        verdict = ("the layout assumption fails too. Textract stays shut "
+                   "permanently on this argument and the template direction "
+                   "is closed rather than parked.")
+    else:
+        verdict = "inconclusive at this n. Stays shut. No escape."
+    print(f"  -> {verdict}")
+
+    snap = buckets["text_layer"]
+    hits = snap["hit"]
+    total_snap = sum(snap.values())
+    print("\nRULE TWO, the snap tier: hit alone over 15")
+    print(f"  {hits:2d}/{total_snap:2d} hits  "
+          f"(near {snap['near']}, miss {snap['miss']})")
+    if hits >= 12:
+        print("  -> the snap tier stands as measured geometry")
+    else:
+        rate = hits / total_snap if total_snap else 0
+        restated = 4 + hits          # the 4 model-box bands, plus real snaps
+        print("  -> snap demotes to a disambiguation prior only, pending "
+              "diagnosis, and")
+        print(f"     the 54.3% comparator on this document is restated: "
+              f"{restated}/35 = {restated / 35:.1%} "
+              f"(snap hit rate {rate:.1%}, not 100%)")
 
 
 if __name__ == "__main__":
