@@ -359,6 +359,16 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    2026-09-03: $0.0074/page, 166 output tokens, so $2.01 standard or $1.01
    batched over the 274 candidate pages. That run is GATED and lands with
    the full extraction run as one spend decision.
+   MEASURED 2026-09-03 on the GT set: A pass, B fail, C not attached, D
+   attached to p37, E pass, F no KNOWN wrong attachment (2 of 17 checkable).
+   17 attachments made from 57 candidate pages; 20 of those candidates
+   carry no identity fields at all and can never attach on any threshold. Threshold
+   unchanged at 2. Three defects out of it: #37 the module trusted the
+   classifier's face label, measured at 44-57% precision, which is why the
+   pin failed; #38 a non-present value carrying text; #39 a written "N.A."
+   allowed to veto. OPEN and yours: whether completion date should veto
+   across form types, which is the remaining reason case B fails. Lease-name
+   matching held until the full corpus run. docs/modules/reassemble.md.
    Superseded by the above, kept for its reasoning: reassembly is unbuilt and is now the biggest known gap. It must pair in
    BOTH directions and settle candidates by identity-field agreement, not
    by position: the smoke pairing looked only forward and three of fifteen

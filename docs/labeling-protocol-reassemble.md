@@ -79,6 +79,19 @@ genuinely does not carry two agreeing fields, which means **the identity
 fields on section pages do not carry enough signal and the module is reported
 as such**.
 
+> **Recorded 2026-09-03, after the first measurement: the list above was
+> wrong.** Case B failed, and the cause was neither of the two explanations
+> this rule names. The module was never offering the page as a candidate,
+> because the classifier had labelled it a face and the module took that as
+> fact (DEFECTS #37). Nothing about the reader, and nothing about how many
+> fields the page carries.
+>
+> Kept rather than corrected, because the failure is instructive: **a rule
+> that enumerates the explanations it expects can be wrong about the list**,
+> and the response to that is to inspect rather than to pick the nearest
+> listed option. Had the two options been treated as exhaustive, the real
+> cause would have been recorded as one of them.
+
 **A probable must-attach fails (C or D).** This decides nothing on its own.
 It is a prompt to read the paper for that record, because the pairing was
 recorded as "almost certainly" and has never been confirmed. A failure here

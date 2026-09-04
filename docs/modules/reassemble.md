@@ -156,6 +156,114 @@ contradicted-but-agreeing list exists to put in front of a human, and at n=1
 it is an observation to watch rather than a finding. It does say the list
 will not be empty.
 
+## First measurement, 2026-09-03
+
+Identity read over 123 pages of the ground-truth records, $0.91, cached. The
+rule, its cases and its thresholds were fixed in
+docs/labeling-protocol-reassemble.md before any of this ran, and amended to be
+two-sided (DEFECTS #35) still before it ran.
+
+Two numbers are reported for each case because the module changed once during
+the sitting, after a failure was diagnosed as a design hole rather than a
+threshold problem (DEFECTS #37). The change is a design fix and not threshold
+tuning, but it was still made after seeing a result, so both figures travel
+together and neither is quoted alone.
+
+| Case | Pairing | Evidence | Before | After |
+|---|---|---|---|---|
+| A | 1493495 p10 → p9 | confirmed | PASS | **PASS** |
+| B | 1495193 p8 → p7 | confirmed | FAIL | **FAIL** |
+| C | 1495195 p6 → face before it | probable | not attached | not attached |
+| D | 1495195 p38 → face before it | probable | not attached | **attached to p37** |
+| E | p8 must not attach to p9 | — | PASS | PASS |
+| F | no wrong attachment | — | none checkable | see below |
+
+**The threshold did not move and is still 2.** The rule says a confirmed
+must-attach failure does not move it, and nothing found argues otherwise: case
+B does not fail on how much agreement is required.
+
+| | before | after |
+|---|---|---|
+| documents | 63 | 54 |
+| pages attached | 5 | **17** |
+| unattached | 52 | 50 |
+| contradicted / below threshold / tie / no face | 29 / 20 / 2 / 1 | 28 / 20 / 1 / 1 |
+
+All five attachments made before the change survive it unchanged. That was
+the stated verification and it is the reason the two columns can be compared.
+
+**Case D is reported as attached, not as a pass.** It attached to page 37, the
+face immediately before it, which is what the protocol expected. But D was
+recorded as "probable" rather than read off the paper, so a match here
+confirms the module agrees with an assumption, not that either is right.
+
+**Case B fails for a second reason, and it is open.** Pages 7 and 8 agree on
+operator (`U. S. Resources, Inc.`) and lease (`Debbie`) and disagree on
+completion date, `10-2-79` against `8/30/79`. Page 8 is a G-1 potential test
+and page 7 a W-2. Whether one document legitimately carries two dates across
+those two forms is a question about the paper and is not answerable from here.
+Held pending a reading.
+
+### What the module cannot reach at all
+
+**20 of the 57 candidate pages carry no identity fields whatever.** They can
+never attach on any threshold, with any comparison rule, because there is
+nothing on them to compare. That is the ceiling this design has, and it is a
+fact about the paper rather than about the code.
+
+### F, stated carefully
+
+Of the 17 attachments, 2 can be checked against ground truth and both are
+right. The other 15 are on records with no ground truth. So the honest claim
+is **no known wrong attachment**, not none.
+
+Two are worth naming as the highest risk, because they are the least like a
+face and its section: record 1495195 pages 52 and 87, and pages 89 and 114.
+Each pair agrees on all five identity fields and sits 35 and 25 pages apart in
+one file. Agreeing on everything is as consistent with two copies of one
+filing as with one document, and only the paper separates those.
+
+### The contradicted-but-agreeing list
+
+54 pairs after the change, up from 17, because faces are now compared against
+faces. Full list: `data/extract/reassemble_report.txt`.
+
+What the veto rejected on:
+
+| field | pairs |
+|---|---|
+| completion date | 42 |
+| operator name | 13 |
+| lease name | 6 |
+| well number | 5 |
+
+**Most of it is the veto working.** Record 1511465 is one lease filed on from
+1985 to 2007 under Howell Petroleum, Anadarko and HEA Exploration, and those
+really are different documents.
+
+**The lease-name disagreements are the ones that test the exact-matching
+hypothesis**, which is that a face and its section were typed by one person in
+one sitting so variance within a document should be rare. Five distinct pairs:
+
+```
+'A.D. Middleton Alc'              vs 'Anahuac SWD Syst. #3'              different leases
+'A.D. Middleton Alc'              vs 'Anahuac SWD System #3'             different leases
+'Anahuac SWD System #3'           vs 'Anahuac SWD Syst. #3'              abbreviated mid-name
+'Charles Fitch et al M/R (03864)' vs 'Charles Fitch et al M/D (03864)'   one character
+'Fleck Lease'                     vs 'Fleck'                             trailing form word
+```
+
+Two are genuinely different leases and the veto is right. Three are one name
+written two ways. Across the wider set of 46 lease disagreements the variance
+takes at least four forms: mid-name abbreviation, appended well number
+(`Fleck` against `FLECK #1`), truncation (`Charles Fitch et al M/R (03864)`
+against `Charles Fitch`), and single characters.
+
+**Ruled 2026-09-03: change nothing, gather from the full corpus first.**
+Suffix stripping would have resolved 3 of the 46, all the same pair, while
+looking like it had addressed the problem. Recorded so the corpus run has
+something to compare against.
+
 ## Rules
 
 All pins are pending: this module is designed and not built, and the pending
