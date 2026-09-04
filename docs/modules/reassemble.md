@@ -399,11 +399,30 @@ on quantity and says nothing about selectivity. Recorded, not acted on.
 
 ### `found_in` earned its cost on its first run
 
-It surfaced something nobody had looked for: **the same printed field is
-numbered differently across revisions.** The lease name on record 1493495 page
-10 comes from "32. Location of Well, Relative to Nearest Lease Boundaries",
-and on record 1495193 page 8 from "**31.** Location of Well, Relative to
-Nearest Lease Boundaries". Same field, different number, two revisions.
+It surfaced something nobody had looked for, and it forecloses a whole class
+of rule: **the same printed field is numbered differently across revisions.**
+
+| Record | Page | Value | Printed label the reader cites |
+|---|---|---|---|
+| 1493495 | 10 | `State Tract 130` | **32.** Location of Well, Relative to Nearest Lease Boundaries |
+| 1495193 | 8 | `Debbie` | **31.** Location of Well, Relative to Nearest Lease Boundaries |
+| 1495195 | 6 | `Mary Fitzhugh` | **32.** Location of Well, Relative to Lease Boundaries |
+| 1495195 | 38 | `Mary Fitzhugh et al` | **32.** Location of Well, Relative to Nearest Lease Boundaries |
+
+Same label, two different numbers, and the label text itself varies by a word.
+
+**So no rule anywhere in this pipeline may be keyed to a printed field
+number.** Not in reassembly, not in extraction, not in a future validation
+rule. A rule that says "field 32 carries the lease name" is silently wrong on
+every document of the other revision, and silently wrong is the failure mode
+this repo has spent the most time on. Rules key to the printed **label**,
+matched as text, which is what the identity prompt already does and what the
+extraction labelling protocol already told anyone who read it: "read the
+printed label rather than counting boxes".
+
+The corollary is that this finding is not local to reassembly. It is a
+constraint on the whole corpus, found by a diagnostic added for a different
+purpose on its first run.
 
 Every value behind the two confirmed cases now carries the box it came from:
 

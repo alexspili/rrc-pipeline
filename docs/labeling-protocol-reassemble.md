@@ -203,3 +203,87 @@ were. It is never evidence on its own.
 A handful get spot-checked against the paper in the next eyeball sitting.
 Deterministic impossible-source flags are welcome later if they turn out to be
 free; no infrastructure is being built for them now.
+
+## The verification sitting, and it gates the corpus spend
+
+Written 2026-09-03, before the sample was drawn. One sitting, three parts, one
+decision rule.
+
+### Why this sitting exists
+
+Reassembly made 18 attachments on the ground-truth records. **Only 2 of them
+can be checked against anything.** The other 16 are on records with no ground
+truth, so the strongest claim available is "no known wrong attachment", and
+that claim rests on a sample of two.
+
+The module's stated anti-goal is that it must not improve by attaching more
+pages, because a wrong attachment puts one well's casing record under another
+well's identity and every downstream check would then validate a document
+that never existed. A run over the whole corpus would multiply that by
+roughly five. So the corpus spend waits on somebody looking at the paper.
+
+### Part A: eight attachments, verified as pairs
+
+**The sample, fixed here before it was drawn.** Eight of the eighteen:
+
+- the **2 that ground truth covers**, so the sitting can be compared against
+  something already known;
+- the **2 flagged as highest risk** in the run-2 write-up, record 1495195
+  pages 52 and 87, and pages 89 and 114, which agree on all five fields while
+  sitting 35 and 25 pages apart;
+- **4 drawn at random** from the remaining 14, seed 20260903.
+
+The two risk picks are deliberate over-sampling of the cases most likely to
+fail. That biases the sitting **against** the module, which is the safe
+direction for a check that unlocks a spend.
+
+**What you decide for each pair:** are these two pages part of the same
+completion report? Yes, no, or cannot tell from the paper.
+
+### Part B: found_in spot-checks
+
+For the pages in Part A, the reader states which printed box each value came
+from. Check a handful against the page.
+
+`found_in` is a claim by the model about its own reading, exactly as the
+provenance boxes were, and it is no more self-verifying than they were. It is
+not evidence on its own and its rate is not a gate. It is here because a value
+taken from the wrong box is invisible whenever the two boxes agree, and this
+is the only way to find out whether that is still happening.
+
+### Part C: the contradicted-but-agreeing list
+
+Eight pairs, plus the Crawford/Triolo pair from record 1493399, which is not
+in the ground-truth set and is carried here because it was the first case
+ever flagged and has never been resolved.
+
+Each row is either the veto working, two genuinely different wells that share
+a lease, or one document split by an abbreviation. They look identical from
+inside the code. This part decides nothing on its own; it is what tells us
+whether exact-after-normalising is holding up before it meets 274 pages.
+
+## DECISION RULE:
+
+**All eight Part A pairs must verify.**
+
+A pair fails if you judge the two pages are not one report, **or** if a
+`found_in` check shows a value the attachment depended on came from the wrong
+box. Those are two ways to be wrong about the same thing: the attachment was
+made on evidence that was not what it claimed.
+
+- **Eight of eight verify:** the full identity run and the full extraction run
+  unlock together, as one batched spend decision, and reassembly is closed at
+  ground-truth scale.
+- **Any pair fails:** no corpus spend. The failure pattern is analysed and
+  brought back before anything is run.
+
+"Cannot tell from the paper" is not a pass. It is recorded as its own outcome
+and counted as a failure for the purpose of this gate, because the gate exists
+to convert an unchecked claim into a checked one, and a pair nobody can read
+stays unchecked.
+
+Parts B and C are reported and inform what happens next. **Neither is a
+second decision clause.** That distinction is written down explicitly because
+this protocol has already been amended once for containing two rules that
+could disagree (DEFECTS #35), and again because a caveat section elsewhere
+grew a verdict nobody meant to write (DEFECTS #31).
