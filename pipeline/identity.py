@@ -92,6 +92,12 @@ def parse(body: str, page: int) -> dict[str, Value]:
         raw = entry.get("raw")
         if status is Status.PRESENT and not raw:
             status = Status.ILLEGIBLE
+        if status is not Status.PRESENT:
+            # DEFECTS #38. The model returns its `raw` field whatever the
+            # status says, and a value that is not present carries no text.
+            # pipeline/extract.py has done this since it was written; the
+            # rule was not carried across when this reader was added.
+            raw = None
         region = (Region(page=page, box=(0.0, 0.0, 1.0, 1.0), source="page")
                   if status is Status.PRESENT else None)
         out[field] = Value(status=status, value=raw, raw=raw, region=region)

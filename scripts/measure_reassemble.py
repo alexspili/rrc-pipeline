@@ -32,6 +32,7 @@ RAW = ROOT / "data" / "raw"
 CENSUS = ROOT / "data" / "census" / "vision_1000.jsonl"
 CACHE = ROOT / "data" / "extract" / "cache_identity.jsonl"
 OUT = ROOT / "data" / "extract" / "reassemble.jsonl"
+REPORT = ROOT / "data" / "extract" / "reassemble_report.txt"
 
 #: The records the ground-truth documents come from, plus the worked cases.
 RECORDS = ("1493495", "1493540", "1493608", "1494274", "1494690", "1494774",
@@ -89,11 +90,30 @@ def read_identity(client, pdf: Path, page: int, cache, key: str):
     return identity.parse(body, page)
 
 
+class Tee:
+    """Print and keep. My own `tail -55` discarded the must-attach section of
+    the first run and the verdicts had to be reconstructed from the results
+    file, so the report is written as well as printed."""
+
+    def __init__(self, path):
+        self.lines = []
+        self.path = path
+
+    def __call__(self, *parts):
+        text = " ".join(str(p) for p in parts)
+        print(text)
+        self.lines.append(text)
+
+    def close(self):
+        self.path.write_text("\n".join(self.lines) + "\n")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--offline", action="store_true",
                     help="cache only; make no API calls")
     args = ap.parse_args()
+    say = Tee(REPORT)
 
     records = {json.loads(l)["record_id"]: json.loads(l)
                for l in MANIFEST.open() if l.strip()}
@@ -103,7 +123,7 @@ def main() -> None:
     pages = census_pages()
     wanted = {k: v for k, v in pages.items()
               if v.get("form_class") in ("w2", "g1", "other_form")}
-    print(f"{len(wanted)} pages over {len(RECORDS)} records\n")
+    say(f"{len(wanted)} pages over {len(RECORDS)} records\n")
 
     built, missing, failures = {}, 0, []
     for (record_id, file_index, page), row in sorted(wanted.items()):
@@ -122,12 +142,12 @@ def main() -> None:
             form_class=row["form_class"], part=row.get("part"),
             identity=identity.identity_for(values))
     if missing:
-        print(f"  {missing} pages not in cache; rerun without --offline")
+        say(f"  {missing} pages not in cache; rerun without --offline")
     if failures:
-        print(f"  {len(failures)} pages failed and are reported, not hidden:")
+        say(f"  {len(failures)} pages failed and are reported, not hidden:")
         for record_id, file_index, page, why in failures:
-            print(f"    {record_id}-{file_index}-{page}: {why}")
-    print()
+            say(f"    {record_id}-{file_index}-{page}: {why}")
+    say()
 
     by_file = {}
     for key, record in built.items():
@@ -141,10 +161,10 @@ def main() -> None:
         contradicted += ra.contradicted_but_agreeing(group)
 
     attached = sum(len(d.pages) - 1 for _, d in documents)
-    print(f"documents {len(documents)}, pages attached {attached}, "
+    say(f"documents {len(documents)}, pages attached {attached}, "
           f"unattached {len(unattached)}")
     from collections import Counter
-    print("  unattached by reason:",
+    say("  unattached by reason:",
           dict(Counter(u.reason for _, u in unattached)))
 
     home = {}
@@ -153,7 +173,7 @@ def main() -> None:
             if p.page != doc.face.page:
                 home[(p.record_id, p.file_index, p.page)] = doc.face.page
 
-    print("\nMUST-ATTACH (pre-registered)")
+    say("\nMUST-ATTACH (pre-registered)")
     for name, (target, face, grade) in MUST_ATTACH.items():
         got = home.get(target)
         if face is None:
@@ -161,24 +181,24 @@ def main() -> None:
         else:
             verdict = "PASS" if got == face else (
                 f"FAIL, attached to {got}" if got else "FAIL, not attached")
-        print(f"  {name} {target} -> expected {face} ({grade}): {verdict}")
+        say(f"  {name} {target} -> expected {face} ({grade}): {verdict}")
 
-    print("\nMUST-NOT-ATTACH (pre-registered)")
+    say("\nMUST-NOT-ATTACH (pre-registered)")
     for name, (target, forbidden) in MUST_NOT_ATTACH.items():
         got = home.get(target)
-        print(f"  {name} {target} must not attach to {forbidden}: "
+        say(f"  {name} {target} must not attach to {forbidden}: "
               f"{'PASS' if got != forbidden else 'FAIL'} (attached to {got})")
 
-    print(f"\nCONTRADICTED BUT AGREEING ({len(contradicted)} pairs) "
+    say(f"\nCONTRADICTED BUT AGREEING ({len(contradicted)} pairs) "
           "-- read by eye before the semantics are settled")
     for candidate, face, disagreed, agreed in contradicted:
-        print(f"  {candidate.record_id}-{candidate.file_index} "
+        say(f"  {candidate.record_id}-{candidate.file_index} "
               f"p{candidate.page} vs face p{face.page}")
         for field in disagreed:
-            print(f"      DISAGREE {field}: "
+            say(f"      DISAGREE {field}: "
                   f"{candidate.identity.get(field)!r} vs "
                   f"{face.identity.get(field)!r}")
-        print(f"      agreed on: {', '.join(agreed)}")
+        say(f"      agreed on: {', '.join(agreed)}")
 
     with OUT.open("w") as fh:
         for file_key, doc in documents:
@@ -187,7 +207,9 @@ def main() -> None:
                 "face": doc.face.page,
                 "pages": [p.page for p in doc.pages],
                 "evidence": [[p, list(f)] for p, f in doc.evidence]}) + "\n")
-    print(f"\n{OUT}")
+    say(f"\n{OUT}")
+    say(f"{REPORT}")
+    say.close()
 
 
 if __name__ == "__main__":

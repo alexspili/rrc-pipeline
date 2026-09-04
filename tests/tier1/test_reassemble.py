@@ -95,21 +95,36 @@ def test_a_contradiction_rejects_a_pair_however_much_else_agrees():
 
 
 def test_a_tie_between_two_faces_attaches_to_neither():
-    """Breaking it by nearness would put position back in as the decider."""
-    first = page(7, "face", **SUN)
-    second = page(20, "face", **SUN)
-    section = page(8, "sec_ii", **SUN)
+    """Breaking it by nearness would put position back in as the decider.
+
+    The two faces have to contradict each other, or DEFECTS #37's change
+    merges them into one document and there is no tie left to test. Here they
+    are two wells on one lease, which is what the veto is for.
+    """
+    first = page(7, "face", operator_name="Sun Oil Company",
+                 lease_name="State Tract 130", well_number="1")
+    second = page(20, "face", operator_name="Sun Oil Company",
+                  lease_name="State Tract 130", well_number="2")
+    section = page(8, "sec_ii", operator_name="Sun Oil Company",
+                   lease_name="State Tract 130")
     documents, unattached = ra.group([first, second, section])
+    assert sorted(d.face.page for d in documents) == [7, 20]
     assert all(len(d.pages) == 1 for d in documents)
     assert unattached[0].reason == "tie"
 
 
 def test_a_unique_best_score_still_wins():
-    strong = page(7, "face", **SUN, well_number="1")
-    weak = page(20, "face", operator_name="Sun Oil Company",
-                lease_name="State Tract 130")
-    section = page(8, "sec_ii", **SUN, well_number="1")
-    documents, unattached = ra.group([strong, weak, section])
+    """Same shape, but the section carries the well number, so one face wins
+    outright and the other is contradicted rather than merely weaker."""
+    strong = page(7, "face", operator_name="Sun Oil Company",
+                  lease_name="State Tract 130", well_number="1",
+                  completion_date="9-22-77")
+    other = page(20, "face", operator_name="Sun Oil Company",
+                 lease_name="State Tract 130", well_number="2")
+    section = page(8, "sec_ii", operator_name="Sun Oil Company",
+                   lease_name="State Tract 130", well_number="1",
+                   completion_date="9-22-77")
+    documents, unattached = ra.group([strong, other, section])
     grouped = {d.face.page: [p.page for p in d.pages] for d in documents}
     assert grouped[7] == [7, 8] and grouped[20] == [20]
     assert not unattached

@@ -33,6 +33,13 @@ Four rules are enforced here rather than asked for.
 
   Candidates never cross a file boundary. A record can hold five files and
   page 3 of one has nothing to do with page 3 of another (DEFECTS #28).
+
+  A page the classifier calls a face may still be somebody's child. Stage 2
+  measured face precision at 44%, and 57.4% after corrections, so the label
+  is wrong roughly two times in five. Taking it as fact made the module fail
+  its own pin: record 1495193 page 8 is a section that the census called a
+  face, so it was never offered as a candidate and could not attach to
+  anything at any threshold (DEFECTS #37).
 """
 
 from __future__ import annotations
@@ -59,6 +66,13 @@ MIN_AGREEMENTS = 2
 
 AGREES, DISAGREES, UNKNOWN = "agrees", "disagrees", "unknown"
 
+#: Things an operator writes to mean "there is no value here". A page that
+#: declines to answer is silent, not in disagreement, and letting it
+#: contradict lets it veto a true pairing (DEFECTS #39). Declared and listed:
+#: the whole field must be one of these, so "Nonesuch Lease" is a lease.
+NON_VALUES = frozenset({"na", "n", "none", "nil", "notapplicable", "unknown",
+                        "blank", "nonvalue", "no", "0"})
+
 _ALNUM = re.compile(r"[^0-9a-z]")
 _DATE = re.compile(r"(\d{1,4})\D+(\d{1,2})\D+(\d{1,4})")
 
@@ -74,7 +88,7 @@ def normalise(field: str, value: str | None) -> str | None:
     if value is None:
         return None
     text = _ALNUM.sub("", value.casefold())
-    if not text:
+    if not text or text in NON_VALUES:
         return None
     if field == "rrc_district":
         # "03" and "3" are one district. Districts are numeric on every form.
@@ -162,11 +176,34 @@ def agreeing_fields(a: PageRecord, b: PageRecord) -> tuple[str, ...]:
     return tuple(f for f, v in compare(a, b).items() if v == AGREES)
 
 
+def richness(page: PageRecord) -> int:
+    """How many identity fields the page actually carries.
+
+    The parent of a pair is the richer page. A real face carries the identity
+    block and a mislabelled section carries less, so this is a measurement of
+    the thing the label was supposed to tell us (DEFECTS #37).
+    """
+    return sum(1 for field in IDENTITY_FIELDS + BONUS_FIELDS
+               if normalise(field, page.identity.get(field)) is not None)
+
+
+def _rank(page: PageRecord) -> tuple[int, int]:
+    """Richest first, then earliest. The fallback matters: richness ties, and
+    without one the mirrored pairs have no answer."""
+    return (-richness(page), page.page)
+
+
 def group(pages, min_agreements: int = MIN_AGREEMENTS):
     """Group one file's pages into documents, and say what was left over.
 
     Takes the pages of a single file. Mixing files is a caller error and is
     refused rather than silently producing cross-file documents.
+
+    Faces are resolved in rank order and a face may only become the child of
+    a face ranked above it. That makes a mirrored pair impossible by
+    construction rather than by a tie-break applied afterwards, and it keeps
+    documents flat: a page that becomes a child holds no children of its own,
+    so the face of a document is never ambiguous.
     """
     pages = list(pages)
     keys = {p.file_key for p in pages}
@@ -174,18 +211,18 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS):
         raise ValueError(
             f"group() takes the pages of one file, got {sorted(keys)}")
 
-    faces = [p for p in pages if p.is_face]
+    ranked_faces = sorted((p for p in pages if p.is_face), key=_rank)
     candidates = [p for p in pages if p.is_candidate and not p.is_face]
-    attached: dict[int, list[tuple[PageRecord, tuple[str, ...]]]] = {
-        id(f): [] for f in faces}
+    parents: list[PageRecord] = []
+    attached: dict[int, list[tuple[PageRecord, tuple[str, ...]]]] = {}
     unattached: list[Unattached] = []
 
-    for candidate in candidates:
-        if not faces:
-            unattached.append(Unattached(candidate, "no_face"))
-            continue
+    def place(candidate, pool):
+        """Attach to the one eligible parent, or say why not."""
+        if not pool:
+            return "no_face"
         eligible, contradicted_any = [], False
-        for face in faces:
+        for face in pool:
             agreements, contradicted = score(candidate, face)
             if contradicted:
                 contradicted_any = True
@@ -193,18 +230,29 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS):
             if agreements >= min_agreements:
                 eligible.append((agreements, face))
         if not eligible:
-            unattached.append(Unattached(
-                candidate,
-                "contradicted" if contradicted_any else "below_threshold"))
-            continue
+            return "contradicted" if contradicted_any else "below_threshold"
         best = max(a for a, _ in eligible)
         winners = [f for a, f in eligible if a == best]
         if len(winners) > 1:
-            unattached.append(Unattached(candidate, "tie"))
-            continue
+            return "tie"
         attached[id(winners[0])].append(
             (candidate, agreeing_fields(candidate, winners[0])))
+        return None
 
+    # Faces first, in rank order, so a face can only fall to a richer one.
+    for face in ranked_faces:
+        reason = place(face, parents) if parents else "no_face"
+        if reason is None:
+            continue
+        parents.append(face)
+        attached[id(face)] = []
+
+    for candidate in candidates:
+        reason = place(candidate, parents)
+        if reason is not None:
+            unattached.append(Unattached(candidate, reason))
+
+    faces = parents
     documents = []
     for face in faces:
         joined = attached[id(face)]
