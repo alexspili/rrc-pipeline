@@ -1725,3 +1725,102 @@ wrong about it is small either way.
 declared list of written non-values, so they compare as `unknown` and can
 neither agree nor contradict. Declared and listed, not a similarity judgement.
 **Pin:** tests/tier1/test_reassemble.py::test_a_written_non_value_cannot_contradict
+
+---
+
+## #40 — 2026-09-03 — I gave the reader six field names and no idea what they mean on the paper
+
+**What happened:** Alex read record 1495193 pages 7 and 8, which is the pin
+this whole module exists to satisfy, and settled two questions at once.
+
+**Page 8 is not a G-1 face.** It is headed SECTION II, it carries no form
+number in the top right, and it is the second page of the W-2 whose face is
+page 7. The census called it a `g1` face. DEFECTS #25's reading is confirmed
+off the paper, and so is #37's premise: the classifier's `face` label is not
+something a module may treat as fact.
+
+**And `8/30/79` is the "Completed" date.** The field beside it is "Commenced",
+reading 8/12/79. Those are the two halves of "Date Plug Back, Deepening, Work
+Over or Drilling Operations Commenced / Completed". They are **not** field 14,
+"Completion or recompletion date", which is the field `completion_date` means
+and which lives on the face, reading 10-2-79.
+
+**So the veto was right and the value was wrong.** Reassembly refused to join
+pages 7 and 8 because their completion dates differed. They differed because
+the reader had put a different field's value in the box. The date veto is not
+too strict; it fired correctly on two genuinely different numbers, one of
+which should never have been there.
+
+**Why it was wrong:** the identity reader's prompt lists six bare field names
+and defines none of them:
+
+    Return ONLY these six fields, as JSON:
+      operator_name, lease_name, well_number, completion_date, rrc_district,
+      total_depth
+
+A model shown a Section II with "Commenced" and "Completed" printed on it, and
+asked for a "completion date", will read the Completed date. That is a
+reasonable reading of an unreasonable instruction.
+
+And the definition already existed. docs/labeling-protocol-extract.md defines
+`completion_date` as field 14, "Completion or recompletion date", and defines
+`drilling_commenced` and `drilling_completed` separately as the two halves of
+the operations field. **I wrote a new reader against a schema the repo had
+already written down precisely, and did not carry the definitions across.**
+The same mistake as #38, which dropped an invariant the extractor already had,
+in the same file, on the same day.
+
+**Measured footprint:** 26 of the 48 non-face pages in the ground-truth set
+report a `completion_date`. Some of those are legitimate, since a section can
+repeat the date, and some are this defect. Which is which cannot be told from
+the output, only from the paper, so the honest number is that **up to 26 of 48
+are suspect** and one is confirmed.
+
+Completion date was the single largest cause of rejection in the measurement,
+42 pairs of 54. An unknown part of that is this defect rather than the paper.
+
+**Resolution:** every field in the prompt gets the printed label it means,
+taken from the labelling protocol, and `completion_date` is told explicitly
+that it is not the Commenced/Completed pair. That changes the prompt, so the
+identity cache is invalidated by construction, which is CLAUDE.md rule 7
+working as intended rather than an inconvenience.
+
+**Predicted before re-running, so the re-run tests a prediction rather than
+producing one:** page 8 will return `completion_date` as `not_on_this_form`;
+case B will then agree on operator and lease with no contradiction and will
+attach to page 7 for the first time; and the count of date-based rejections
+will fall from 42.
+**Pin:** tests/tier2/test_identity_prompt.py::test_the_prompt_defines_every_field_it_asks_for
+
+---
+
+## #41 — 2026-09-03 — A pre-registered case that could not fail
+
+**What happened:** case E of the reassembly measurement is "record 1495193
+page 8 must not attach to page 9". It passed in both measurements and I
+reported it as a pass twice.
+
+Page 9 is a **W-12**. This module only considers completion faces and their
+sections and `other_form` pages. A W-12 is neither a face nor a candidate, so
+it was never in the running, and case E cannot fail whatever the module does.
+
+**Why it was wrong:** the case came from DEFECTS #25's pin, "pages 7 and 8
+must resolve to one document, and pages 7 and 9 must not", which was written
+about scan order rather than about this module's candidate set. I copied it
+into the protocol as a must-not-attach case without checking that the module
+could ever attach those two pages.
+
+**What it cost:** one of six pre-registered cases carried no information, and
+was counted twice as evidence that the module does not over-attach. The
+over-attachment side of the measurement is now thinner than it looked: what
+remains is case F, "no wrong attachment anywhere", and only 2 of 17
+attachments can be checked against ground truth.
+
+**Resolution:** case E is marked as decided by construction and is not counted
+as evidence. It stays in the protocol rather than being deleted, because a
+pre-registered case that turned out to be vacuous is worth seeing.
+
+A replacement is needed and is not invented here: it would have to be two
+pages that this module genuinely could join and that are known not to belong
+together, and finding one needs the paper.
+**Pin:** none in code. The protocol carries the annotation.

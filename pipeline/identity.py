@@ -42,13 +42,39 @@ FIELDS = ("operator_name", "lease_name", "well_number", "completion_date",
           "rrc_district", "total_depth")
 
 SYSTEM = """You are reading one page of a Texas Railroad Commission well
-record. It is usually a section, a continuation, or the back of a completion
+record. It is often a section, a continuation, or the back of a completion
 report, so it may carry no identity block at all.
 
-Return ONLY these six fields, as JSON:
+Return ONLY these six fields, as JSON. Each field names a PRINTED BOX on the
+form. Read the printed label, not the position, and do not substitute a
+neighbouring field that looks similar.
 
-  operator_name, lease_name, well_number, completion_date, rrc_district,
-  total_depth
+  operator_name   The operator's name. Printed as "OPERATOR", or "OPERATOR'S
+                  NAME (Exactly as shown on Form P-5)". On a Section II it may
+                  instead be "Notice of Intention to Drill this Well was filed
+                  in Name of", which is the same operator and counts.
+
+  lease_name      Printed as "LEASE NAME", or "Lease". Not the field name and
+                  not the well number.
+
+  well_number     Printed as "Well No." or "Well Number".
+
+  completion_date The box labelled "Completion Date", or "Completion or
+                  recompletion date". This is field 14 and it is on the FACE
+                  of the form.
+                  It is NOT the pair of boxes labelled "Commenced" and
+                  "Completed" under "Date Plug Back, Deepening, Work Over or
+                  Drilling Operations". Those are drilling dates and they are
+                  a different field. If the only dates on this page are that
+                  Commenced/Completed pair, then completion_date is
+                  not_on_this_form.
+                  It is also NOT "Date of Test", "Date Permit Issued", or a
+                  signature date.
+
+  rrc_district    Printed as "RRC District" or "District No.".
+
+  total_depth     Printed as "Total Depth". Not "P.B. Depth" and not "Top of
+                  Pay".
 
 Each is an object: {"status": ..., "raw": ...}.
 
@@ -61,9 +87,10 @@ status is one of:
 raw is exactly what is written, as written, or null when status is not
 present. Do not normalise dates, strip foot marks, or expand abbreviations.
 
-Do NOT return coordinates. Do not guess. A field that is not printed on this
-page is not_on_this_form, and a field you cannot read is illegible; neither
-is blank."""
+Do NOT return coordinates. Do not guess, and do not reach for the nearest
+similar box: a field whose printed label is not on this page is
+not_on_this_form, and a field you cannot read is illegible. Neither is
+blank."""
 
 PROMPT_HASH = pc.prompt_hash(SYSTEM)
 

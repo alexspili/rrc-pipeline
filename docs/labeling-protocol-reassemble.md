@@ -53,7 +53,7 @@ because it changes what a failure means.
 | Case | Pairing | Evidence |
 |---|---|---|
 | A | record 1493495, page 10 attaches to page 9 | **Confirmed.** The worked case: a W-2 face and its Section II agreeing on operator (Sun Oil Company), lease (State Tract 130) and completion date (9-22-77) |
-| B | record 1495193, page 8 attaches to page 7 | **Confirmed.** DEFECTS #25's pin, read off the paper: page 8 is a section of the report whose face is page 7 |
+| B | record 1495193, page 8 attaches to page 7 | **Confirmed, and re-confirmed off the paper 2026-09-03:** page 8 is headed SECTION II, carries no form number in the top right, and is the second page of the W-2 on page 7. The census called it a `g1` face |
 | C | record 1495195, page 6 attaches to the face before it | **Probable.** Recorded in the labelling protocol as "almost certainly", not read off the paper as a pairing |
 | D | record 1495195, page 38 attaches to the face before it | **Probable.** Same |
 
@@ -61,7 +61,7 @@ because it changes what a failure means.
 
 | Case | Requirement |
 |---|---|
-| E | record 1495193, page 8 must **not** attach to page 9 |
+| E | record 1495193, page 8 must **not** attach to page 9. **VACUOUS, annotated 2026-09-03, DEFECTS #41:** page 9 is a W-12, which this module treats as neither a face nor a candidate, so it was never in the running and this case cannot fail. It passed twice and carried no information. Kept rather than deleted, and no longer counted as evidence. A replacement needs two pages the module genuinely could join that are known not to belong together, and finding one needs the paper |
 | F | no page anywhere in either set attaches to a face it does not belong to |
 
 ### What each failure means, and it is not the same response
