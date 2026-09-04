@@ -1,13 +1,13 @@
 part,item,record_id,file_index,pages,detail,in_sample_because,verdict,note,check
-A,1493495-0 p10+p9,1493495,0,9 10,"joined on operator_name, lease_name",ground truth,,,
-A,1495193-0 p8+p7,1495193,0,7 8,"joined on operator_name, lease_name",ground truth,,,
-A,1495195-0 p87+p52,1495195,0,52 87,"joined on operator_name, lease_name, well_number, completion_date, rrc_district",flagged highest risk,,,
-A,1495195-0 p114+p89,1495195,0,89 114,"joined on operator_name, lease_name, well_number, completion_date, rrc_district",flagged highest risk,,,
-A,1511465-0 p9+p7,1511465,0,7 9,"joined on operator_name, lease_name, well_number, completion_date, rrc_district","random, seed 20260903",,,
-A,1493608-0 p6+p5,1493608,0,5 6,"joined on operator_name, lease_name","random, seed 20260903",,,
-A,1912687-0 p6+p2,1912687,0,2 6,"joined on operator_name, lease_name","random, seed 20260903",,,
-A,1510666-1 p3+p1,1510666,1,1 3,"joined on operator_name, lease_name, well_number, completion_date, rrc_district","random, seed 20260903",,,
-B,1493495-0 p9,1493495,0,9,completion_date = '9/22/77' <- 14. Completion Date,on a part A page,,,CHECK
+A,1493495-0 p10+p9,1493495,0,9 10,"joined on operator_name, lease_name",ground truth,yes,,
+A,1495193-0 p8+p7,1495193,0,7 8,"joined on operator_name, lease_name",ground truth,yes,,
+A,1495195-0 p87+p52,1495195,0,52 87,"joined on operator_name, lease_name, well_number, completion_date, rrc_district",flagged highest risk,no,"Two W2 faces, same well (well #10), two filings: p52 initial potential, p87 retest",
+A,1495195-0 p114+p89,1495195,0,89 114,"joined on operator_name, lease_name, well_number, completion_date, rrc_district",flagged highest risk,no,"Two W2 faces, same well (well #11), two filings: p89 initial potential, p114 retest",
+A,1511465-0 p9+p7,1511465,0,7 9,"joined on operator_name, lease_name, well_number, completion_date, rrc_district","random, seed 20260903",no,"Two W2 faces, same well (well #1), two filings: p9 initial potential, p7 retest",
+A,1493608-0 p6+p5,1493608,0,5 6,"joined on operator_name, lease_name","random, seed 20260903",yes,"Definitely face and back of the same form, I can tell by the shape of the punch holes. ",
+A,1912687-0 p6+p2,1912687,0,2 6,"joined on operator_name, lease_name","random, seed 20260903",no,"face(p2) and continuation(p6) of a G1 form, but they have different ""Received"" dates stamped. P6 has June 9, 2009; P2 has Aug 18, 2009. I do not see an indication it is for he same well, but I may be missing something.",
+A,1510666-1 p3+p1,1510666,1,1 3,"joined on operator_name, lease_name, well_number, completion_date, rrc_district","random, seed 20260903",no,"Two W2 faces, same well (well #4), two filings, they have different ""Received"" dates stamped",
+B,1493495-0 p9,1493495,0,9,completion_date = '9/22/77' <- 14. Completion Date,on a part A page,yes,,CHECK
 B,1493495-0 p9,1493495,0,9,lease_name = 'State Tract 130' <- 2. LEASE NAME,on a part A page,,,
 B,1493495-0 p9,1493495,0,9,operator_name = 'Sun Oil Company' <- 3. OPERATOR,on a part A page,,,
 B,1493495-0 p9,1493495,0,9,rrc_district = '3' <- 7. RRC District,on a part A page,,,
@@ -22,8 +22,8 @@ B,1493608-0 p5,1493608,0,5,rrc_district = '3' <- 7. RRC District,on a part A pag
 B,1493608-0 p5,1493608,0,5,well_number = '35-L' <- 9. Well Number,on a part A page,,,
 B,1493608-0 p6,1493608,0,6,"lease_name = 'F. G. Cobb ""B""' <- 32. Location of Well, Relative to Lease Boundaries",on a part A page,,,
 B,1493608-0 p6,1493608,0,6,operator_name = 'SKELLY OIL COMPANY' <- 26. Notice of Intention to Drill this Well was filed in Name of,on a part A page,,,
-B,1493608-0 p6,1493608,0,6,"total_depth = ""8465'"" <- 36. Total Depth",on a part A page,,,CHECK
-B,1495193-0 p7,1495193,0,7,completion_date = '10-2-79' <- 14. Completion or Recompletion Date,on a part A page,,,CHECK
+B,1493608-0 p6,1493608,0,6,"total_depth = ""8465'"" <- 36. Total Depth",on a part A page,yes,,CHECK
+B,1495193-0 p7,1495193,0,7,completion_date = '10-2-79' <- 14. Completion or Recompletion Date,on a part A page,yes,,CHECK
 B,1495193-0 p7,1495193,0,7,lease_name = 'Debbie' <- 2. LEASE NAME,on a part A page,,,
 B,1495193-0 p7,1495193,0,7,"operator_name = 'U. S. Resources, Inc.' <- 3. OPERATOR",on a part A page,,,
 B,1495193-0 p7,1495193,0,7,rrc_district = '03' <- 7. RRC District,on a part A page,,,
@@ -32,17 +32,17 @@ B,1495193-0 p8,1495193,0,8,"lease_name = 'Debbie' <- 31. Location of Well, Relat
 B,1495193-0 p8,1495193,0,8,"operator_name = 'U. S. Resources, Inc.' <- 26. Notice of Intention to Drill this Well was filed in Name of",on a part A page,,,
 B,1495193-0 p8,1495193,0,8,total_depth = '8515' <- 36. Total Depth,on a part A page,,,
 B,1495195-0 p52,1495195,0,52,completion_date = '12-11-78' <- 14. Completion or Recompletion Date,on a part A page,,,
-B,1495195-0 p52,1495195,0,52,lease_name = 'Mary Fitzhugh et al' <- 2. LEASE NAME,on a part A page,,,CHECK
+B,1495195-0 p52,1495195,0,52,lease_name = 'Mary Fitzhugh et al' <- 2. LEASE NAME,on a part A page,yes,,CHECK
 B,1495195-0 p52,1495195,0,52,operator_name = 'Gulf Oil Corporation' <- 3. OPERATOR,on a part A page,,,
 B,1495195-0 p52,1495195,0,52,rrc_district = '3' <- 7. RRC District,on a part A page,,,
 B,1495195-0 p52,1495195,0,52,well_number = '10' <- 9. Well Number,on a part A page,,,
 B,1495195-0 p87,1495195,0,87,completion_date = '12-11-78' <- 14. Completion or Recompletion Date,on a part A page,,,
 B,1495195-0 p87,1495195,0,87,lease_name = 'Mary Fitzhugh et al' <- 2. LEASE NAME,on a part A page,,,
-B,1495195-0 p87,1495195,0,87,operator_name = 'Gulf Oil Corporation' <- 3. OPERATOR,on a part A page,,,CHECK
+B,1495195-0 p87,1495195,0,87,operator_name = 'Gulf Oil Corporation' <- 3. OPERATOR,on a part A page,yes,,CHECK
 B,1495195-0 p87,1495195,0,87,rrc_district = '3' <- 7. RRC District,on a part A page,,,
 B,1495195-0 p87,1495195,0,87,well_number = '10' <- 9. Well Number,on a part A page,,,
 B,1495195-0 p89,1495195,0,89,completion_date = '7-10-79' <- 14. Completion or Recompletion Date,on a part A page,,,
-B,1495195-0 p89,1495195,0,89,lease_name = 'Mary Fitzhugh et al' <- 2. LEASE NAME,on a part A page,,,CHECK
+B,1495195-0 p89,1495195,0,89,lease_name = 'Mary Fitzhugh et al' <- 2. LEASE NAME,on a part A page,yes,,CHECK
 B,1495195-0 p89,1495195,0,89,operator_name = 'Gulf Oil Corporation' <- 3. OPERATOR,on a part A page,,,
 B,1495195-0 p89,1495195,0,89,rrc_district = '3' <- RRC District,on a part A page,,,
 B,1495195-0 p89,1495195,0,89,well_number = '11' <- 9. Well Number,on a part A page,,,
@@ -56,9 +56,9 @@ B,1510666-1 p1,1510666,1,1,lease_name = 'B. E. Quinn et al #3' <- 2. LEASE NAME,
 B,1510666-1 p1,1510666,1,1,operator_name = 'John W. McGowan' <- 3. OPERATOR'S NAME (Exactly as shown on Form P-5),on a part A page,,,
 B,1510666-1 p1,1510666,1,1,rrc_district = '03' <- 7. RRC District No.,on a part A page,,,
 B,1510666-1 p1,1510666,1,1,well_number = '4' <- 9. Well No.,on a part A page,,,
-B,1510666-1 p3,1510666,1,3,completion_date = '2-7-90' <- 14. Completion or recompletion date,on a part A page,,,CHECK
-B,1510666-1 p3,1510666,1,3,lease_name = 'B. E. Quinn et al #3' <- 2. LEASE NAME,on a part A page,,,CHECK
-B,1510666-1 p3,1510666,1,3,"operator_name = 'John W. McGowan' <- 3. OPERATOR'S NAME (Exactly as shown on Form P-5, Organization Report)",on a part A page,,,CHECK
+B,1510666-1 p3,1510666,1,3,completion_date = '2-7-90' <- 14. Completion or recompletion date,on a part A page,yes,,CHECK
+B,1510666-1 p3,1510666,1,3,lease_name = 'B. E. Quinn et al #3' <- 2. LEASE NAME,on a part A page,yes,,CHECK
+B,1510666-1 p3,1510666,1,3,"operator_name = 'John W. McGowan' <- 3. OPERATOR'S NAME (Exactly as shown on Form P-5, Organization Report)",on a part A page,yes,,CHECK
 B,1510666-1 p3,1510666,1,3,rrc_district = '03' <- 7. RRC District No.,on a part A page,,,
 B,1510666-1 p3,1510666,1,3,well_number = '4' <- 9 Well No.,on a part A page,,,
 B,1511465-0 p7,1511465,0,7,completion_date = '02/09/90' <- 14 Completion or recompletion date,on a part A page,,,
@@ -69,11 +69,11 @@ B,1511465-0 p7,1511465,0,7,well_number = '1' <- 9 Well No,on a part A page,,,
 B,1511465-0 p9,1511465,0,9,completion_date = '2/9/90' <- 14 Completion or recompletion date,on a part A page,,,
 B,1511465-0 p9,1511465,0,9,lease_name = 'NEWBERRY' <- 2. LEASE NAME,on a part A page,,,
 B,1511465-0 p9,1511465,0,9,operator_name = 'HOWELL PETROLEUM CORPORATION' <- 3. OPERATOR'S NAME (Exactly as shown on Form P-5. Organization Report),on a part A page,,,
-B,1511465-0 p9,1511465,0,9,rrc_district = '3' <- 7 RRC District No.,on a part A page,,,CHECK
+B,1511465-0 p9,1511465,0,9,rrc_district = '3' <- 7 RRC District No.,on a part A page,yes,,CHECK
 B,1511465-0 p9,1511465,0,9,well_number = '1' <- 9 Well No,on a part A page,,,
-B,1912687-0 p2,1912687,0,2,completion_date = 'N/A' <- 14. Completion or recompletion date,on a part A page,,,CHECK
+B,1912687-0 p2,1912687,0,2,completion_date = 'N/A' <- 14. Completion or recompletion date,on a part A page,yes,,CHECK
 B,1912687-0 p2,1912687,0,2,lease_name = 'Malota Unit' <- 2. LEASE NAME,on a part A page,,,
-B,1912687-0 p2,1912687,0,2,"operator_name = 'U.S. Enercorp, LTD.' <- 3. OPERATOR'S NAME (Exactly as shown on Form P-5, Organization Report)",on a part A page,,,CHECK
+B,1912687-0 p2,1912687,0,2,"operator_name = 'U.S. Enercorp, LTD.' <- 3. OPERATOR'S NAME (Exactly as shown on Form P-5, Organization Report)",on a part A page,yes,,CHECK
 B,1912687-0 p2,1912687,0,2,rrc_district = '03' <- 7. RRC District No.,on a part A page,,,
 B,1912687-0 p2,1912687,0,2,well_number = '1' <- 9. Well No.,on a part A page,,,
 B,1912687-0 p6,1912687,0,6,"lease_name = 'Malota Unit' <- 24. Location of well, relative to the nearest lease boundaries - Lease",on a part A page,,,

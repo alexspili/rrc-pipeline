@@ -1882,3 +1882,60 @@ free. It is not evidence on its own and must never be reported as if it were.
 affected, one failing and one passing for the wrong reason, across two runs.
 **Pin:** tests/tier1/test_identity.py::test_a_value_carries_the_printed_label_it_came_from
 and ::test_found_in_is_recorded_even_when_the_value_looks_ordinary
+
+---
+
+## #43 — 2026-09-04 — Identity fields identify the well, not the document
+
+**What happened:** the verification sitting judged eight of reassembly's
+eighteen attachments against the paper. **Five are wrong**, and three of those
+five are among the four drawn at random, so this is not confined to the two
+pairs that were flagged as risky in advance.
+
+| Pair | In sample because | Verdict | Why |
+|---|---|---|---|
+| 1493495 p10+p9 | ground truth | yes | face and its Section II |
+| 1495193 p8+p7 | ground truth | yes | face and its Section II |
+| 1493608 p6+p5 | random | yes | face and back of one form |
+| 1495195 p87+p52 | flagged risk | **no** | one well, two filings: initial potential and retest |
+| 1495195 p114+p89 | flagged risk | **no** | same |
+| 1511465 p9+p7 | random | **no** | same |
+| 1510666 p3+p1 | random | **no** | same, and different Received-date stamps |
+| 1912687 p6+p2 | random | **no** | back page attached across filings |
+
+**Why it was wrong.** Four of the five failures are one pattern. Two filings
+for the same well agree on **every identity field the module compares**, and
+they must: same operator, same lease, same well number, same district, and the
+same completion date, because the well was completed once and both filings
+report that completion.
+
+So the premise is wrong. **Agreement on these fields is evidence that two
+pages concern the same well. The module reads it as evidence that they are the
+same document.** Those are different claims and one does not imply the other
+on any file where a well has been filed on more than once, which is most of
+this corpus: 64 of the 112 files that hold a completion face hold more than
+one.
+
+The field that separates an initial potential test from a retest is
+`purpose_of_filing`, the field 11 checkboxes, and it is not among the six the
+identity reader collects. Alex separated them at a glance; the module has no
+way to see the distinction at all.
+
+**What made it visible, and what caused it.** These attachments did not exist
+in the first measurement. They appeared when a face was allowed to be
+somebody's child (DEFECTS #37), a change made to fix the module's own pin. It
+bought the pin and cost precision: the first run's five attachments included
+two that this sitting confirms are right and none that it confirms are wrong.
+
+**The honest reading of the earlier numbers.** "No known wrong attachment" was
+reported after runs 1 and 2 on a checkable sample of two. The sample was two
+because nothing else could be checked, and the phrase was chosen carefully.
+It still read as reassurance, and it was reassurance about a module that was
+wrong five times in eight.
+
+**Resolution:** none applied. Per the pre-registered rule the corpus spend does
+not happen and the failure pattern goes back to Alex before anything runs. The
+threshold is not the problem and is not moved. A proposal exists and is
+recorded in docs/modules/reassemble.md rather than implemented, because the
+evidence for it comes from the same eight pairs that would judge it.
+**Pin:** tests/tier1/test_reassemble.py::test_two_filings_for_one_well_are_not_one_document

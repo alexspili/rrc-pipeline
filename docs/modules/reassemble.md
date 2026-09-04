@@ -441,6 +441,71 @@ self-verifying than they were. A handful get spot-checked against paper in the
 next eyeball sitting. Until then it makes a wrong-field read checkable, and
 that is all it does.
 
+## The verification sitting, 2026-09-04: the gate closed
+
+Eight attachments judged against the paper under the rule fixed before the
+sample was drawn. **Five are wrong. No corpus spend.**
+
+Three of the five are among the four drawn at random, so the failure is not
+confined to the two pairs flagged as risky in advance.
+
+**Every correct attachment is a face with its own back page. Every wrong one
+joins two faces, or joins a back page across filings.** DEFECTS #43 has the
+table and the diagnosis: identity fields identify the well, and the module was
+reading them as identifying the document.
+
+### found_in was right 12 times out of 12, and that is not "reliable"
+
+Every one of the twelve marked spot-checks came back correct: the value really
+was in the box the reader named. Wilson 95% on 12 of 12 is **[75.7%, 100%]**,
+which is consistent with a true error rate as high as one in four. Twelve
+checks cannot license the word reliable and it is not used here.
+
+What it does license is using `found_in` as a signal while continuing to check
+it, which is how it was described when it was added: a claim that makes a
+wrong-field read visible, not proof.
+
+### The signal it exposes, recorded and NOT implemented
+
+Sorting the eight pairs by what boxes each page cites separates seven of them:
+
+| Verdict | Parent cites | Child cites |
+|---|---|---|
+| yes | face boxes | back boxes |
+| yes | face boxes | back boxes |
+| yes | face boxes | back boxes |
+| **no** | face boxes | **face boxes** |
+| **no** | face boxes | **face boxes** |
+| **no** | face boxes | **face boxes** |
+| **no** | face boxes | **face boxes** |
+| **no** | face boxes | back boxes |
+
+Every join of two real faces is wrong, four times out of four. Every
+face-and-back join is right, three times out of four.
+
+A rule that let only a back page be a child would have got **seven of eight**
+right instead of three. It would keep both ground-truth passes, keep the pin
+that DEFECTS #37 was fixed to satisfy, and undo all four of the
+two-filings-in-one-document errors.
+
+**It is not implemented, and the reason is the important part.** That rule was
+derived from the same eight pairs that would be used to judge it. Fitting a
+rule to a test set and then reporting the test set's score is the failure this
+repo pre-registers everything to avoid. If it is adopted it has to be
+pre-registered against pairs that are not these eight, which needs another
+sitting, and that trade is Alex's to make rather than mine.
+
+### The other thing the sitting produced, which the module cannot see
+
+Alex separated two filings twice by their **Received date stamps**, printed on
+the page and different between filings of one well. He also used the shape of
+the punch holes once, which is a real signal and not an extractable one.
+
+The date stamp is printed, machine-readable and not among the six fields. So
+is `purpose_of_filing`, the field 11 checkboxes that say Initial Potential
+against Retest, which is the distinction four of the five failures turn on.
+Recorded, not built: adding a field changes the prompt and costs another run.
+
 ## Rules
 
 All pins are pending: this module is designed and not built, and the pending
