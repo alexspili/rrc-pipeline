@@ -171,3 +171,35 @@ passed the measurement above on the ground-truth set.
 
 A probe of two or three pages, approved 2026-09-03, exists only to replace an
 estimated per-page cost with a measured one.
+
+## Predictions for run 3, committed before it ran
+
+The prompt changed twice: it now tells the reader that a Section II prints the
+lease name inside field 32, and it asks for `found_in` on every present value
+(DEFECTS #40, #42). Both invalidate the cache, so all 123 pages are read
+again.
+
+Written down first so the run tests a prediction rather than producing one.
+**All four are reported afterwards, including the ones that miss.**
+
+1. Record 1493495 page 10 returns `lease_name` as `State Tract 130`.
+2. **Case A attaches to page 9 again**, this time on two fields that are what
+   they claim to be rather than on a date taken from the wrong box.
+3. Case B still passes.
+4. **Attachments rise from 14.**
+
+Prediction 4 is the one most likely to miss and is written that way on
+purpose. The last run's numbers moved in two directions at once, and a
+prompt that is stricter about provenance can easily cost more values than the
+one new field recovers.
+
+### What `found_in` is for, and what it is not
+
+It records the printed label the reader says it took each value from. It makes
+a wrong-field read **checkable**. It does not make it checked, and it is a
+claim by the model about its own reading, exactly as the provenance boxes
+were. It is never evidence on its own.
+
+A handful get spot-checked against the paper in the next eyeball sitting.
+Deterministic impossible-source flags are welcome later if they turn out to be
+free; no infrastructure is being built for them now.
