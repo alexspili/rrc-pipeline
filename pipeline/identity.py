@@ -26,6 +26,7 @@ rather than a second one invented with its own vocabulary (DEFECTS #22).
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from pipeline import pageclass as pc
@@ -33,7 +34,7 @@ from pipeline import render
 from pipeline.extract import Region, Status, Value, _json_object
 
 MODEL = "claude-sonnet-5"
-MAX_TOKENS = 2_000
+MAX_TOKENS = 3_000       # raised with found_in; not part of the cache key
 IMAGE_CAP = 1568
 
 #: The five fields reassembly compares, plus the one it uses as
@@ -56,6 +57,10 @@ neighbouring field that looks similar.
 
   lease_name      Printed as "LEASE NAME", or "Lease". Not the field name and
                   not the well number.
+                  A Section II usually has no LEASE NAME box, and prints the
+                  lease name inside field 32, "Location of Well, Relative to
+                  Lease Boundaries", in the phrase "Line of The ___ Lease".
+                  That is the lease name and it counts.
 
   well_number     Printed as "Well No." or "Well Number".
 
@@ -76,7 +81,14 @@ neighbouring field that looks similar.
   total_depth     Printed as "Total Depth". Not "P.B. Depth" and not "Top of
                   Pay".
 
-Each is an object: {"status": ..., "raw": ...}.
+Each is an object: {"status": ..., "raw": ..., "found_in": ...}.
+
+found_in is the PRINTED LABEL of the box you took the value from, copied as
+it appears on the page, with its field number if the form prints one. For
+example "26. Notice of Intention to Drill this Well was filed in Name of", or
+"32. Location of Well, Relative to Lease Boundaries", or "14. Completion
+Date". Give it whenever status is present, and null otherwise. If you took a
+value from a box whose label you cannot fully read, put what you can read.
 
 status is one of:
   present              something is written there and you can read it
@@ -104,7 +116,22 @@ def build_content(pdf: Path, page: int, cap: int = IMAGE_CAP) -> list[dict]:
         {"type": "text", "text": "Read the six fields from this page."}]
 
 
-def parse(body: str, page: int) -> dict[str, Value]:
+@dataclass(frozen=True)
+class Read:
+    """What one page gave up, and where the model says each value came from.
+
+    `found_in` is a claim and not proof. It is the model reporting on its own
+    reading, exactly as the provenance boxes were, and it is no more
+    self-verifying than they were (DEFECTS #42, and #29 one layer up). It
+    makes a wrong-field read checkable by a human. It does not make it
+    checked, and it is never evidence on its own.
+    """
+
+    values: dict[str, Value]
+    found_in: dict[str, str | None]
+
+
+def parse(body: str, page: int) -> Read:
     """Model output to Values. A present value gets a page-level region.
 
     Page-level is the truth here rather than a placeholder: no coordinates
@@ -112,7 +139,7 @@ def parse(body: str, page: int) -> dict[str, Value]:
     tag exists to say exactly that.
     """
     payload = _json_object(body)
-    out = {}
+    out, sources = {}, {}
     for field in FIELDS:
         entry = payload.get(field) or {}
         status = Status(str(entry.get("status", "not_on_this_form")).strip())
@@ -128,10 +155,18 @@ def parse(body: str, page: int) -> dict[str, Value]:
         region = (Region(page=page, box=(0.0, 0.0, 1.0, 1.0), source="page")
                   if status is Status.PRESENT else None)
         out[field] = Value(status=status, value=raw, raw=raw, region=region)
-    return out
+        label = entry.get("found_in")
+        sources[field] = (str(label).strip() or None
+                          if label and status is Status.PRESENT else None)
+    return Read(values=out, found_in=sources)
 
 
-def identity_for(values: dict[str, Value]) -> dict[str, str | None]:
-    """The plain dict pipeline.reassemble compares."""
+def identity_for(read) -> dict[str, str | None]:
+    """The plain dict pipeline.reassemble compares.
+
+    Takes a Read, or the bare values dict, so a caller that only wants the
+    comparison does not have to know about found_in.
+    """
+    values = read.values if isinstance(read, Read) else read
     return {name: (value.raw if value.status is Status.PRESENT else None)
             for name, value in values.items()}

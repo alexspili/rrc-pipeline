@@ -125,22 +125,23 @@ def main() -> None:
               if v.get("form_class") in ("w2", "g1", "other_form")}
     say(f"{len(wanted)} pages over {len(RECORDS)} records\n")
 
-    built, missing, failures = {}, 0, []
+    built, missing, failures, sources = {}, 0, [], {}
     for (record_id, file_index, page), row in sorted(wanted.items()):
         pdf = RAW / record_id / records[record_id]["files"][file_index]["name"]
         key = cache.key(render.doc_hash(pdf), page, "identity")
         try:
-            values = read_identity(client, pdf, page, cache, key)
+            read = read_identity(client, pdf, page, cache, key)
         except Exception as exc:                   # noqa: BLE001
             failures.append((record_id, file_index, page, str(exc)[:80]))
             continue
-        if values is None:
+        if read is None:
             missing += 1
             continue
+        sources[(record_id, file_index, page)] = read.found_in
         built[(record_id, file_index, page)] = ra.PageRecord(
             record_id=record_id, file_index=file_index, page=page,
             form_class=row["form_class"], part=row.get("part"),
-            identity=identity.identity_for(values))
+            identity=identity.identity_for(read))
     if missing:
         say(f"  {missing} pages not in cache; rerun without --offline")
     if failures:
@@ -207,6 +208,18 @@ def main() -> None:
                 "face": doc.face.page,
                 "pages": [p.page for p in doc.pages],
                 "evidence": [[p, list(f)] for p, f in doc.evidence]}) + "\n")
+    say("\nFOUND_IN, the printed box the reader says each value came from.")
+    say("A claim and not proof: it makes a wrong-field read checkable, not")
+    say("checked, and it is never evidence on its own (DEFECTS #42).")
+    for _, doc in documents:
+        for p in doc.pages:
+            got = sources.get((p.record_id, p.file_index, p.page), {})
+            named = {f: l for f, l in got.items() if l}
+            if named:
+                say(f"  {p.record_id}-{p.file_index} p{p.page}")
+                for f, label in sorted(named.items()):
+                    say(f"      {f:18s} <- {label}")
+
     say(f"\n{OUT}")
     say(f"{REPORT}")
     say.close()

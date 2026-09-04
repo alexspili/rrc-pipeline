@@ -70,8 +70,7 @@ def main() -> None:
         total_out += usage.output_tokens
         body = response.content[0].text
         try:
-            values = identity.parse(body, page)
-            read = identity.identity_for(values)
+            read = identity.identity_for(identity.parse(body, page))
             present = {k: v for k, v in read.items() if v}
         except Exception as exc:                   # noqa: BLE001
             present = f"parse failed: {exc}"

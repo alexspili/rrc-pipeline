@@ -1824,3 +1824,61 @@ A replacement is needed and is not invented here: it would have to be two
 pages that this module genuinely could join and that are known not to belong
 together, and finding one needs the paper.
 **Pin:** none in code. The protocol carries the annotation.
+
+---
+
+## #42 — 2026-09-03 — A wrong-field read is invisible whenever the two fields agree
+
+**What happened:** the identity reader was taking values out of the wrong
+printed box, and the measurement reported it as working.
+
+On record 1495193 page 8 it read the "Completed" half of the drilling
+operations field, `8/30/79`, into `completion_date`, whose real value on the
+face is `10-2-79`. Those differ, reassembly's veto fired, and the pin failed.
+That failure is how the defect was found (#40).
+
+On record 1493495 page 10 it made **the same mistake** and nobody could tell.
+Field 30 on that page reads "Commenced 8-16-77, Completed 9-22-77", and the
+face's completion date is `9/22/77`. **The wrong field held the right number.**
+So case A attached, and I reported it as a pass twice.
+
+The same thing happened to `lease_name` on the same page, from the other
+direction: "State Tract 130" is printed on page 10 inside field 32,
+"Location of Well Relative to Lease Boundaries", in the phrase "Line of The
+___ Lease". The loose prompt found it and the corrected prompt refused it,
+and in between nobody knew which box either answer had come from.
+
+**Why this is its own entry and not part of #40.** #40 is the instance: one
+field, badly specified. This is the class, and the class is worse than the
+instance. **A value read from the wrong box is indistinguishable from a value
+read from the right box, in every output the pipeline produces, whenever the
+two boxes happen to hold the same thing.** It shows up only when they differ,
+which means it shows up on some documents and hides on others, and the ones it
+hides on look like successes.
+
+Two "passes" in the first two measurements were of this kind. They were not
+evidence the module worked. They were two fields agreeing by coincidence.
+
+This is the same shape as DEFECTS #29 one layer up. There a box was
+well-formed and pointed nowhere, and "0 malformed boxes" measured shape rather
+than landing. Here a value is well-formed and comes from the wrong box, and a
+matching value measures agreement rather than provenance. **In both cases the
+output cannot distinguish the good case from the bad one, and the check that
+was supposed to catch it was reading the wrong property.**
+
+**Resolution:** the reader now returns `found_in`, the printed label it took
+each value from, so a wrong-field read is at least *checkable* rather than
+invisible.
+
+**What `found_in` is not, recorded with it because the last time this lesson
+was learned it cost a milestone.** It is a claim by the model about its own
+reading, exactly as the provenance boxes were, and it is no more
+self-verifying than they were. It does not prove a value came from that box.
+Its job is to make the error visible to a human who checks, and to make
+deterministic impossible-source flags possible later if they turn out to be
+free. It is not evidence on its own and must never be reported as if it were.
+
+**Measured footprint:** 2 of the 4 pre-registered must-attach cases were
+affected, one failing and one passing for the wrong reason, across two runs.
+**Pin:** tests/tier1/test_identity.py::test_a_value_carries_the_printed_label_it_came_from
+and ::test_found_in_is_recorded_even_when_the_value_looks_ordinary
