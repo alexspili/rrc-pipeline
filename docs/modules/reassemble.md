@@ -264,6 +264,81 @@ Suffix stripping would have resolved 3 of the 46, all the same pair, while
 looking like it had addressed the problem. Recorded so the corpus run has
 something to compare against.
 
+## Second measurement, 2026-09-03: the prompt fix traded one case for the other
+
+The identity reader's prompt was rewritten to define each field by its printed
+label (DEFECTS #40), which invalidated the cache, so all 123 pages were read
+again for $0.91.
+
+**Three predictions were committed before the run and all three held.** Page 8
+of record 1495193 returned `completion_date` as `not_on_this_form`; case B
+attached to page 7 for the first time; and date-driven rejections fell, with
+the contradicted-but-agreeing list dropping from 54 pairs to 10.
+
+**And the stated verification failed.** "Case A must still pass after the
+change" was written into the plan, and case A now fails.
+
+| Case | Evidence | Run 1 | Run 2 (defined prompt) |
+|---|---|---|---|
+| A | confirmed | PASS | **FAIL** |
+| B | confirmed | FAIL | **PASS** |
+| C | probable | not attached | not attached |
+| D | probable | attached to p37 | not attached |
+| E | vacuous, DEFECTS #41 | — | — |
+
+| | run 1 | run 2 |
+|---|---|---|
+| attachments | 17 | 14 |
+| below threshold | 20 | 29 |
+| contradicted | 28 | 20 |
+| contradicted-but-agreeing pairs | 54 | 10 |
+
+### Why it traded, and it is not a bug
+
+The stricter prompt made the reader far more conservative, which is what it
+was for. What it cost is visible in how many identity fields a candidate page
+now carries:
+
+| fields carried | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| run 1 | 20 | 1 | 2 | 12 | 17 | 5 |
+| run 2 | 21 | 2 | **20** | 9 | 3 | 1 |
+
+Before, a typical section page came back with three or four fields. Now it
+comes back with exactly two. The number that could in principle reach a
+threshold of two barely moved, 36 of 57 against 33 of 56, but **the margin
+collapsed**: most candidates now sit exactly on the threshold, so any single
+field going the other way drops them under it.
+
+Case A is that, concretely. Record 1493495 page 10 returned operator, lease
+and completion date under the old prompt and returns **operator alone** under
+the new one, because the new prompt tells it that `lease_name` is the box
+printed "LEASE NAME" and a W-2 Section II may not print one.
+
+### The question that is now open, and it is about the paper
+
+**Is the lease name printed on record 1493495 page 10 or not?**
+
+If it is not, the new reading is correct, case A's pages genuinely carry one
+shared identity field, and **a threshold of two is unreachable for that pair
+by any comparison rule**. That is the second explanation the pre-registered
+rule named, arriving on a different case from the one it was written for, and
+it would be a finding about what a section page carries rather than about the
+code.
+
+If it is printed, the reader has become too strict and the prompt needs a
+sentence, not the design.
+
+Held until the paper is read. Redesigning on an unverified reading is what
+produced DEFECTS #40 in the first place.
+
+### One page truncated
+
+`1510666-1-2` exceeded the reader's 2,000-token cap and was **reported and
+never cached**, which is the rule from the extraction milestone working: a
+truncated response is its own error, because a cache key that does not cover
+`max_tokens` would otherwise serve the truncation back forever.
+
 ## Rules
 
 All pins are pending: this module is designed and not built, and the pending
