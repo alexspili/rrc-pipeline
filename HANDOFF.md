@@ -359,8 +359,13 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    2026-09-03: $0.0074/page, 166 output tokens, so $2.01 standard or $1.01
    batched over the 274 candidate pages. That run is GATED and lands with
    the full extraction run as one spend decision.
-   MEASURED 2026-09-03 on the GT set: A pass, B fail, C not attached, D
-   attached to p37, E pass, F no KNOWN wrong attachment (2 of 17 checkable).
+   MEASURED three times 2026-09-03, $0.91 each; run 3 is current. Both
+   confirmed cases pass at once for the first time, on values now known to
+   come from the boxes they claim: A pass, B pass, C attached to p5, D
+   correctly declines an 8-way tie, E vacuous (#41), F no KNOWN wrong
+   attachment (2 of 18 checkable). Runs 1 and 2 are kept in
+   docs/modules/reassemble.md because run 1's case A passed on a wrong-field
+   read that returned the right number by coincidence (#42).
    17 attachments made from 57 candidate pages; 20 of those candidates
    carry no identity fields at all and can never attach on any threshold. Threshold
    unchanged at 2. Three defects out of it: #37 the module trusted the

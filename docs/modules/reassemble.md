@@ -339,6 +339,89 @@ never cached**, which is the rule from the extraction milestone working: a
 truncated response is its own error, because a cache key that does not cover
 `max_tokens` would otherwise serve the truncation back forever.
 
+## Third measurement, 2026-09-03: both confirmed cases pass
+
+Two prompt changes, both invalidating the cache, both costing $0.91: the
+Section II lease name in field 32 (DEFECTS #40) and `found_in` on every
+present value (DEFECTS #42).
+
+**All four predictions were committed before the run and all four held**,
+including the one flagged in advance as most likely to miss.
+
+| Predicted | Result |
+|---|---|
+| Page 10 returns `lease_name` as `State Tract 130` | held, and `found_in` says field 32 |
+| Case A attaches to page 9 again | **held** |
+| Case B still passes | **held** |
+| Attachments rise from 14 | **held, 18** |
+
+| Case | Evidence | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|---|
+| A | confirmed | pass (wrong reason) | fail | **PASS** |
+| B | confirmed | fail | pass | **PASS** |
+| C | probable | not attached | not attached | attached to p5 |
+| D | probable | attached to p37 | not attached | not attached |
+| E | vacuous, #41 | — | — | — |
+
+| | run 1 | run 2 | run 3 |
+|---|---|---|---|
+| attachments | 17 | 14 | **18** |
+| below threshold | 20 | 29 | 21 |
+| tie | 2 | 3 | **6** |
+| contradicted | 28 | 20 | 22 |
+| contradicted-but-agreeing pairs | 54 | 10 | 8 |
+
+**This is the first run in which both confirmed cases pass at once**, and the
+first in which the values behind them are known to come from the boxes they
+claim. Run 1's case A was a wrong-field read returning the right number by
+coincidence (DEFECTS #42).
+
+### Case D not attaching is the module working, not failing
+
+Page 38 agrees on operator and lease with **eight different faces**: pages 15,
+16, 37, 52, 53, 87, 89 and 114. Every one is Gulf Oil Corporation on the Mary
+Fitzhugh et al lease. So it ties eight ways and attaches to nothing.
+
+That is the correct answer. **Operator plus lease clears a threshold of two
+without identifying anything**, on a file holding many wells of one lease. The
+tie rule exists for exactly this and the rise in ties from 2 to 6 is the
+module refusing to guess more often, not performing worse.
+
+It also says something about case D itself. D was recorded as "probable" and
+its expectation was that page 38 attaches to *the face before it*. That
+expectation is positional, which is the one thing this module is built not to
+use. Run 1 satisfied it only because a wrong-field date broke the tie. **The
+module is declining to confirm an assumption that was never read off the
+paper, which is what it should do.**
+
+The real lesson is about which fields, not how many: two agreements is a floor
+on quantity and says nothing about selectivity. Recorded, not acted on.
+
+### `found_in` earned its cost on its first run
+
+It surfaced something nobody had looked for: **the same printed field is
+numbered differently across revisions.** The lease name on record 1493495 page
+10 comes from "32. Location of Well, Relative to Nearest Lease Boundaries",
+and on record 1495193 page 8 from "**31.** Location of Well, Relative to
+Nearest Lease Boundaries". Same field, different number, two revisions.
+
+Every value behind the two confirmed cases now carries the box it came from:
+
+```
+1493495 p9   operator      <- 3. OPERATOR
+             lease_name    <- 2. LEASE NAME
+1493495 p10  operator      <- 26. Notice of Intention to Drill this Well was filed in Name of
+             lease_name    <- 32. Location of Well, Relative to Nearest Lease Boundaries
+1495193 p7   completion    <- 14. Completion or Recompletion Date
+1495193 p8   lease_name    <- 31. Location of Well, Relative to Nearest Lease Boundaries
+```
+
+**It remains a claim and not proof.** The model is reporting on its own
+reading, exactly as the provenance boxes did, and it is no more
+self-verifying than they were. A handful get spot-checked against paper in the
+next eyeball sitting. Until then it makes a wrong-field read checkable, and
+that is all it does.
+
 ## Rules
 
 All pins are pending: this module is designed and not built, and the pending
