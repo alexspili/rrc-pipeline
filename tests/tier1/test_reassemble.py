@@ -253,3 +253,98 @@ def test_the_identity_reader_reads_exactly_the_fields_reassembly_compares():
     would be compared as unknown forever and nobody would see it."""
     from pipeline.identity import FIELDS
     assert set(FIELDS) == set(ra.IDENTITY_FIELDS) | set(ra.BONUS_FIELDS)
+
+
+# --------------------------------------------------------------- DEFECTS #39
+
+def test_a_written_non_value_cannot_contradict():
+    """An operator wrote "N.A." in the completion date box, and the reader
+    correctly reported what is written. A page that declines to answer must
+    not be able to veto a true pairing."""
+    face = page(7, "face", operator_name="U.S. Enercorp, Ltd.",
+                lease_name="Kotzur", completion_date="5/19/06")
+    section = page(8, "sec_ii", operator_name="U.S. Enercorp, Ltd.",
+                   lease_name="Kotzur", completion_date="N/A")
+    verdicts = ra.compare(section, face)
+    assert verdicts["completion_date"] == ra.UNKNOWN
+    _, contradicted = ra.score(section, face)
+    assert not contradicted
+    documents, unattached = ra.group([face, section])
+    assert [p.page for p in documents[0].pages] == [7, 8]
+    assert not unattached
+
+
+@pytest.mark.parametrize("written", ["N/A", "n/a", "N.A.", "none", "None",
+                                     "---", "unknown", "NIL"])
+def test_the_non_value_list_is_declared_and_not_a_similarity_judgement(written):
+    assert ra.normalise("completion_date", written) is None
+    assert ra.normalise("lease_name", written) is None
+
+
+def test_a_real_value_that_merely_contains_a_non_value_word_survives():
+    """"None" is a non-value. "Nonesuch Lease" is a lease."""
+    assert ra.normalise("lease_name", "Nonesuch Lease") is not None
+    assert ra.normalise("operator_name", "Nations Energy") is not None
+
+
+# --------------------------------------------------------------- DEFECTS #37
+
+def test_a_mislabelled_face_attaches_to_a_richer_face():
+    """Record 1495193: page 8 is a section, the census called it a `g1` face,
+    and the module offered only non-faces as candidates so it could never
+    attach. The classifier is right about faces 44% of the time."""
+    face = page(7, "face", operator_name="U. S. Resources, Inc.",
+                lease_name="Debbie", well_number="1", rrc_district="03")
+    mislabelled = page(8, "face", form_class="g1",
+                       operator_name="U. S. Resources, Inc.",
+                       lease_name="Debbie")
+    documents, unattached = ra.group([face, mislabelled])
+    assert len(documents) == 1
+    assert documents[0].face.page == 7
+    assert [p.page for p in documents[0].pages] == [7, 8]
+    assert not unattached
+
+
+def test_the_richer_of_a_mirrored_pair_is_the_parent():
+    """Each wants the other. The page carrying more identity fields is the
+    real face; a mislabelled section carries less."""
+    rich = page(11, "face", operator_name="Sun Oil Company",
+                lease_name="State Tract 130", well_number="1",
+                completion_date="9-22-77", rrc_district="03")
+    poor = page(9, "face", operator_name="Sun Oil Company",
+                lease_name="State Tract 130")
+    documents, _ = ra.group([rich, poor])
+    assert len(documents) == 1
+    assert documents[0].face.page == 11
+    assert [p.page for p in documents[0].pages] == [9, 11]
+
+
+def test_a_richness_tie_falls_back_to_page_order():
+    first = page(9, "face", **SUN)
+    second = page(11, "face", **SUN)
+    documents, _ = ra.group([first, second])
+    assert len(documents) == 1 and documents[0].face.page == 9
+
+
+def test_a_face_that_becomes_a_child_holds_no_children_of_its_own():
+    """Documents stay flat. A chain would make the face of a document
+    ambiguous, which is what the ranking exists to prevent."""
+    rich = page(1, "face", operator_name="Sun Oil Company",
+                lease_name="State Tract 130", well_number="1",
+                completion_date="9-22-77", rrc_district="03")
+    middle = page(2, "face", operator_name="Sun Oil Company",
+                  lease_name="State Tract 130", well_number="1")
+    poor = page(3, "sec_ii", operator_name="Sun Oil Company",
+                lease_name="State Tract 130")
+    documents, _ = ra.group([rich, middle, poor])
+    assert len(documents) == 1
+    assert documents[0].face.page == 1
+    assert [p.page for p in documents[0].pages] == [1, 2, 3]
+
+
+def test_two_genuine_faces_that_agree_on_nothing_stay_two_documents():
+    documents, unattached = ra.group([page(7, "face", **SUN),
+                                      page(20, "face", **GULF)])
+    assert sorted(d.face.page for d in documents) == [7, 20]
+    assert all(len(d.pages) == 1 for d in documents)
+    assert not unattached

@@ -1614,3 +1614,114 @@ The general form: **an exclusion written for one reason must not be allowed
 to decide a different question.** `data/` means "may contain personal data".
 It has never meant "safe to lose".
 **Pin:** tests/tier2/test_box_grades_probe.py::test_the_answer_key_is_committed_not_ignored
+
+---
+
+## #37 — 2026-09-03 — The module trusted a label the corpus had already measured as wrong
+
+**What happened:** the first measurement of reassembly failed its own pin.
+Record 1495193 page 8 is a section of the completion report whose face is
+page 7, and the module attached it to nothing.
+
+The cause is not the threshold and not the identity reader. **The census
+classified page 8 as a `g1` face**, and the module only offers non-face pages
+as candidates, so page 8 was never eligible to attach to anything. It became a
+single-page document of its own. Case B cannot pass at any threshold with any
+reader.
+
+**Why it was wrong:** the module takes the classifier's `face` label as fact.
+Stage 2 measured face precision at **44%, and 57.4% after the corrections**,
+so it is wrong roughly two times in five.
+
+And the evidence was not somewhere else. It is in DEFECTS #25, the entry this
+module exists to satisfy, in the sentence I quoted while building it: "record
+1495193 page 8 is a section of the W-2 whose face is page 7, **and the census
+called page 8 a `g1` face**." I read that sentence, used the first half as the
+test case, and built the module on the assumption the second half denies.
+
+**Measured footprint:** on the ground-truth set, 63 of 122 pages were treated
+as faces and therefore ineligible. Allowing a face to be a child opens 242
+further pairings, of which 18 attach at the current threshold, and those 18
+are 9 mirrored pairs: page 9 wants page 11 and page 11 wants page 9.
+
+**How the measurement behaved, which is the reason it was found.** The
+pre-registered rule named two explanations for a failed confirmed case, a
+reader problem or a page that genuinely lacks two agreeing fields. The real
+cause was neither. A rule that enumerates the outcomes it expects can be wrong
+about the list, and the response to that is to inspect rather than to pick the
+nearest listed option. Recorded beside the rule rather than corrected out of
+it.
+
+**Resolution:** a face may also be a child. The parent is the page carrying
+more identity fields, on the reasoning that a real face carries the identity
+block and a mislabelled section carries less. Ranking is
+`(fields carried desc, page asc)`; a face may only become a child of a face
+ranked above it, and a face that becomes a child leaves the parent pool. That
+makes the mirrored pairs impossible by construction rather than by a
+tie-break applied afterwards, and keeps documents flat rather than chained.
+
+**What it does not fix, stated with it:** case B still fails. Pages 7 and 8
+agree on operator and lease and disagree on completion date, `10-2-79`
+against `8/30/79`, and date can reject a pair. Eligibility was one of two
+reasons the pin failed. The other is open pending a reading of the paper.
+**Pin:** tests/tier1/test_reassemble.py::test_a_mislabelled_face_attaches_to_a_richer_face
+and ::test_the_richer_of_a_mirrored_pair_is_the_parent
+
+---
+
+## #38 — 2026-09-03 — A non-present value carrying its own text
+
+**What happened:** `pipeline.identity.parse` built a `Value` with status
+`illegible` and raw text `'2:-73-67'`. The `Value` constructor refused it: a
+value that is not `present` carries no text.
+
+**Why it was wrong:** the parser took the model's `raw` field and attached it
+whatever the status said. `pipeline/extract.py` has handled this since it was
+written, and the new reader was written without carrying the rule across.
+
+**Measured footprint:** 1 page of 123. It surfaced as a raised exception that
+the measurement script caught per page and counted, so the page was dropped
+rather than silently mis-read.
+
+**What is worth more than the instance.** The constructor caught this, which
+is the whole reason the invariant lives in a constructor rather than in a
+comment. This is the same shape as R11 and R12: a prompt or a convention is a
+rule, and a raised exception is a constructor.
+
+**Resolution:** text is dropped when the status is not `present`, matching the
+extractor.
+**Pin:** tests/tier1/test_identity.py::test_a_non_present_value_carries_no_text
+
+---
+
+## #39 — 2026-09-03 — A written "not applicable" was allowed to contradict
+
+**What happened:** on record 1912687 the identity reader returned a completion
+date of `present` with raw text `'N/A'`. Reassembly then compared that against
+a real date on another page, found them different, and vetoed the pair.
+
+**Why the first diagnosis was wrong, and this is the point of the entry.** I
+logged this as a reader defect: the reader should have said `blank` or
+`not_on_this_form` instead of returning a value. Then I read the protocol the
+reader follows. **The operator wrote "N.A." on the paper.** The labelling
+protocol says to key what is written. So the reader was right, and reporting
+it as a present value with that text is exactly correct.
+
+The defect is one layer down. **Reassembly allowed a value that means "there
+is no value" to act as evidence of disagreement.** A field where one page says
+`N/A` and another gives a date is a field where one page is silent, which is
+`unknown`, not a contradiction. Treating it as a contradiction lets a page
+that declines to answer veto a true pairing.
+
+**Measured footprint:** 1 of 421 present values across the run, 0.2%.
+
+**Why the fix goes where it goes.** A prompt change would invalidate the
+identity cache and cost another run. A comparison change is free, is
+deterministic, and is where the error actually is. The measured rate did not
+decide this; the diagnosis did, and the rate only says the cost of being
+wrong about it is small either way.
+
+**Resolution:** normalisation in `pipeline.reassemble` returns `None` for a
+declared list of written non-values, so they compare as `unknown` and can
+neither agree nor contradict. Declared and listed, not a similarity judgement.
+**Pin:** tests/tier1/test_reassemble.py::test_a_written_non_value_cannot_contradict

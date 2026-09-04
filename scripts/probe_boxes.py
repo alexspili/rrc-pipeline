@@ -413,15 +413,21 @@ def score_sheet() -> None:
     total = sum(template.values())
     scalars = buckets["template"]
     cells = buckets["template_row"]
-    print("RULE ONE, the template: hit + near over 18")
+    # The pooled figure decides. A second clause in the protocol said the
+    # scalar rate did, and it disagreed when the grades came in; the numbered
+    # clause governs and the other is superseded (DEFECTS #31). This label
+    # used to repeat the superseded claim.
+    print("RULE ONE, the template: hit + near over 18 (the pooled figure "
+          "decides; DEFECTS #31)")
     print(f"  scalars      {scalars['hit'] + scalars['near']:2d}/"
           f"{sum(scalars.values()):2d}   "
           f"(hit {scalars['hit']}, near {scalars['near']}, "
-          f"miss {scalars['miss']})   <- the number that decides")
+          f"miss {scalars['miss']})   <- reported, does not decide")
     print(f"  cell bands   {cells['hit'] + cells['near']:2d}/"
           f"{sum(cells.values()):2d}   "
           f"(hit {cells['hit']}, near {cells['near']}, miss {cells['miss']})"
-          f"   <- weak in the hit direction, median area 0.075 of the page")
+          f"   <- median area 0.075 of the page; predicted to be biased "
+          f"toward hit and was not")
     low, high = wilson(landed, total) if total else (0, 0)
     print(f"  pooled       {landed:2d}/{total:2d} = {landed / total:.1%}   "
           f"Wilson [{low:.1%}, {high:.1%}]")
