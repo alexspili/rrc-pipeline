@@ -447,3 +447,53 @@ nothing about **recall**: how many real face-and-back pairs the module never
 attached. 271 pages went unattached, 114 of them because no face was available
 in the file at all. Whether those are correct abstentions is a separate
 question needing a separate sample, and it is not asked here.
+
+### CORRECTION, 2026-09-05, before the sheet was keyed and before any verdict
+
+**The unit was wrong and the count with it.** The rule above says twenty-one,
+counted from the 32 multi-page documents of which 11 were already judged. But
+the thing a person actually judges is a **pair**: one face and one page
+attached to it. A document with six pages holds five such pairs, and each is a
+separate judgement.
+
+Counted as pairs: **39 attached pages corpus-wide, 13 already judged in the
+earlier sittings, 26 on this sheet.**
+
+**What changes and what does not.** The standard does not move. The rule above
+sets it as a rate and gives the reasoning: below about 90% precision, roughly
+three documents in the corpus put one well's casing record under another
+well's identity. Translated to 26 pairs, the smallest count meeting that rate
+is **24 of 26** (92.3%); 23 of 26 is 88.5% and falls below it.
+
+**DECISION RULE, restated in the right unit and superseding the count above:
+twenty-four or more of the twenty-six pairs must verify.** Everything else
+stands unchanged: one clause, `cannot-tell` is a failure, and the escape at 23
+or fewer is face-only extraction, elected in advance.
+
+**This correction was made before a single verdict was read.** What changed is
+arithmetic that was wrong when written, not a bar adjusted to fit an outcome.
+The original wording is left above rather than edited, on the same reasoning as
+the SUPERSEDED block in the extraction protocol: the mistake is part of the
+record.
+
+### Two predictions, committed before the sitting
+
+Building the sheet made two structural facts visible. Neither is a verdict, and
+neither may change the rule, but writing down what I expect before Alex reads
+the paper is the only way these can count as evidence afterwards.
+
+1. **Record 1493451, file 0: five pages attach to one face, p10**, every one of
+   them joined on `operator_name` and `total_depth` rather than on the lease
+   name. That is the shape of the DEFECTS #43 failure — one well, several
+   filings — and a total depth agreeing is a weak signal because a well has one.
+   **I expect most of these five to be wrong.** If they are, they are 5 of the
+   26 on their own and the sitting fails on this record alone.
+
+2. **Record 1493399, file 0: two pages, p13 and p42, attach to the same face
+   p41**, twenty-nine pages apart in the same file. **I expect at least one of
+   those two to be wrong**, because a file this large holds several filings and
+   physical distance is not something the module looks at.
+
+If both predictions hold, the module fails this sitting at 20 or 21 of 26 and
+the elected escape fires. If they do not hold, that is a stronger result than
+the count alone, because it was called in advance.
