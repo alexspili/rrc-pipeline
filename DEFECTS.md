@@ -2097,4 +2097,27 @@ one is a real face and the other is not — and that rule would score 7 of 7 on
 this sitting, which is exactly why it cannot be adopted on this sitting's
 evidence. A third sitting would be needed, and each round so far has revealed
 another layer.
-**Pin:** pending, on whatever is decided.
+
+**Resolved in part, 2026-09-04.** Two of the three holes are closed: a back
+page may not be a parent, and a page the classifier calls a face may only be a
+child if its own cited boxes say back page, which is keyed to `part` rather
+than `is_face` because `is_face` is gated on form_class and let the first page
+of a P-4 through.
+
+**The third is NOT closed, deliberately.** A form-family rule would be keyed to
+the classifier's `form_class`, and the two cases it must separate are
+indistinguishable there: record 1495193 pages 7 and 8 are `w2` and `g1` and
+ARE one document, which is DEFECTS #25's pin and the reason this module
+exists, while record 1912687 pages 2 and 8 are `g1` and `w2` and are not. The
+rule that closes the failure breaks the pin. `form_class` is untrustworthy for
+exactly the reason `part` is, which was #37's lesson.
+
+Across both sittings the rule now scores 13 of 15, and **all fifteen are
+development data**, since the rule was derived from the second sitting. The
+module makes seven attachments and all seven have now been judged, so **the
+pool for a third sitting is empty** and no held-out check is available without
+reading further records.
+**Pin:** tests/tier1/test_reassemble.py::test_a_back_page_may_not_be_a_parent,
+::test_a_page_of_another_form_may_not_attach, and
+::test_a_child_crossing_form_families_is_a_known_limitation, which pins the
+hole that is staying open.

@@ -219,6 +219,45 @@ def looks_like_a_back_page(sources) -> bool:
     return any(box in label for label in labels for box in BACK_BOXES)
 
 
+def may_pair(parent: PageRecord, child: PageRecord) -> bool:
+    """Whether these two pages could be one document at all.
+
+    One rule, arrived at from three directions in the second verification
+    sitting: **two pages are one document only when they are the same form
+    family, one is a real face, and the other is not.**
+
+    Every check here is about what a page IS, not about what it says. The
+    identity fields describe a well, and every round of this module's history
+    has been another way that fails to describe a document: two filings of one
+    form, then two sides that are both backs, then two different forms about
+    one well (DEFECTS #43, #44, #46).
+
+    **The form-family half of that sentence is NOT implemented, and the reason
+    is worth more than the rule would have been.** It would have been keyed to
+    the classifier's `form_class`, and the two cases it must separate are
+    indistinguishable there. Record 1495193 pages 7 and 8 are `w2` and `g1`
+    and are one document, which is DEFECTS #25's pin and the reason this
+    module exists. Record 1912687 pages 2 and 8 are `g1` and `w2` and are not.
+    A family rule built on that label rejects the pin. `form_class` is
+    untrustworthy for exactly the reason `part` is, and #37 was the lesson
+    about trusting `part`.
+
+    So the W-2 Section III that attached to a G-1 face stays attached, and is
+    recorded as a measured limitation rather than closed with a rule that
+    would break something load-bearing.
+    """
+    if looks_like_a_back_page(parent.sources):
+        return False
+    if child.part != "face":
+        return True
+    # The classifier calls the child a face. Only its own cited boxes may
+    # overrule that, and they must actually say back page. `is_face` is not
+    # the test here: it is gated on form_class, so a page the classifier
+    # called the FACE of some other form passed straight through it and a
+    # P-4's first page attached to a W-2 (DEFECTS #46).
+    return looks_like_a_back_page(child.sources)
+
+
 def compare_stamps(a, b) -> str:
     """Received stamps, compared office by office.
 
@@ -316,10 +355,13 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS):
 
     def place(candidate, pool):
         """Attach to the one eligible parent, or say why not."""
+        pool = [f for f in pool if may_pair(f, candidate)]
         if not pool:
             return "no_face"
         eligible, contradicted_any = [], False
         for face in pool:
+            if not may_pair(face, candidate):
+                continue
             agreements, contradicted = score(candidate, face)
             if contradicted:
                 contradicted_any = True

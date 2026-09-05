@@ -36,19 +36,20 @@ def test_no_pair_from_the_first_sitting_appears_again():
     assert not {key(r) for r in _rows(SHEET)} & first
 
 
-def test_the_sample_is_every_unjudged_attachment_not_a_subset():
+#: What the run this sheet was drawn from produced. Pinned rather than
+#: recomputed: the sheet is a record of one run, and recomputing against the
+#: live output made this test fail the moment the module improved and the
+#: attachment count dropped from 11 to 7.
+DRAWN_FROM_ATTACHMENTS = 11
+DRAWN_FROM_ALREADY_JUDGED = 4
+
+
+def test_the_sample_was_every_unjudged_attachment_of_the_run_it_came_from():
     """The rule: fewer than eight means all are judged and the count is
     reported, never topped up. It also means never trimmed."""
-    docs = ROOT / "data" / "extract" / "reassemble.jsonl"
-    if not docs.exists():
-        pytest.skip("run output is git-ignored, not present here")
-    import json
-    total = sum(len(json.loads(l)["pages"]) - 1
-                for l in docs.open() if l.strip())
-    judged = len([r for r in _rows(FIRST) if r["part"] == "A"])
-    # 11 attachments, 4 of them pairs already judged
-    assert len(_rows(SHEET)) == total - 4
-    assert judged == 8
+    assert len(_rows(SHEET)) == (DRAWN_FROM_ATTACHMENTS
+                                 - DRAWN_FROM_ALREADY_JUDGED)
+    assert len([r for r in _rows(FIRST) if r["part"] == "A"]) == 8
 
 
 def test_every_pair_says_what_joined_it_and_where_the_values_came_from():
