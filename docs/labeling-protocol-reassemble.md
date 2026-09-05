@@ -343,3 +343,107 @@ a classifier label that is wrong on the very pin this module exists for
 (DEFECTS #46). If the same shape appears among these twenty it is counted as a
 failure like any other, because a limitation being documented does not make an
 attachment right.
+
+---
+
+## The fourth sitting: the whole held-out population. Written 2026-09-05
+## before any of the twenty-one was looked at
+
+**Why this exists, and why it could not have existed before.** After three
+sittings the module made seven attachments and Alex had judged all seven. The
+pool was empty. DEFECTS #46 is the reason that mattered: the rules scored 7 of
+8 on the pairs they were built from and 2 of 7 on fresh pairs, so a number from
+already-judged data tells us nothing about a corpus run.
+
+The corpus identity read changed that. Run over 141 records instead of 19, the
+module builds 218 documents, of which **32 have more than one page**. Eleven of
+those 32 have been judged in the earlier sittings. **Twenty-one have not, and
+twenty of the twenty-one are in records that were never used to build any rule
+in this module.** That is a real held-out population, and it is the first one
+available.
+
+### The draw: there is no draw
+
+**All 21 unjudged attachments are judged.** No sample, no seed, no exclusion.
+
+This is deliberate and it is cheaper than it sounds. The whole population of
+multi-page documents is 32. Judging the remaining 21 makes the module's
+attachment precision on this corpus a **counted fact rather than an estimate**:
+no sampling error, no interval, nothing to argue about in an interview. A
+sample of eight out of twenty-one would buy a wider uncertainty for less of
+Alex's time, and the time saved is not the scarce thing here.
+
+The population does not grow unless the module changes. This is the cheap
+moment and it does not come again.
+
+### What counts as verified
+
+A pair verifies when **both** hold:
+
+- the two pages are one completion report, judged from the paper; and
+- no value the attachment depended on came from the wrong printed box.
+
+Both are on the sheet, as in the third sitting: each row carries the fields
+that agreed, the printed box the reader says each value came from, and the
+received stamps of both pages.
+
+`cannot-tell` counts as a failure. That biases the sitting against the module,
+which is the safe direction.
+
+### DECISION RULE: nineteen or more of the twenty-one must verify
+
+There is one clause and it is this one. Nothing else in this section can
+change the outcome.
+
+**19, 20 or 21 verified** — the corpus extraction run goes ahead with the
+documents grouped as the module grouped them.
+
+**18 or fewer** — the corpus extraction run goes ahead **face-only**: 218
+one-page documents, no attachments, and the attachment mechanism does not ship
+until it has been diagnosed and re-verified against evidence that does not
+exist yet. **This escape is elected now**, so nothing is chosen after the
+numbers are seen.
+
+**Why nineteen.** 19 of 21 is 90.5%. At 90% precision, with 32 multi-page
+documents in the corpus, roughly three documents put one well's casing record
+under another well's identity — and a corrupted document is worse than a
+missing page, because it looks complete and every downstream check then
+validates a document that never existed. The last fresh-data reading, after the
+three fixes, was 6 of 6.
+
+**Why the escape is face-only and not a stricter threshold.** The obvious
+middle path is to keep only attachments resting on three or more agreeing
+fields. Checked before writing this rule: **37 of the 39 attached pages rest on
+exactly two fields**, so that path removes 37 of 39 and is face-only wearing a
+disguise. Writing it in as a distinct outcome would have been DEFECTS #41
+again, a pre-registered branch that cannot do anything. There is no graded
+middle here, so this rule does not pretend there is one.
+
+**The escape is not "no spend".** Face-only extraction is 218 one-page
+documents and still runs. What it gives up is the casing, depth and completion
+tables that live on the reverse side, on the 32 documents that have one.
+
+### Regression conditions: reported, never traded
+
+- The eleven attachments already judged must still be as judged.
+- The pre-registered pins hold: A (1493495 p10 to p9) and B (1495193 p8 to p7)
+  attach; E (1495193 p8 must not attach to p9) does not.
+
+These are reported alongside the count. They do not enter the arithmetic and
+they cannot rescue a failing count.
+
+### What a failure teaches, and what it may not do
+
+A pair judged wrong may reveal a mechanism nobody has seen — a form-family
+crossing, a new box-label pattern, something else. **That gets a defect entry
+and a failing test, and it does not change this sitting's arithmetic.** Origin:
+DEFECTS #31 and #35, where a pre-registration carried two decision clauses and
+the second one was available to rescue the first. One clause. It is above.
+
+### What this sitting cannot establish
+
+It measures **precision**: of the attachments made, how many are right. It says
+nothing about **recall**: how many real face-and-back pairs the module never
+attached. 271 pages went unattached, 114 of them because no face was available
+in the file at all. Whether those are correct abstentions is a separate
+question needing a separate sample, and it is not asked here.
