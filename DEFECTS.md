@@ -2284,3 +2284,52 @@ fails loudly if it does not, which is the only version of this fix that stops
 the next such page from vanishing quietly.
 
 **Pin:** tests/tier1/test_reassemble.py::test_every_page_that_goes_in_comes_out_somewhere
+
+---
+
+## #50 — 2026-09-05 — I quoted $2.61 for a run that cost $5.24
+
+**What happened:** before the corpus identity read, I sized it for Alex and
+said: 532 pages in scope, 353 of them not yet cached, **$2.61**. He approved
+the spend against that number. The run has finished. The 349 pages it actually
+read cost **$5.24**, which is 2.0x the quote.
+
+**The page count was right and the price per page was half.** 349 read against
+353 predicted is a good estimate of scope. $0.0150 per page against $0.0074
+quoted is not an estimate of price, it is a different number.
+
+**Where the factor of two came from.** The identity reader sends one page image
+at `IMAGE_CAP = 1568`, the same cap extraction uses and deliberately not the
+classifier's 1000. A 1568-px page image is about 4,000 input tokens; the run
+measured 3,975 per page. My quote was built on roughly half that, which is
+what a 1000-px image costs. I priced the identity reader as though it were the
+classifier, because the classifier is the module whose per-page cost I know by
+heart.
+
+**Why this is the same defect as #21 and not a new kind.** DEFECTS #21 was a
+price taken from the wrong model's rate card. This is a price taken from the
+wrong module's image size. Both are the same mistake underneath: quoting a cost
+from memory of a neighbouring thing instead of computing it from the constants
+in front of me. `scripts/estimate_batch.py` exists for extraction precisely so
+that cannot happen there, and I did not give the identity reader the same
+instrument before spending on it.
+
+The money is not the damage. The damage is that Alex approved a spend against
+a number I had not computed, and standing rule 8 says numbers in prose are
+measured or absent.
+
+**Found by:** measuring what the finished run cost before reporting its
+results, rather than repeating my own estimate back as though the run had
+confirmed it.
+
+**Fix:** `scripts/estimate_batch.py` grows an `--identity` mode that prices a
+page read from the identity reader's own constants and its own measured cache,
+so the next quote for that module comes from the same kind of instrument
+extraction already has. Nothing is quoted from memory again.
+
+**What remains:** the extraction quote in this session's report ($15.35
+standard, $7.67 batched for 218 documents) comes from `estimate_batch.py` and
+from the smoke run's measured tokens, not from memory, so it is not exposed to
+this fault. It is still an estimate of a run that has not happened.
+
+**Pin:** tests/tier2/test_estimate_batch.py::test_a_page_is_priced_from_the_cap_the_module_actually_sends

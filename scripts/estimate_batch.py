@@ -111,6 +111,36 @@ def corpus_mix() -> dict | None:
     return counts or None
 
 
+def identity_price() -> float | None:
+    """USD for one page read by the identity reader, from its own cache.
+
+    Origin: DEFECTS #50. That run was quoted at $2.61 and cost $5.24, because
+    the quote priced a 1000 px page image and the reader sends 1568. The page
+    count in that quote was right and only the price was wrong, which is the
+    version of the mistake that survives a sanity check.
+
+    Measured from what the reader has actually been billed, under the prompt
+    that is shipping now. No constants, no arithmetic from an image size, and
+    nothing carried over from a neighbouring module.
+    """
+    from pipeline import identity
+    path = ROOT / "data" / "extract" / "cache_identity.jsonl"
+    if not path.exists():
+        return None
+    entries = {}
+    for line in path.open():
+        if line.strip():
+            row = json.loads(line)
+            entries[row["key"]] = row
+    current = [e for k, e in entries.items()
+               if k.endswith(identity.PROMPT_HASH) and e.get("input_tokens")]
+    if not current:
+        return None
+    tin = sum(e["input_tokens"] for e in current) / len(current)
+    tout = sum(e["output_tokens"] for e in current) / len(current)
+    return (tin * extractor.PRICE_IN + tout * extractor.PRICE_OUT) / 1e6
+
+
 def price(tokens: dict, pages: int) -> float:
     """USD for one document of this page count, at the standard rate.
 
@@ -189,6 +219,15 @@ def main() -> None:
     print(f"  standard  ${standard:.2f}")
     print(f"  batched   ${batched:.2f}")
     print(f"  saving    ${standard - batched:.2f}")
+
+    per_page = identity_price()
+    if per_page is not None:
+        print(f"\nidentity reader, measured over its own cache: "
+              f"${per_page:.4f} a page")
+        print(f"  a 353-page read is ${per_page * 353:.2f} standard, "
+              f"${per_page * 353 * extractor.BATCH_DISCOUNT:.2f} batched")
+        print("  (DEFECTS #50: that read was quoted at $2.61 from a 1000 px "
+              "image and cost $5.24.)")
 
 
 if __name__ == "__main__":
