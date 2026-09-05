@@ -287,3 +287,59 @@ second decision clause.** That distinction is written down explicitly because
 this protocol has already been amended once for containing two rules that
 could disagree (DEFECTS #35), and again because a caveat section elsewhere
 grew a verdict nobody meant to write (DEFECTS #31).
+
+## The extension, and the third sitting. Written 2026-09-04 before reading
+
+**Why this exists.** After two sittings the module makes seven attachments and
+Alex has judged all seven. Its score of 13 of 15 across both sittings is
+**entirely development data**: the rule that produces it was derived from the
+second sitting. There is no held-out pair left to test it on, and the sample
+that would test it needs reading records nobody has read, which is the spend
+this gate exists to authorise. That is circular, and the circle is broken by
+enlarging the measurement set rather than by running the corpus.
+
+**This is not the corpus run.** It is 20 records, 56 pages, $0.41. The corpus
+run remains gated behind this sitting.
+
+### The draw, fixed before the pages were read
+
+89 records hold a completion face and have not been read. **20 were drawn at
+random under seed 20260904**, before any of them was looked at:
+
+    1493450 1493524 1493639 1494015 1494023 1494028 1494058 1494408
+    1494459 1494722 1494811 1496799 1501720 1509403 1512952 1513275
+    1774674 1865660 2306415 2345595
+
+They contain 36 completion faces over 56 readable pages.
+
+**Every attachment on these records is fresh by construction.** No page of any
+of them has been judged, so nothing here can be contaminated by a rule derived
+from the earlier sittings.
+
+### DECISION RULE:
+
+Every attachment the module makes on these 20 records is judged, up to **10**.
+If it makes more than 10, ten are drawn at random under seed 20260904 and the
+total is reported. If it makes none, that is reported as the result: a module
+that attaches nothing on twenty fresh records is a finding about the paper.
+
+**All judged pairs must verify** — the two pages are one completion report,
+and no value the attachment depended on came from the wrong box.
+`cannot-tell` counts as a failure.
+
+Two regression conditions travel with it, reported and not traded: the five
+pairs judged correct across the first two sittings must still attach, and
+pre-registered cases A and B must still pass.
+
+**All verify, and both regressions hold:** the full identity run and the full
+extraction run unlock together as one batched spend decision.
+**Anything else:** no corpus spend, and the failure pattern comes back first.
+
+### What this cannot fix
+
+The known limitation stays known. A W-2 section attaching to a G-1 face is not
+closed and is not expected to be: closing it needs a form-family rule keyed to
+a classifier label that is wrong on the very pin this module exists for
+(DEFECTS #46). If the same shape appears among these twenty it is counted as a
+failure like any other, because a limitation being documented does not make an
+attachment right.
