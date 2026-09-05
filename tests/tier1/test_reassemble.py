@@ -464,44 +464,75 @@ def test_two_filings_for_one_well_are_not_one_document():
     assert not unattached
 
 
-def test_a_back_page_carries_neither_field_so_neither_can_veto():
-    """Both are printed on the face. A section says not_on_this_form for
-    both, which compares as unknown and cannot reject a true pair."""
+def stamped(number, part=None, form_class="w2", sources=None, stamps=(),
+            **identity):
+    return ra.PageRecord(record_id="1912687", file_index=0, page=number,
+                         form_class=form_class, part=part,
+                         identity=identity, sources=sources or {},
+                         stamps=stamps)
+
+
+def test_a_back_page_carries_no_purpose_so_it_cannot_veto():
+    """Purpose is printed on the face. A section says not_on_this_form, which
+    compares as unknown and cannot reject a true pair."""
     face = page(7, "face", sources=FACE_BOXES, **SUN,
-                purpose_of_filing="Initial Potential",
-                received_stamp="MAY 19 1975")
+                purpose_of_filing="Initial Potential")
     section = page(8, "sec_ii", sources=BACK_BOXES, **SUN)
-    verdicts = ra.compare(section, face)
-    assert verdicts["purpose_of_filing"] == ra.UNKNOWN
-    assert verdicts["received_stamp"] == ra.UNKNOWN
+    assert ra.compare(section, face)["purpose_of_filing"] == ra.UNKNOWN
     documents, unattached = ra.group([face, section])
     assert [p.page for p in documents[0].pages] == [7, 8]
     assert not unattached
 
 
-def test_a_received_stamp_is_compared_at_month_and_year():
-    """Measured on the probe: two stamps came back as a full date and two as
-    month and year only. Comparing a full date against a coarse one as
-    strings would be a false disagreement, and on a veto field that refuses
-    a pair that belongs together."""
-    assert ra.normalise("received_stamp", "AUG 18 2009") == "8-2009"
-    assert ra.normalise("received_stamp", "MAR 1990") == "3-1990"
-    assert (ra.normalise("received_stamp", "JUN 09 2009")
-            != ra.normalise("received_stamp", "AUG 18 2009"))
-    # the honest cost of that choice, pinned rather than hidden: two filings
-    # stamped in one month are indistinguishable here
-    assert (ra.normalise("received_stamp", "MAR 05 1990")
-            == ra.normalise("received_stamp", "MAR 27 1990"))
+# --------------------------------------------------------------- DEFECTS #45
+
+def test_stamps_are_compared_office_by_office():
+    """Record 1912687 page 2 carries BOTH a Houston stamp from June and a
+    Central Records Austin stamp from August. Page 6 carries only the Houston
+    one. Comparing "the" stamp compares whichever each reading picked."""
+    p2 = stamped(2, "face", stamps=(("Houston", "JUN 09 2009"),
+                                    ("Central Records", "AUG 18 2009")))
+    p6 = stamped(6, "face", stamps=(("Houston", "JUN 09 2009"),))
+    assert ra.compare_stamps(p2.stamps, p6.stamps) == ra.AGREES
 
 
-def test_different_received_stamps_reject_a_pair():
-    """The failure still standing after the back-page rule: 1912687 p6+p2,
-    stamped Jun 9 2009 and Aug 18 2009."""
-    a = page(2, "face", sources=FACE_BOXES, **SUN, received_stamp="AUG 18 2009")
-    b = page(6, "face", sources=BACK_BOXES, **SUN, received_stamp="JUN 09 2009")
-    assert ra.compare(b, a)["received_stamp"] == ra.DISAGREES
+def test_an_office_only_one_page_names_says_nothing():
+    """A Central Records stamp lands on a packet's top page and not on the
+    pages behind it. That is a fact about stapling, not about filings."""
+    top = stamped(2, "face", stamps=(("Houston", "JUN 09 2009"),
+                                     ("Central Records", "AUG 18 2009")))
+    behind = stamped(6, "face", stamps=(("Houston", "JUN 09 2009"),))
+    assert ra.compare_stamps(top.stamps, behind.stamps) == ra.AGREES
+    none = stamped(9, "face", stamps=())
+    assert ra.compare_stamps(top.stamps, none.stamps) == ra.UNKNOWN
+
+
+def test_one_office_with_two_dates_rejects_the_pair():
+    """The real signal: the same office received these on different days, so
+    they are different filings."""
+    a = stamped(52, "face", stamps=(("Houston", "JUN 09 2009"),))
+    b = stamped(87, "face", stamps=(("Houston", "AUG 18 2009"),))
+    assert ra.compare_stamps(a.stamps, b.stamps) == ra.DISAGREES
     _, contradicted = ra.score(b, a)
     assert contradicted
+
+
+def test_stamps_are_compared_at_month_and_year():
+    """Measured on the probe: some stamps read as a full date and some as
+    month and year only. Comparing those as strings would be a false
+    disagreement, which on a veto field refuses a pair that belongs."""
+    assert ra.normalise("received_date", "AUG 18 2009") == "8-2009"
+    assert ra.normalise("received_date", "MAR 1990") == "3-1990"
+    # pinned rather than hidden: two filings stamped in one month look alike
+    assert (ra.normalise("received_date", "MAR 05 1990")
+            == ra.normalise("received_date", "MAR 27 1990"))
+
+
+def test_office_names_are_compared_after_normalising():
+    assert (ra.normalise("received_office", "Houston")
+            == ra.normalise("received_office", "HOUSTON,"))
+    assert (ra.normalise("received_office", "Central Records")
+            != ra.normalise("received_office", "Houston"))
 
 
 def test_the_reader_and_reassembly_still_agree_on_the_field_list():

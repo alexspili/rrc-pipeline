@@ -142,7 +142,7 @@ def main() -> None:
             record_id=record_id, file_index=file_index, page=page,
             form_class=row["form_class"], part=row.get("part"),
             identity=identity.identity_for(read),
-            sources=read.found_in)
+            sources=read.found_in, stamps=read.stamps)
     if missing:
         say(f"  {missing} pages not in cache; rerun without --offline")
     if failures:
@@ -209,6 +209,14 @@ def main() -> None:
                 "face": doc.face.page,
                 "pages": [p.page for p in doc.pages],
                 "evidence": [[p, list(f)] for p, f in doc.evidence]}) + "\n")
+    say("\nRECEIVED STAMPS, per page, office and date (DEFECTS #45: a page")
+    say("carries several, so they are compared office by office).")
+    for key in sorted(built):
+        st = built[key].stamps
+        if st:
+            say(f"  {key[0]}-{key[1]} p{key[2]}: "
+                + "; ".join(f"{o} {d}" for o, d in st))
+
     say("\nFOUND_IN, the printed box the reader says each value came from.")
     say("A claim and not proof: it makes a wrong-field read checkable, not")
     say("checked, and it is never evidence on its own (DEFECTS #42).")

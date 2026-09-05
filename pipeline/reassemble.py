@@ -52,8 +52,7 @@ from dataclasses import dataclass, field as dc_field
 #: The fields both a face and its section can carry, and any of which can
 #: reject a pair by disagreeing.
 IDENTITY_FIELDS = ("operator_name", "lease_name", "well_number",
-                   "completion_date", "rrc_district", "purpose_of_filing",
-                   "received_stamp")
+                   "completion_date", "rrc_district", "purpose_of_filing")
 
 #: Carried by some sections and useful as corroboration, but never able to
 #: reject a pair: a face and its section can legitimately disagree when one
@@ -122,7 +121,9 @@ def normalise(field: str, value: str | None) -> str | None:
             a, b, c = (int(part) for part in match.groups())
             return f"{a % 100}-{b % 100}-{c % 100}"
         return text
-    if field == "received_stamp":
+    if field == "received_office":
+        return text or None
+    if field == "received_date":
         # Compared at month and year only, which is the precision BOTH sides
         # reliably carry. Measured on the four-page probe: two stamps came
         # back as a full date and two as month and year, and comparing
@@ -156,6 +157,9 @@ class PageRecord:
     #: claim by the model about its own reading, not proof (DEFECTS #42), and
     #: the only thing that tells a real face from a mislabelled one.
     sources: dict[str, str | None] = dc_field(default_factory=dict)
+
+    #: (office, date) for every received stamp on the page.
+    stamps: tuple[tuple[str, str], ...] = ()
 
     @property
     def file_key(self) -> tuple[str, int]:
@@ -215,9 +219,35 @@ def looks_like_a_back_page(sources) -> bool:
     return any(box in label for label in labels for box in BACK_BOXES)
 
 
+def compare_stamps(a, b) -> str:
+    """Received stamps, compared office by office.
+
+    A page carries several stamps because a filing is stamped by the district
+    office and again by Central Records months later. Comparing "the" stamp
+    compares whichever one each reading happened to pick, which on record
+    1912687 made two pages agree on Houston while a human comparing Austin
+    against Houston read them as different filings (DEFECTS #45).
+
+    So only offices BOTH pages name are compared. One page carrying an extra
+    stamp says nothing: a Central Records stamp lands on a packet's top page
+    and not on the pages behind it, which is a fact about stapling rather than
+    about which filing a page belongs to.
+    """
+    left = {normalise("received_office", o): normalise("received_date", d)
+            for o, d in a}
+    right = {normalise("received_office", o): normalise("received_date", d)
+             for o, d in b}
+    shared = {o for o in left if o and o in right and right[o] and left[o]}
+    if not shared:
+        return UNKNOWN
+    if any(left[o] != right[o] for o in shared):
+        return DISAGREES
+    return AGREES
+
+
 def compare(a: PageRecord, b: PageRecord) -> dict[str, str]:
     """Field by field: agrees, disagrees, or unknown."""
-    out = {}
+    out = {"received_stamps": compare_stamps(a.stamps, b.stamps)}
     for field in IDENTITY_FIELDS + BONUS_FIELDS:
         left = normalise(field, a.identity.get(field))
         right = normalise(field, b.identity.get(field))
@@ -233,9 +263,9 @@ def compare(a: PageRecord, b: PageRecord) -> dict[str, str]:
 def score(a: PageRecord, b: PageRecord) -> tuple[int, bool]:
     """(fields that agree, whether anything that can reject them does)."""
     verdicts = compare(a, b)
-    agreements = sum(1 for v in verdicts.values() if v is AGREES
-                     or v == AGREES)
-    contradicted = any(verdicts[f] == DISAGREES for f in IDENTITY_FIELDS)
+    agreements = sum(1 for v in verdicts.values() if v == AGREES)
+    contradicted = any(verdicts[f] == DISAGREES
+                       for f in IDENTITY_FIELDS + ("received_stamps",))
     return agreements, contradicted
 
 

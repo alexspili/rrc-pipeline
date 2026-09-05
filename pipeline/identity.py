@@ -40,8 +40,7 @@ IMAGE_CAP = 1568
 #: The five fields reassembly compares, plus the one it uses as
 #: corroboration. Kept in step with pipeline.reassemble by a tier-1 test.
 FIELDS = ("operator_name", "lease_name", "well_number", "completion_date",
-          "rrc_district", "total_depth", "purpose_of_filing",
-          "received_stamp")
+          "rrc_district", "total_depth", "purpose_of_filing")
 
 SYSTEM = """You are reading one page of a Texas Railroad Commission well
 record. It is often a section, a continuation, or the back of a completion
@@ -90,13 +89,25 @@ neighbouring field that looks similar.
                   of the form; a section or back page does not print it, and
                   there it is not_on_this_form.
 
-  received_stamp  The date in a district office RECEIVED stamp. This is a
-                  rubber stamp and not a printed form field: it is often
-                  rotated, sometimes by 45 degrees, and usually sits across a
-                  signature block or a margin rather than in a box. Report
-                  the date exactly as stamped. Do NOT report a printed form
-                  date such as the completion date, the date of test or a
-                  signature date.
+Then, separately from those fields, list EVERY received stamp on the page:
+
+  "received_stamps": [{"office": ..., "date": ...}, ...]
+
+A received stamp is a rubber stamp, not a printed form field. It is often
+rotated, sometimes by 45 degrees, and usually sits across a signature block or
+a margin rather than in a box.
+
+**A page frequently carries more than one**, because a filing is stamped by
+the district office and again later by Central Records in Austin. List them
+all. An empty list means none.
+
+  office  the office named in the stamp, as SHORT as possible: the city, or
+          "Central Records". Write "Houston", not "RRC of Texas, O&G
+          Division, Houston, TX".
+  date    the date exactly as stamped.
+
+Do NOT list a printed form date such as the completion date, the date of test
+or a signature date. Those are not stamps.
 
 Each is an object: {"status": ..., "raw": ..., "found_in": ...}.
 
@@ -147,6 +158,12 @@ class Read:
     values: dict[str, Value]
     found_in: dict[str, str | None]
 
+    #: (office, date) for every received stamp on the page. A page carries
+    #: several: a district office stamps it, then Central Records stamps it
+    #: again months later (DEFECTS #45). Asking for "the" stamp asked for
+    #: something the paper does not have.
+    stamps: tuple[tuple[str, str], ...] = ()
+
 
 def parse(body: str, page: int) -> Read:
     """Model output to Values. A present value gets a page-level region.
@@ -175,7 +192,15 @@ def parse(body: str, page: int) -> Read:
         label = entry.get("found_in")
         sources[field] = (str(label).strip() or None
                           if label and status is Status.PRESENT else None)
-    return Read(values=out, found_in=sources)
+    stamps = []
+    for entry in payload.get("received_stamps") or []:
+        if not isinstance(entry, dict):
+            continue
+        office = str(entry.get("office") or "").strip()
+        date = str(entry.get("date") or "").strip()
+        if office and date:
+            stamps.append((office, date))
+    return Read(values=out, found_in=sources, stamps=tuple(stamps))
 
 
 def identity_for(read) -> dict[str, str | None]:
