@@ -1939,3 +1939,51 @@ threshold is not the problem and is not moved. A proposal exists and is
 recorded in docs/modules/reassemble.md rather than implemented, because the
 evidence for it comes from the same eight pairs that would judge it.
 **Pin:** tests/tier1/test_reassemble.py::test_two_filings_for_one_well_are_not_one_document
+
+---
+
+## #44 — 2026-09-04 — Letting a face be a child let two faces become one document
+
+**What happened:** DEFECTS #37 allowed a page the classifier calls a face to
+become another face's child, because the classifier is right about faces only
+44% of the time and the module was treating that label as fact. It fixed the
+pin. It also created every one of the two-filings-in-one-document errors that
+the verification sitting then found (DEFECTS #43).
+
+Both halves are true and they are not in tension. **A page mislabelled a face
+must be allowed to be a child. A page that really is a face must not.** The
+change made no distinction between them, so it bought one and paid for the
+other.
+
+**What the sitting measured**, and it is the cleanest split in the whole
+thread:
+
+| Verdict | What the pair joins |
+|---|---|
+| yes, yes, yes | a first page and a **back** page |
+| no, no, no, no | two **first** pages |
+| no | a first page and a back page, wrong parent |
+
+Every join of two real first-pages is wrong, four times out of four.
+
+**Why the fix was not available in September's design and is now.** Telling a
+real face from a mislabelled one needs to know which printed boxes a page's
+values came from, and until `found_in` was added on 2026-09-03 (DEFECTS #42)
+nothing recorded that. A real face cites "2. LEASE NAME" and "3. OPERATOR'S
+NAME". A back page cites "Notice of Intention to Drill this Well was filed in
+Name of" and "Location of well, relative to the nearest lease boundaries".
+
+**Resolution:** a page the classifier calls a face may become a child only
+when its own cited boxes say it is a back page. Pages the classifier already
+calls a section or a continuation are unaffected: they were always candidates
+and the classifier's error rate on *those* labels is not what #37 was about.
+
+Keyed to the **label text, never the field number**. The same printed box is
+numbered 24, 31 and 32 on three revisions of this form, so a number-keyed rule
+is silently wrong on two of them.
+
+**Stated because it is the point of the firewall:** this rule was derived from
+the eight pairs Alex judged, so its score on those eight is a development
+number and decides nothing. The verdict comes from a fresh sample, and its
+rule is pre-registered in docs/labeling-protocol-reassemble.md.
+**Pin:** tests/tier1/test_reassemble.py::test_a_real_face_may_not_become_a_child

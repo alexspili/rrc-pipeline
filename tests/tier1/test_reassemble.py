@@ -363,3 +363,69 @@ def test_two_genuine_faces_that_agree_on_nothing_stay_two_documents():
     assert sorted(d.face.page for d in documents) == [7, 20]
     assert all(len(d.pages) == 1 for d in documents)
     assert not unattached
+
+
+# --------------------------------------------------------------- DEFECTS #44
+
+FACE_SOURCES = {"operator_name": "3. OPERATOR'S NAME (Exactly as shown on P-5)",
+                "lease_name": "2. LEASE NAME",
+                "well_number": "9. Well No."}
+BACK_SOURCES = {"operator_name": "26. Notice of Intention to Drill this Well "
+                                 "was filed in Name of",
+                "lease_name": "32. Location of Well, Relative to Lease "
+                              "Boundaries"}
+
+
+def sourced(number, part=None, form_class="w2", sources=None, **identity):
+    return ra.PageRecord(record_id="1495195", file_index=0, page=number,
+                         form_class=form_class, part=part,
+                         identity=identity, sources=sources or {})
+
+
+def test_a_real_face_may_not_become_a_child():
+    """The sitting: every join of two real first-pages is wrong, four of four.
+    Two filings for one well agree on everything, because it is one well."""
+    initial = sourced(52, "face", sources=FACE_SOURCES, **SUN)
+    retest = sourced(87, "face", sources=FACE_SOURCES, **SUN)
+    documents, unattached = ra.group([initial, retest])
+    assert sorted(d.face.page for d in documents) == [52, 87]
+    assert all(len(d.pages) == 1 for d in documents)
+
+
+def test_a_mislabelled_face_may_still_become_a_child():
+    """The other half, and DEFECTS #37's pin. Record 1495193 page 8 is a
+    section the census called a face, and its own cited boxes say so."""
+    face = sourced(7, "face", sources=FACE_SOURCES, well_number="1", **SUN)
+    section = sourced(8, "face", form_class="g1", sources=BACK_SOURCES, **SUN)
+    documents, unattached = ra.group([face, section])
+    assert len(documents) == 1
+    assert [p.page for p in documents[0].pages] == [7, 8]
+    assert not unattached
+
+
+def test_a_page_the_classifier_calls_a_section_is_unaffected():
+    """The rule is about faces. A section was always a candidate and stays
+    one, whatever its cited boxes say, including none at all."""
+    face = sourced(7, "face", sources=FACE_SOURCES, **SUN)
+    section = sourced(8, "sec_ii", sources={}, **SUN)
+    documents, _ = ra.group([face, section])
+    assert [p.page for p in documents[0].pages] == [7, 8]
+
+
+def test_a_face_with_no_recorded_sources_may_not_become_a_child():
+    """Abstention. With nothing to say it is really a back page, the safe
+    answer is the one that cannot invent a document."""
+    face = sourced(7, "face", sources=FACE_SOURCES, **SUN)
+    unknown = sourced(8, "face", sources={}, **SUN)
+    documents, _ = ra.group([face, unknown])
+    assert sorted(d.face.page for d in documents) == [7, 8]
+
+
+def test_the_face_test_reads_the_label_text_not_its_number():
+    """The same printed box is 24, 31 and 32 on three revisions, so a
+    number-keyed rule is silently wrong on two of them."""
+    for label in ("24. Location of well, relative to nearest lease boundary",
+                  "31. Location of Well, Relative to Nearest Lease Boundaries",
+                  "32. Location of Well, Relative to Lease Boundaries"):
+        assert ra.looks_like_a_back_page({"lease_name": label}), label
+    assert not ra.looks_like_a_back_page({"lease_name": "2. LEASE NAME"})
