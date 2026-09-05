@@ -538,3 +538,72 @@ def test_office_names_are_compared_after_normalising():
 def test_the_reader_and_reassembly_still_agree_on_the_field_list():
     from pipeline.identity import FIELDS
     assert set(FIELDS) == set(ra.IDENTITY_FIELDS) | set(ra.BONUS_FIELDS)
+
+
+# --------------------------------------------------------------- DEFECTS #46
+
+def classed(number, form_class, part, sources, **identity):
+    return ra.PageRecord(record_id="x", file_index=0, page=number,
+                         form_class=form_class, part=part,
+                         identity=identity, sources=sources)
+
+
+def test_a_back_page_may_not_be_a_parent():
+    """Second sitting: 1495195 p88+p53 and 1511465 p8+p10, both judged wrong
+    with the note "both are back sides". #44 stopped a real face becoming a
+    child and never asked the same question in the other direction."""
+    parent = classed(53, "w2", "face", BACK_BOXES, **SUN)
+    child = classed(88, "w2", "continuation", BACK_BOXES, **SUN)
+    documents, unattached = ra.group([parent, child])
+    assert all(len(d.pages) == 1 for d in documents)
+    assert unattached and unattached[0].reason == "no_face"
+
+
+def test_a_child_may_not_cross_form_families():
+    """1912687 p8+p2: a W-2 Section III attached to a G-1 face. Both pass the
+    face test, so only the family test rejects them."""
+    g1_face = classed(2, "g1", "face", FACE_BOXES, **SUN)
+    w2_back = classed(8, "w2", "sec_iii", BACK_BOXES, **SUN)
+    documents, unattached = ra.group([g1_face, w2_back])
+    assert all(len(d.pages) == 1 for d in documents)
+
+
+def test_a_page_of_another_form_may_not_attach():
+    """1494690 p3+p7 and 1760703 p24+p6: the face of a P-4 attached to a
+    completion report that shares its operator, lease, district and even its
+    received stamp, because they are about the same well."""
+    face = classed(7, "w2", "face", FACE_BOXES, **SUN)
+    other = classed(3, "other_form", "face", FACE_BOXES, **SUN)
+    documents, unattached = ra.group([face, other])
+    assert [p.page for p in documents[0].pages] == [7]
+
+
+def test_the_two_pairs_the_sitting_verified_still_attach():
+    """1495195 p6+p5 and 1504957 p7+p6. A rule that rejects everything is not
+    a fix, and this is the regression that says so."""
+    for parent_class, child_class, child_part in (("w2", "w2", "face"),
+                                                  ("w2", "w2", "continuation")):
+        parent = classed(5, parent_class, "face", FACE_BOXES, **SUN)
+        child = classed(6, child_class, child_part, BACK_BOXES, **SUN)
+        documents, unattached = ra.group([parent, child])
+        assert [p.page for p in documents[0].pages] == [5, 6]
+        assert not unattached
+
+
+def test_a_document_is_a_real_face_plus_pages_that_are_not():
+    """The whole rule in one assertion, since it is one rule and not three."""
+    assert ra.may_pair(
+        classed(5, "w2", "face", FACE_BOXES),
+        classed(6, "w2", "continuation", BACK_BOXES))
+    assert not ra.may_pair(                       # parent is a back page
+        classed(5, "w2", "face", BACK_BOXES),
+        classed(6, "w2", "continuation", BACK_BOXES))
+    assert not ra.may_pair(                       # child is a real face
+        classed(5, "w2", "face", FACE_BOXES),
+        classed(6, "w2", "face", FACE_BOXES))
+    assert not ra.may_pair(                       # different families
+        classed(5, "g1", "face", FACE_BOXES),
+        classed(6, "w2", "sec_iii", BACK_BOXES))
+    assert not ra.may_pair(                       # family unknown
+        classed(5, "w2", "face", FACE_BOXES),
+        classed(6, "other_form", "face", BACK_BOXES))
