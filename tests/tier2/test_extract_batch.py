@@ -113,17 +113,43 @@ class _Batches:
         return iter(self._entries[bid])
 
 
+class _Stream:
+    """The SDK's streaming context manager, reduced to what is used."""
+
+    def __init__(self, message, seen):
+        self._message, self._seen = message, seen
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def get_final_message(self):
+        self._seen.append("streamed")
+        return self._message
+
+
 class _Messages:
-    def __init__(self, batches):
+    def __init__(self, batches, live=None):
         self.batches = batches
+        self.live = live
+        self.calls: list[str] = []
 
     def create(self, **kwargs):                     # pragma: no cover
-        raise AssertionError("the batch path must not make a live call")
+        raise AssertionError(
+            "extraction streams; a plain create() can outlast the timeout")
+
+    def stream(self, **kwargs):
+        if self.live is None:
+            raise AssertionError("this path must not make a live call")
+        self.calls.append("stream")
+        return _Stream(self.live, self.calls)
 
 
 class _Api:
-    def __init__(self, batches):
-        self.messages = _Messages(batches)
+    def __init__(self, batches, live=None):
+        self.messages = _Messages(batches, live)
 
 
 def _docs():
@@ -304,3 +330,46 @@ def test_batching_is_half_price():
                      cached=False)
     assert one.cost_usd() == pytest.approx(12.00)
     assert one.cost_usd(batched=True) == pytest.approx(6.00)
+
+
+# ------------------------------------------- the cap, and what it is guarding
+
+def test_the_cap_clears_the_worst_document_the_smoke_run_produced():
+    """13,122 output tokens is the worst of the 20 smoke documents, and it is
+    not a big document: it returned 5,607 characters of JSON, roughly 1,600
+    tokens. The rest is adaptive thinking, which claude-sonnet-5 runs whenever
+    no thinking parameter is passed, and which is billed and counted against
+    this cap without appearing in the response.
+
+    So the cap is bounding how long the model thinks, not how much document
+    there is, and snug headroom is the wrong shape for that. Pinned at 2x the
+    worst observed rather than at a round number.
+    """
+    worst_observed = 13_122
+    assert extractor.MAX_TOKENS >= 2 * worst_observed
+
+
+def test_the_live_path_streams():
+    """A response permitted to run to 32,000 tokens can outlast the SDK's
+    request timeout on a plain create(). The stub refuses create() for exactly
+    that reason, so this fails loudly rather than intermittently in a run.
+    """
+    message = _Message(content=[_Block(GOOD)])
+    api = _Api(_Batches(), live=message)
+    result = extractor.extract_document(
+        api, FIXTURE, (1,), record_id="1493495", file_index=0)
+    assert api.messages.calls[0] == "stream"
+    assert result.report.form_class == "w2"
+
+
+def test_a_streamed_truncation_is_caught_by_the_same_guard(tmp_path):
+    cache = classify.ResultCache(tmp_path / "c.jsonl",
+                                 prompt_hash=extractor.PROMPT_HASH)
+    message = _Message(content=[_Block('{"document": {"form_cla')],
+                       stop_reason="max_tokens")
+    result = extractor.extract_document(
+        _Api(_Batches(), live=message), FIXTURE, (1,), record_id="1493495",
+        file_index=0, cache=cache)
+    assert result.report is None
+    assert "truncated" in result.error
+    assert cache.get(extractor.cache_key(cache, FIXTURE, (1,))) is None

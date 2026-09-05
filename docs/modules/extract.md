@@ -622,13 +622,59 @@ At 238 predicted completion faces priced as one page each, that is **$15.66
 standard against $7.83 batched**; the real document count comes from
 reassembly and the script reads it off `reassemble.jsonl` when there is one.
 
-**The cap is thinner than it looks.** `MAX_TOKENS` is 16,000 and the worst
-document in that sample of 20 used 13,122 output tokens, which is 1.22x
-headroom. A document that hits the cap is refused rather than cached, and it
-costs full price for nothing. The estimate script prints the ratio on every
-run so the number cannot go stale again the way the previous one did: the
-comment on `MAX_TOKENS` said "about 5,100 output tokens" and was written before
-the run it described had finished.
+### Three quarters of what we pay for as output is not in the response
+
+**Measured 2026-09-05, and it was found by chasing the token cap rather than
+by looking for it.**
+
+The worst document in the smoke run was billed 13,122 output tokens against a
+cap of 16,000. That is 1.22x headroom, which is thin. What made it worth
+opening is that the document is not large: its response is 5,607 characters of
+JSON, roughly 1,600 tokens. The other 11,500 tokens are not in the response at
+all.
+
+`claude-sonnet-5` runs adaptive thinking whenever no `thinking` parameter is
+passed, and no extraction call has ever passed one. Thinking tokens are billed
+as output and counted against `max_tokens`, and they never appear in the text
+blocks the parser reads. Comparing response length against billed output
+across the 20 smoke documents:
+
+| | Tokens |
+|---|---|
+| Visible JSON, estimated from character count | ~46,000 |
+| Billed as output | 179,456 |
+| Not in any response | **~74%** |
+
+The character-to-token conversion is an estimate and JSON tokenises worse than
+prose, so the true share is somewhere near 70% rather than exactly 74. The
+finding does not depend on the precision: most of the extraction bill is
+thinking, and output is 85% of the bill.
+
+**Two consequences, and only the first has been acted on.**
+
+*The cap is not guarding what I thought.* It bounds how long the model chooses
+to think, which does not scale with anything visible in the document beforehand
+— the worst case was a two-page filing with seven present values. Snug headroom
+is the wrong shape for that, so `MAX_TOKENS` moved from 16,000 to **32,000**,
+which is 2.4x the worst observed. It costs nothing until it is used, because
+billing is on tokens produced rather than on the ceiling. The live path now
+streams and takes the final message, because a response permitted to run that
+long can outlast the SDK's request timeout on a plain call; the batch path
+needs no such change, being asynchronous already.
+
+*Thinking is the largest untouched cost lever in the pipeline, and it is not
+being pulled.* Lowering `effort`, or disabling thinking, would cut the largest
+component of the largest cost in the project. It would also change the thing
+the 87.4% / 82.5% headline measured, because every scored run had adaptive
+thinking on. Pulling that lever without re-scoring would be trading measured
+accuracy for an unmeasured saving, which is the trade this repo exists to
+refuse. Recorded here as a known, quantified option with a known price of
+admission: it needs its own before-and-after on the ground-truth set.
+
+The estimate script prints the headroom ratio against the measured worst case
+on every run, so this number cannot go stale the way the last one did — the
+comment on `MAX_TOKENS` said "about 5,100 output tokens" and had been written
+before the run it described had finished.
 
 ### found_in: which printed box each value came from
 

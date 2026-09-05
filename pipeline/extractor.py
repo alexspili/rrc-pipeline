@@ -46,11 +46,24 @@ IMAGE_CAP = 1568
 #:   1-page documents  n=13   mean 5,851 output tokens   worst  9,706
 #:   2-page documents  n= 7   mean 8,480 output tokens   worst 13,122
 #:
-#: So this cap sits 1.22x above the worst document in a sample of 20, which is
-#: thin. `scripts/estimate_batch.py` prints that ratio every time it runs.
-#: Raising it is free until it is used, but it is not a decision to take
-#: quietly: a run that truncates pays full price and yields nothing.
-MAX_TOKENS = 16000
+#: 16000 sat 1.22x above the worst of those 20, which is thin, and the reason
+#: it is thin is not document size. **About three quarters of what we are
+#: billed for as output is not in the response.** claude-sonnet-5 runs adaptive
+#: thinking whenever no `thinking` parameter is passed, and thinking tokens are
+#: billed and counted against this cap while never appearing in the text
+#: blocks. The worst document in the smoke run returned 5,607 characters of
+#: JSON, roughly 1,600 tokens, and was billed 13,122.
+#:
+#: That changes what this number guards. The cap is not bounding how much
+#: document there is to describe; it is bounding how long the model chooses to
+#: think, which does not scale with anything we can see in advance. So the
+#: headroom has to be generous rather than snug.
+#:
+#: 32000 is 2.4x the worst observed. It costs nothing until it is used, since
+#: billing is on tokens produced and not on the ceiling, and claude-sonnet-5
+#: accepts up to 128,000. `scripts/estimate_batch.py` prints the ratio against
+#: the measured worst case on every run so this cannot go stale again.
+MAX_TOKENS = 32000
 
 SYSTEM = """\
 You extract structured data from scanned Texas Railroad Commission oil and gas
@@ -288,10 +301,16 @@ def extract_document(api, pdf: Path, pages, *, record_id: str,
             return _extraction(hit, record_id=record_id,
                                file_index=file_index, pages=pages, cached=True)
 
-    response = api.messages.create(
-        model=MODEL, max_tokens=MAX_TOKENS, system=SYSTEM,
-        messages=[{"role": "user",
-                   "content": build_content(pdf, pages)}])
+    # Streamed, and the reason is the cap above rather than any wish to show
+    # progress. A response allowed to run to 32,000 tokens can outlast the
+    # SDK's request timeout on a plain create(); the documented remedy is to
+    # stream and take the final message. The batch path needs none of this,
+    # because a batch is asynchronous by construction.
+    with api.messages.stream(
+            model=MODEL, max_tokens=MAX_TOKENS, system=SYSTEM,
+            messages=[{"role": "user",
+                       "content": build_content(pdf, pages)}]) as stream:
+        response = stream.get_final_message()
     return _extraction(payload_of(response), record_id=record_id,
                        file_index=file_index, pages=pages, cached=False,
                        cache=cache, key=key)
