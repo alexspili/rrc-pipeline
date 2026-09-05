@@ -28,6 +28,7 @@ from pipeline import reassemble as ra              # noqa: E402
 from pipeline import render                        # noqa: E402
 
 EXTEND = False
+ALL = False
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
 RAW = ROOT / "data" / "raw"
@@ -68,7 +69,7 @@ def census_pages():
             continue
         row = json.loads(line)
         record_id, file_index, page = pc.parse_page_id(row["page_id"])
-        if record_id in RECORDS + (EXTENSION if EXTEND else ()):
+        if ALL or record_id in RECORDS + (EXTENSION if EXTEND else ()):
             out[(record_id, file_index, page)] = row
     return out
 
@@ -121,13 +122,16 @@ class Tee:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--all", action="store_true",
+                    help="every completion-ish page in the corpus")
     ap.add_argument("--extend", action="store_true",
                     help="also read the 20 extension records")
     ap.add_argument("--offline", action="store_true",
                     help="cache only; make no API calls")
     args = ap.parse_args()
-    global EXTEND
+    global EXTEND, ALL
     EXTEND = args.extend
+    ALL = args.all
     say = Tee(REPORT)
 
     records = {json.loads(l)["record_id"]: json.loads(l)
