@@ -559,6 +559,62 @@ shape carries information.
 `numpy` and `scipy` were added for this and then removed with it, rather than
 left in `requirements.txt` for code that no longer exists.
 
+## The third sitting, 2026-09-05: the gate passes
+
+**Six of six verify on held-out data.** Both pre-registered regression
+conditions hold: all five pairs judged correct in the earlier sittings still
+attach, and cases A and B still pass.
+
+| Pair | Verdict |
+|---|---|
+| 1493639 p5+p4 | yes |
+| 1494028 p7+p6 | yes |
+| 1494408 p5+p4 | yes |
+| 1512952 p2+p1 | yes |
+| 1774674 p6+p2 | yes |
+| 2345595 p8+p3 | yes |
+
+Every one is on a record drawn at random before it was read, and no page of any
+of them had ever been judged. So unlike the 13 of 15 across the first two
+sittings, this is not a rule scoring well on the data it came from.
+
+**What the sequence measured, and it is the part worth keeping.** The second
+sitting scored **7 of 8 on the pairs the fixes were built from and 2 of 7 on
+fresh pairs**. Without a held-out sample, 7 of 8 would have been reported as
+the result and the corpus run would have followed it. The held-out sitting is
+the only reason the two remaining holes were ever found.
+
+| Sitting | Data | Result |
+|---|---|---|
+| 1 | first measurement | 3 of 8 |
+| 2 | fresh, after three fixes | 2 of 7 |
+| 2 (same fixes, development) | the pairs they were built from | 7 of 8 |
+| 3 | fresh, after two more fixes | **6 of 6** |
+
+### How Alex verified, three sittings running
+
+Not by the identity fields. By the physical sheet: "I can tell by the shape of
+the punch holes", then "punch holes match perfectly", then "the creases,
+staple markings, folds and missing parts on the paper gave me certainty".
+
+**The module has none of that evidence and passes anyway**, which is worth
+stating plainly rather than claiming more than it earns. It agrees with a human
+who is reading a different signal. That agreement is what six of six means, and
+it is also the reason the punch-hole road is recorded rather than deleted: the
+signal a person actually uses is measurable, was measured at +0.911 on a clean
+pair, and is defeated by ink touching the hole rather than by the paper.
+
+### What it does not settle
+
+- **The known limitation stands.** A W-2 section can still attach to a G-1
+  face, because the rule that would stop it is keyed to a classifier label
+  that is wrong on this module's own pin. None of the six had that shape.
+- **13 attachments over 39 records.** The module is conservative by
+  construction and its recall has never been measured, only its precision.
+  How many documents it fails to assemble is unknown.
+- **20 of 57 candidate pages carry no identity fields at all** and can never
+  attach on any rule.
+
 ## Rules
 
 All pins are pending: this module is designed and not built, and the pending
