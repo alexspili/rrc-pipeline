@@ -52,7 +52,8 @@ from dataclasses import dataclass, field as dc_field
 #: The fields both a face and its section can carry, and any of which can
 #: reject a pair by disagreeing.
 IDENTITY_FIELDS = ("operator_name", "lease_name", "well_number",
-                   "completion_date", "rrc_district")
+                   "completion_date", "rrc_district", "purpose_of_filing",
+                   "received_stamp")
 
 #: Carried by some sections and useful as corroboration, but never able to
 #: reject a pair: a face and its section can legitimately disagree when one
@@ -86,6 +87,12 @@ BACK_BOXES = ("notice of intention", "location of well", "location of the well",
 NON_VALUES = frozenset({"na", "n", "none", "nil", "notapplicable", "unknown",
                         "blank", "nonvalue", "no", "0"})
 
+#: Months, for the received stamp. It is stamped rather than printed, so it
+#: arrives as "AUG 18 2009", "JUN 09 2009" or "MAR 1990" with no day at all.
+_MONTHS = {m: i for i, m in enumerate(
+    ("jan", "feb", "mar", "apr", "may", "jun",
+     "jul", "aug", "sep", "oct", "nov", "dec"), start=1)}
+
 _ALNUM = re.compile(r"[^0-9a-z]")
 _DATE = re.compile(r"(\d{1,4})\D+(\d{1,2})\D+(\d{1,4})")
 
@@ -115,6 +122,19 @@ def normalise(field: str, value: str | None) -> str | None:
             a, b, c = (int(part) for part in match.groups())
             return f"{a % 100}-{b % 100}-{c % 100}"
         return text
+    if field == "received_stamp":
+        # Compared at month and year only, which is the precision BOTH sides
+        # reliably carry. Measured on the four-page probe: two stamps came
+        # back as a full date and two as month and year, and comparing
+        # "aug182009" against "aug2009" would be a false disagreement, which
+        # on a veto field means refusing a pair that belongs together.
+        low = value.casefold()
+        month = next((n for m, n in _MONTHS.items() if m in low), None)
+        year = re.search(r"(19|20)\d{2}", value)
+        if month and year:
+            return f"{month}-{year.group(0)}"
+        digits = re.findall(r"\d+", value)
+        return "-".join(digits[-2:]) if len(digits) >= 2 else None
     if field == "total_depth":
         digits = re.sub(r"\D", "", value)
         return digits.lstrip("0") or None if digits else None

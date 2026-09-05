@@ -40,7 +40,8 @@ IMAGE_CAP = 1568
 #: The five fields reassembly compares, plus the one it uses as
 #: corroboration. Kept in step with pipeline.reassemble by a tier-1 test.
 FIELDS = ("operator_name", "lease_name", "well_number", "completion_date",
-          "rrc_district", "total_depth")
+          "rrc_district", "total_depth", "purpose_of_filing",
+          "received_stamp")
 
 SYSTEM = """You are reading one page of a Texas Railroad Commission well
 record. It is often a section, a continuation, or the back of a completion
@@ -80,6 +81,22 @@ neighbouring field that looks similar.
 
   total_depth     Printed as "Total Depth". Not "P.B. Depth" and not "Top of
                   Pay".
+
+  purpose_of_filing
+                  The checkbox row headed "Purpose of Test" or "Purpose of
+                  Filing", whose options are Initial Potential, Retest,
+                  Reclass, and sometimes Workover or Well Record Only. Report
+                  the option that is ticked, as printed. This is on the FACE
+                  of the form; a section or back page does not print it, and
+                  there it is not_on_this_form.
+
+  received_stamp  The date in a district office RECEIVED stamp. This is a
+                  rubber stamp and not a printed form field: it is often
+                  rotated, sometimes by 45 degrees, and usually sits across a
+                  signature block or a margin rather than in a box. Report
+                  the date exactly as stamped. Do NOT report a printed form
+                  date such as the completion date, the date of test or a
+                  signature date.
 
 Each is an object: {"status": ..., "raw": ..., "found_in": ...}.
 

@@ -441,3 +441,69 @@ def test_the_face_test_reads_the_label_text_not_its_number():
                   "32. Location of Well, Relative to Lease Boundaries"):
         assert ra.looks_like_a_back_page({"lease_name": label}), label
     assert not ra.looks_like_a_back_page({"lease_name": "2. LEASE NAME"})
+
+
+# ---------------------------------------------- the two fields Alex used
+
+def test_two_filings_for_one_well_are_not_one_document():
+    """DEFECTS #43's pin. Everything an initial potential test and a retest
+    share, they share because it is one well. The purpose is what differs."""
+    initial = page(52, "face", sources=BACK_BOXES, **SUN,
+                   purpose_of_filing="Initial Potential")
+    retest = page(87, "face", sources=BACK_BOXES, **SUN,
+                  purpose_of_filing="Retest")
+    verdicts = ra.compare(retest, initial)
+    assert verdicts["purpose_of_filing"] == ra.DISAGREES
+    _, contradicted = ra.score(retest, initial)
+    assert contradicted
+    # A face that does not attach becomes its own document rather than an
+    # unattached page: nothing is lost, there are simply two reports.
+    documents, unattached = ra.group([initial, retest])
+    assert sorted(d.face.page for d in documents) == [52, 87]
+    assert all(len(d.pages) == 1 for d in documents)
+    assert not unattached
+
+
+def test_a_back_page_carries_neither_field_so_neither_can_veto():
+    """Both are printed on the face. A section says not_on_this_form for
+    both, which compares as unknown and cannot reject a true pair."""
+    face = page(7, "face", sources=FACE_BOXES, **SUN,
+                purpose_of_filing="Initial Potential",
+                received_stamp="MAY 19 1975")
+    section = page(8, "sec_ii", sources=BACK_BOXES, **SUN)
+    verdicts = ra.compare(section, face)
+    assert verdicts["purpose_of_filing"] == ra.UNKNOWN
+    assert verdicts["received_stamp"] == ra.UNKNOWN
+    documents, unattached = ra.group([face, section])
+    assert [p.page for p in documents[0].pages] == [7, 8]
+    assert not unattached
+
+
+def test_a_received_stamp_is_compared_at_month_and_year():
+    """Measured on the probe: two stamps came back as a full date and two as
+    month and year only. Comparing a full date against a coarse one as
+    strings would be a false disagreement, and on a veto field that refuses
+    a pair that belongs together."""
+    assert ra.normalise("received_stamp", "AUG 18 2009") == "8-2009"
+    assert ra.normalise("received_stamp", "MAR 1990") == "3-1990"
+    assert (ra.normalise("received_stamp", "JUN 09 2009")
+            != ra.normalise("received_stamp", "AUG 18 2009"))
+    # the honest cost of that choice, pinned rather than hidden: two filings
+    # stamped in one month are indistinguishable here
+    assert (ra.normalise("received_stamp", "MAR 05 1990")
+            == ra.normalise("received_stamp", "MAR 27 1990"))
+
+
+def test_different_received_stamps_reject_a_pair():
+    """The failure still standing after the back-page rule: 1912687 p6+p2,
+    stamped Jun 9 2009 and Aug 18 2009."""
+    a = page(2, "face", sources=FACE_BOXES, **SUN, received_stamp="AUG 18 2009")
+    b = page(6, "face", sources=BACK_BOXES, **SUN, received_stamp="JUN 09 2009")
+    assert ra.compare(b, a)["received_stamp"] == ra.DISAGREES
+    _, contradicted = ra.score(b, a)
+    assert contradicted
+
+
+def test_the_reader_and_reassembly_still_agree_on_the_field_list():
+    from pipeline.identity import FIELDS
+    assert set(FIELDS) == set(ra.IDENTITY_FIELDS) | set(ra.BONUS_FIELDS)
