@@ -801,3 +801,63 @@ candidate; the outline is closed.
 judged, so there is no held-out pair left. A mechanism developed against these
 verdicts cannot be validated against them, and new labelled pairs would have to
 be produced before any number from it means anything.
+
+## Punch-hole rim shape carries the signal. Marks and positions do not.
+## 2026-09-05, $0
+
+**A physics error first, because it changes what a control is.** The outline
+probe treated the flip about the vertical axis as impossible. It is not: a
+sheet can be turned over about either edge, and which one the scanner operator
+used is unknown. Both flips are legitimate. The transforms a turned-over sheet
+**cannot** produce are the orientation-preserving ones — identity and 180
+degrees — because turning paper over always reverses orientation. Two real
+options and two controls, so best-of on the real side gets no freedom the
+control lacks.
+
+**What was rebuilt, and it should not have been.** A matcher over the positions
+and sizes of solid marks, run over all 26 pairs of the fourth sitting. It
+separates nothing: the controls match it pair for pair. That is not a surprise
+in hindsight. The design pass of 2026-09-04 had already measured hole
+**position** as weak — the punch pitch is a corpus-wide constant, 2¾ in across
+19 unrelated pages, and unrelated pages collide 16.9% of the time — and had
+written down that position finds the holes while **the rim shape decides**.
+Alex said the same thing in his own words. I built the weak half anyway,
+because a single pair matched convincingly on position and area and I read that
+as the mechanism working.
+
+**The detection problem does now look solved.** A morphological opening that
+severs hairline connections before labelling is what the earlier attempt
+lacked. On 1495414 it lifts both punch holes out of the printed rules they sit
+on and returns them as clean discs, 4,449 and 5,034 px, density 0.75 and 0.77.
+That is the failure that stopped the 2026-09-04 rim work, where one hole came
+back 110 px wide on one page and 82 on the other.
+
+**Rim shape, on the sheet Alex pointed at, with no rotation search and only the
+mirror the paper performs:**
+
+| Comparison | Correlation |
+|---|---|
+| The same hole, both sides of one sheet, mirrored | **+0.618** |
+| The same hole, not mirrored (paper cannot do this) | +0.295 |
+| A different hole on the same page, same punch machine, mirrored | −0.043 |
+| A different hole, not mirrored | +0.055 |
+| The two holes of one page against each other | +0.045 |
+| A hole from an unrelated record, mirrored | −0.228 |
+
+Every control collapses to about zero. This is the second record to show that
+shape: 1493608 gave +0.911 against controls of −0.08 to +0.002 on 2026-09-04.
+
+**Searching rotations destroys it.** Allowing the best correlation over all
+angular offsets lifts the true pair to +0.633 and the controls to +0.42 and
++0.49, which is no separation at all. The earlier probe recorded the same
+effect. The transform is predicted, never searched.
+
+**Reach.** 18 of the 26 pairs have a round solid hole on both pages, so this
+channel could speak to 69% of them. It needs no scanner border, which is what
+limited the outline to 59% and excluded the very pairs Alex matched by eye.
+
+**What this is not.** Two pairs is not a measurement, and today's work iterated
+several times against the same 26 verdicts that would have to grade it. A rim
+matcher built now and scored on these pairs would be fitted to them. All 39
+corpus attachments are judged, so a real number needs pairs that do not exist
+yet.
