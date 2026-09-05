@@ -359,21 +359,38 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    2026-09-03: $0.0074/page, 166 output tokens, so $2.01 standard or $1.01
    batched over the 274 candidate pages. That run is GATED and lands with
    the full extraction run as one spend decision.
-   MEASURED three times 2026-09-03, $0.91 each; run 3 is current. Both
-   confirmed cases pass at once for the first time, on values now known to
-   come from the boxes they claim: A pass, B pass, C attached to p5, D
-   correctly declines an 8-way tie, E vacuous (#41), F no KNOWN wrong
-   attachment (2 of 18 checkable). Runs 1 and 2 are kept in
-   docs/modules/reassemble.md because run 1's case A passed on a wrong-field
-   read that returned the right number by coincidence (#42).
-   17 attachments made from 57 candidate pages; 20 of those candidates
-   carry no identity fields at all and can never attach on any threshold. Threshold
-   unchanged at 2. Three defects out of it: #37 the module trusted the
-   classifier's face label, measured at 44-57% precision, which is why the
-   pin failed; #38 a non-present value carrying text; #39 a written "N.A."
-   allowed to veto. OPEN and yours: whether completion date should veto
-   across form types, which is the remaining reason case B fails. Lease-name
-   matching held until the full corpus run. docs/modules/reassemble.md.
+   STATE 2026-09-04, AWAITING A VERDICT. Three verification sittings, six
+   identity runs, ~$4.60 total. Do not spend on the corpus until the third
+   sitting is graded.
+   - Sitting 1: 8 attachments judged, 5 WRONG, three of them among the four
+     drawn at random. Cause (DEFECTS #43): the identity fields identify the
+     WELL, not the document. Two filings for one well agree on every field
+     compared, because it is one well.
+   - Three fixes followed. A predicted face may be a child only when its own
+     cited boxes say back page (#44); purpose_of_filing and received stamps
+     added as veto fields; the stamp respecified as office-plus-date after
+     one page turned out to carry two stamps from two offices (#45).
+   - Sitting 2 was the held-out check and it earned its keep: 7 of 8 on the
+     pairs the fixes were BUILT from, 2 of 7 on fresh pairs (#46). Without
+     it, 7 of 8 would have been reported and the corpus run would have
+     followed it.
+   - Two of the three new holes then closed: a back page may not be a
+     parent, and the child test is keyed to `part` rather than `is_face`,
+     which is gated on form_class and let the first page of a P-4 through.
+   - The third hole STAYS OPEN on purpose. A form-family rule keys on
+     form_class, and the two cases it must separate are indistinguishable
+     there: 1495193 p7+p8 are w2 and g1 and ARE one document, which is the
+     pin this module exists for; 1912687 p2+p8 are g1 and w2 and are not.
+     The rule that closes the failure breaks the pin.
+   - 13 of 15 across the first two sittings, all of it development data.
+   - Sitting 3 is drawn and with Alex: 6 pairs, on a set of twenty records
+     selected at random before reading, no page of which has ever been
+     judged. The rule
+     is all must verify. That is the number that decides the corpus spend.
+   - Twice now Alex has verified a pair by the shape of its punch holes. The
+     signal is real, measured at +0.911 on a clean pair, and parked because
+     ink touching the hole defeats the isolation step and because it can only
+     ever pair two sides of one sheet. docs/modules/reassemble.md.
    Superseded by the above, kept for its reasoning: reassembly is unbuilt and is now the biggest known gap. It must pair in
    BOTH directions and settle candidates by identity-field agreement, not
    by position: the smoke pairing looked only forward and three of fifteen
