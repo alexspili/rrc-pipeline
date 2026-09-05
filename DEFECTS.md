@@ -2040,3 +2040,61 @@ The general form, which stands whichever he picks: **a probe that does not run
 the artifact that will ship has not de-risked anything.** It measured a
 neighbour.
 **Pin:** pending, on whichever resolution is chosen.
+
+---
+
+## #46 — 2026-09-04 — 7 of 8 on the data the rules were built from, 2 of 7 on fresh data
+
+**What happened:** the second verification sitting judged all seven
+attachments Alex had not already seen. **Two verify.** The pre-registered rule
+was that every pair must, so the corpus spend does not happen.
+
+The gap is the entry. Against the eight pairs the three fixes were **built
+from**, the module scored 7 of 8. Against seven pairs it had never been shown,
+it scores 2 of 7. **The firewall did the job it was put there for**: without a
+fresh sample, 7 of 8 would have been reported as the result and a corpus run
+would have followed it.
+
+**The five failures are one sentence, arrived at from three directions.**
+
+| Pair | Child | Parent | Alex |
+|---|---|---|---|
+| 1494690 p3+p7 | other_form face | w2 face | face of a P-4 attached to a W-2 |
+| 1760703 p24+p6 | other_form face | g1 face | a different random form |
+| 1912687 p8+p2 | w2 sec_iii | g1 face | — |
+| 1495195 p88+p53 | w2 continuation | w2 face | both are back sides |
+| 1511465 p8+p10 | g1 sec_ii | w2 face | both are back sides |
+
+Three holes, and they are the same hole seen three ways:
+
+1. **`other_form` pages are candidates.** The design admitted them so that a
+   completion page misfiled as `other_form` could still attach. It also admits
+   genuinely different forms, and a P-4 about the same well shares operator,
+   lease, district and even the received stamp. Both instances are
+   `other_form/**face**`, and the face of another form is another document by
+   definition.
+2. **A back page can be a parent.** DEFECTS #44 stopped a real face becoming a
+   child and never asked the same question in the other direction. On both
+   "both are back sides" pairs the parent is a back page the classifier called
+   a face.
+3. **A child may cross form families.** A W-2 Section III attached to a G-1
+   face.
+
+**Why this keeps happening.** #43 said the identity fields identify the well
+and not the document. Every round since has fixed one way that bites and
+revealed the next: two filings of one form, then two sides that are both
+backs, then two different forms about one well. The fields cannot say which
+*document* a page belongs to because they do not describe documents at all.
+
+**What the sitting also showed, twice.** Alex verified one of the two correct
+pairs with "punch holes match perfectly", having used the same signal in the
+first sitting. The physical-sheet evidence is what a human reaches for, and it
+is the thing this module does not have.
+
+**Resolution:** open, and the decision is Alex's. The three holes collapse to
+one rule — two pages are one document only when they are the same form family,
+one is a real face and the other is not — and that rule would score 7 of 7 on
+this sitting, which is exactly why it cannot be adopted on this sitting's
+evidence. A third sitting would be needed, and each round so far has revealed
+another layer.
+**Pin:** pending, on whatever is decided.
