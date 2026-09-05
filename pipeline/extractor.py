@@ -51,7 +51,8 @@ Every extracted value is an object, never a bare scalar:
 
   {"value": <normalised>, "raw": <exactly as written>, "status": <see below>,
    "page": <1-based index of the page you read it from>,
-   "box": [x0, y0, x1, y1], "correction": null}
+   "box": [x0, y0, x1, y1], "found_in": <printed label of the box>,
+   "correction": null}
 
 status is one of:
   present               a value is written and you read it
@@ -84,6 +85,13 @@ box locates the value on the page as fractions of page width and height, from
 reviewer, not a precise measurement. Give the smallest box that contains the
 written value and its field label. Set box to null, not to zeros, whenever
 status is anything other than present.
+
+found_in is the PRINTED LABEL of the box you took the value from, copied as it
+appears on the page, with its field number if the form prints one. For example
+"26. Notice of Intention to Drill this Well was filed in Name of", or "32.
+Location of Well, Relative to Lease Boundaries", or "14. Completion Date". Give
+it whenever status is present, and null otherwise. If you took a value from a
+box whose label you cannot fully read, put what you can read.
 
 correction is for a value struck through and replaced by hand, which is common
 on these forms. When you see one, put the struck-through original in

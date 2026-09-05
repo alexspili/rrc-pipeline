@@ -139,6 +139,24 @@ class Value:
     region: Region | None = None
     correction: Correction | None = None
 
+    #: The printed label of the box the model says it read this from, copied
+    #: off the page, with the field number when the form prints one.
+    #:
+    #: It is a claim and not proof, in exactly the way `region` is. The box
+    #: grading of 2026-09-03 measured the model's own geometry at hit+near
+    #: 60.9%, and nothing here makes a label more self-verifying than a
+    #: rectangle was (DEFECTS #29, #42). What it buys is that a value read out
+    #: of the wrong box becomes checkable by a human, and that two documents
+    #: which agree on every value can still be told apart by which boxes those
+    #: values came from, which is what DEFECTS #43 turned on.
+    #:
+    #: The label text, never the field number on its own: the same box is
+    #: numbered 24, 31 and 32 on three revisions of the same form.
+    #:
+    #: Defaults to None so every value already on disk keeps its meaning.
+    #: Nothing recorded before this field existed carried a label.
+    found_in: str | None = None
+
     def __post_init__(self) -> None:
         if self.status in LOCATABLE:
             if self.region is None:
@@ -156,6 +174,10 @@ class Value:
                 raise ValueError(
                     f"a {self.status.value} value carries no text, got "
                     f"value={self.value!r} raw={self.raw!r}")
+            if self.found_in is not None:
+                raise ValueError(
+                    f"a {self.status.value} value was not read out of a box, "
+                    f"got found_in={self.found_in!r}")
         if self.correction is not None and self.status not in LOCATABLE:
             raise ValueError(
                 "a correction belongs to a value that was actually read")
@@ -386,7 +408,8 @@ def parse_value(obj, *, page_hint: int | None = None,
         return Value(status=status,
                      value=_text(obj.get("value")),
                      raw=_text(obj.get("raw")) or _text(obj.get("value")),
-                     region=region, correction=correction)
+                     region=region, correction=correction,
+                     found_in=_text(obj.get("found_in")))
     return Value(status=status)
 
 

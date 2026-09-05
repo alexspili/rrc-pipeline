@@ -382,3 +382,78 @@ def test_a_region_refuses_a_source_outside_the_vocabulary():
         assert Region(page=1, box=(0.1, 0.2, 0.3, 0.4), source=source)
     with pytest.raises(ValueError):
         Region(page=1, box=(0.1, 0.2, 0.3, 0.4), source="textract")
+
+
+# ------------------------------- the printed box a value was read out of
+
+def test_a_present_value_carries_the_printed_label_it_came_from():
+    """The label the model copied off the page, field number included.
+
+    The identity reader has recorded this per value since it was written. The
+    extractor did not, so a value read out of the wrong box was invisible in
+    the extraction output (DEFECTS #42) and two filings for one well looked
+    identical (DEFECTS #43).
+    """
+    value = parse_value({"status": "present", "value": "Fleck",
+                         "raw": "Fleck", "page": 1,
+                         "box": [0.1, 0.2, 0.3, 0.25],
+                         "found_in": "5. Lease Name"}, pages=(9,))
+    assert value.found_in == "5. Lease Name"
+
+
+def test_a_value_with_no_label_reported_is_none_and_not_an_error():
+    """found_in is a claim the model may simply not make. Absence is not a
+    parse failure, and it must not be repaired into something plausible.
+    """
+    value = parse_value({"status": "present", "value": "Fleck",
+                         "raw": "Fleck", "page": 1,
+                         "box": [0.1, 0.2, 0.3, 0.25]}, pages=(9,))
+    assert value.found_in is None
+
+
+def test_a_blank_label_is_read_as_no_label():
+    value = parse_value({"status": "present", "value": "Fleck",
+                         "raw": "Fleck", "page": 1,
+                         "box": [0.1, 0.2, 0.3, 0.25],
+                         "found_in": "   "}, pages=(9,))
+    assert value.found_in is None
+
+
+@pytest.mark.parametrize("status", ABSENT)
+def test_an_absent_value_was_not_read_out_of_any_box(status):
+    """Same rule the region and the text already follow. The model returns
+    every key whatever the status says, and a field nobody read has no box to
+    name (DEFECTS #38, one field later).
+    """
+    assert parse_value({"status": status.value,
+                        "found_in": "14. Completion Date"}).found_in is None
+    with pytest.raises(ValueError, match="not read out of a box"):
+        Value(status=status, found_in="14. Completion Date")
+
+
+def test_a_label_survives_into_a_table_cell():
+    """A casing depth is as worth locating as a completion date, and the same
+    goes for the box it was read from.
+    """
+    report = parse_report(
+        '{"document": {"form_class": "w2", "form_revision": '
+        '{"status": "present", "value": "Rev. 6/30/75", "raw": "Rev. 6/30/75",'
+        ' "page": 1, "box": [0.7, 0.02, 0.95, 0.05]}},'
+        '"completion": {"casing_strings": [{"size": {"status": "present",'
+        ' "value": "5 1/2", "raw": "5 1/2\\"", "page": 1,'
+        ' "box": [0.1, 0.5, 0.2, 0.53],'
+        ' "found_in": "18. Casing Record - Size"}}]}}',
+        record_id="1493495", file_index=0, pages=(9,))
+    cell = report.tables["casing_strings"][0].get("size")
+    assert cell.found_in == "18. Casing Record - Size"
+
+
+def test_the_prompt_asks_for_the_label_it_parses():
+    """A parser that reads a key the prompt never asks for reads nothing.
+
+    Origin: DEFECTS #45, where a probe measured one prompt and the run shipped
+    another.
+    """
+    from pipeline import extractor
+    assert "found_in" in extractor.SYSTEM
+    assert "PRINTED LABEL" in extractor.SYSTEM
