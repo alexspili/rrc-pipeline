@@ -16,11 +16,21 @@ import pytest
 from pipeline import reassemble as ra
 
 
+#: The printed boxes a real first page cites, and the ones a back page cites.
+#: DEFECTS #44: this is what separates a mislabelled face from a real one.
+FACE_BOXES = {"lease_name": "2. LEASE NAME",
+              "operator_name": "3. OPERATOR'S NAME"}
+BACK_BOXES = {"operator_name": "26. Notice of Intention to Drill this Well "
+                               "was filed in Name of",
+              "lease_name": "32. Location of Well, Relative to Lease "
+                            "Boundaries"}
+
+
 def page(number, part=None, form_class="w2", record="1495193", file_index=0,
-         **identity):
+         sources=None, **identity):
     return ra.PageRecord(record_id=record, file_index=file_index,
                          page=number, form_class=form_class, part=part,
-                         identity=identity)
+                         identity=identity, sources=sources or {})
 
 
 SUN = dict(operator_name="Sun Oil Company", lease_name="State Tract 130",
@@ -310,7 +320,7 @@ def test_a_mislabelled_face_attaches_to_a_richer_face():
     attach. The classifier is right about faces 44% of the time."""
     face = page(7, "face", operator_name="U. S. Resources, Inc.",
                 lease_name="Debbie", well_number="1", rrc_district="03")
-    mislabelled = page(8, "face", form_class="g1",
+    mislabelled = page(8, "face", form_class="g1", sources=BACK_BOXES,
                        operator_name="U. S. Resources, Inc.",
                        lease_name="Debbie")
     documents, unattached = ra.group([face, mislabelled])
@@ -326,7 +336,8 @@ def test_the_richer_of_a_mirrored_pair_is_the_parent():
     rich = page(11, "face", operator_name="Sun Oil Company",
                 lease_name="State Tract 130", well_number="1",
                 completion_date="9-22-77", rrc_district="03")
-    poor = page(9, "face", operator_name="Sun Oil Company",
+    poor = page(9, "face", sources=BACK_BOXES,
+                operator_name="Sun Oil Company",
                 lease_name="State Tract 130")
     documents, _ = ra.group([rich, poor])
     assert len(documents) == 1
@@ -335,8 +346,8 @@ def test_the_richer_of_a_mirrored_pair_is_the_parent():
 
 
 def test_a_richness_tie_falls_back_to_page_order():
-    first = page(9, "face", **SUN)
-    second = page(11, "face", **SUN)
+    first = page(9, "face", sources=BACK_BOXES, **SUN)
+    second = page(11, "face", sources=BACK_BOXES, **SUN)
     documents, _ = ra.group([first, second])
     assert len(documents) == 1 and documents[0].face.page == 9
 
@@ -347,7 +358,8 @@ def test_a_face_that_becomes_a_child_holds_no_children_of_its_own():
     rich = page(1, "face", operator_name="Sun Oil Company",
                 lease_name="State Tract 130", well_number="1",
                 completion_date="9-22-77", rrc_district="03")
-    middle = page(2, "face", operator_name="Sun Oil Company",
+    middle = page(2, "face", sources=BACK_BOXES,
+                  operator_name="Sun Oil Company",
                   lease_name="State Tract 130", well_number="1")
     poor = page(3, "sec_ii", operator_name="Sun Oil Company",
                 lease_name="State Tract 130")

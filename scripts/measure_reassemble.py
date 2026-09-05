@@ -141,7 +141,8 @@ def main() -> None:
         built[(record_id, file_index, page)] = ra.PageRecord(
             record_id=record_id, file_index=file_index, page=page,
             form_class=row["form_class"], part=row.get("part"),
-            identity=identity.identity_for(read))
+            identity=identity.identity_for(read),
+            sources=read.found_in)
     if missing:
         say(f"  {missing} pages not in cache; rerun without --offline")
     if failures:

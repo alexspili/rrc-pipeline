@@ -34,12 +34,14 @@ Four rules are enforced here rather than asked for.
   Candidates never cross a file boundary. A record can hold five files and
   page 3 of one has nothing to do with page 3 of another (DEFECTS #28).
 
-  A page the classifier calls a face may still be somebody's child. Stage 2
-  measured face precision at 44%, and 57.4% after corrections, so the label
-  is wrong roughly two times in five. Taking it as fact made the module fail
-  its own pin: record 1495193 page 8 is a section that the census called a
-  face, so it was never offered as a candidate and could not attach to
-  anything at any threshold (DEFECTS #37).
+  A page the classifier calls a face may still be somebody's child, but only
+  when its own values came out of back-page boxes. Stage 2 measured face
+  precision at 44%, so the label cannot be taken as fact (DEFECTS #37); but
+  allowing every face to be a child let two filings for one well become one
+  document, four times out of four in the verification sitting (DEFECTS #44).
+  The reader's own report of which printed box each value came from is what
+  separates the two cases, and it is read as text: the same box is numbered
+  24, 31 and 32 on three revisions of this form.
 """
 
 from __future__ import annotations
@@ -65,6 +67,17 @@ BONUS_FIELDS = ("total_depth",)
 MIN_AGREEMENTS = 2
 
 AGREES, DISAGREES, UNKNOWN = "agrees", "disagrees", "unknown"
+
+#: Printed boxes that only a completion report's FIRST page carries. A page
+#: citing these is a real face and may never become somebody's child.
+FACE_BOXES = ("lease name", "operator's name", "well no", "well number",
+              "rrc district", "field name")
+
+#: Printed boxes that only a back or section page carries. A page citing these
+#: is a back page whatever the classifier called it. Matched as text, never by
+#: field number: the location box is 24, 31 and 32 on three revisions.
+BACK_BOXES = ("notice of intention", "location of well", "location of the well",
+              "total depth", "casing record", "data on well completion")
 
 #: Things an operator writes to mean "there is no value here". A page that
 #: declines to answer is silent, not in disagreement, and letting it
@@ -119,6 +132,11 @@ class PageRecord:
     part: str | None = None
     identity: dict[str, str | None] = dc_field(default_factory=dict)
 
+    #: field -> the printed label the reader says the value came from. A
+    #: claim by the model about its own reading, not proof (DEFECTS #42), and
+    #: the only thing that tells a real face from a mislabelled one.
+    sources: dict[str, str | None] = dc_field(default_factory=dict)
+
     @property
     def file_key(self) -> tuple[str, int]:
         return (self.record_id, self.file_index)
@@ -126,6 +144,19 @@ class PageRecord:
     @property
     def is_face(self) -> bool:
         return self.form_class in ("w2", "g1") and self.part == "face"
+
+    @property
+    def may_be_a_child(self) -> bool:
+        """Whether this page is allowed to attach to another.
+
+        A page the classifier calls a section always may: that is what it was
+        always for. A page it calls a face may only when the page's own cited
+        boxes say it is really a back page. With nothing cited, the answer is
+        no, because the safe answer is the one that cannot invent a document.
+        """
+        if not self.is_face:
+            return True
+        return looks_like_a_back_page(self.sources)
 
     @property
     def is_candidate(self) -> bool:
@@ -146,6 +177,22 @@ class Document:
 class Unattached:
     page: PageRecord
     reason: str          # no_face | below_threshold | tie | contradicted
+
+
+def looks_like_a_back_page(sources) -> bool:
+    """Do this page's values come out of back-page boxes?
+
+    Read as text rather than by field number, because the same printed box is
+    numbered 24, 31 and 32 on three revisions and a number-keyed rule is
+    silently wrong on two of them. A page citing any face box is a face,
+    whatever else it cites: the identity block is the thing only a first page
+    has.
+    """
+    labels = [str(label).casefold() for label in (sources or {}).values()
+              if label]
+    if any(box in label for label in labels for box in FACE_BOXES):
+        return False
+    return any(box in label for label in labels for box in BACK_BOXES)
 
 
 def compare(a: PageRecord, b: PageRecord) -> dict[str, str]:
@@ -241,6 +288,10 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS):
 
     # Faces first, in rank order, so a face can only fall to a richer one.
     for face in ranked_faces:
+        if not face.may_be_a_child:
+            parents.append(face)
+            attached[id(face)] = []
+            continue
         reason = place(face, parents) if parents else "no_face"
         if reason is None:
             continue
