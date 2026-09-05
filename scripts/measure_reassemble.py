@@ -142,7 +142,12 @@ def main() -> None:
     pages = census_pages()
     wanted = {k: v for k, v in pages.items()
               if v.get("form_class") in ("w2", "g1", "other_form")}
-    say(f"{len(wanted)} pages over {len(RECORDS)} records\n")
+    # Both halves of this sentence come from `wanted`. They used to come
+    # from different places, and the run printed "532 pages over 19
+    # records" while reading 108 (DEFECTS #48). RECORDS names the
+    # development set; it describes no run.
+    say(f"{len(wanted)} pages over "
+        f"{len({r for r, _, _ in wanted})} records\n")
 
     built, missing, failures, sources = {}, 0, [], {}
     for (record_id, file_index, page), row in sorted(wanted.items()):
@@ -184,6 +189,22 @@ def main() -> None:
     attached = sum(len(d.pages) - 1 for _, d in documents)
     say(f"documents {len(documents)}, pages attached {attached}, "
           f"unattached {len(unattached)}")
+
+    # The sum has to close against the pages that were read. It did not, and
+    # nothing said so: twenty instruction backs left the count silently
+    # (DEFECTS #49). Asserted rather than printed, because a total that
+    # quietly stops adding up is the failure being guarded against.
+    accounted = (len(documents) + attached + len(unattached)
+                 + len(failures) + missing)
+    if accounted != len(wanted):
+        raise SystemExit(
+            f"accounting does not close: {len(wanted)} pages read, "
+            f"{accounted} accounted for "
+            f"({len(documents)} documents + {attached} attached + "
+            f"{len(unattached)} unattached + {len(failures)} failed + "
+            f"{missing} not cached). "
+            f"{len(wanted) - accounted} pages went missing.")
+    say(f"  all {len(wanted)} pages read are accounted for")
     from collections import Counter
     say("  unattached by reason:",
           dict(Counter(u.reason for _, u in unattached)))

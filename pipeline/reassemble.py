@@ -200,7 +200,14 @@ class Document:
 @dataclass(frozen=True)
 class Unattached:
     page: PageRecord
-    reason: str          # no_face | below_threshold | tie | contradicted
+    #: no_face | below_threshold | tie | contradicted | not_a_candidate
+    #:
+    #: `not_a_candidate` is the module declining to have an opinion: the page
+    #: is neither a face nor something that could be a child, so no rule here
+    #: ever looked at it. It exists because those pages used to leave the
+    #: count without leaving a trace (DEFECTS #49). They are almost all the
+    #: printed instruction backs of forms.
+    reason: str
 
 
 def looks_like_a_back_page(sources) -> bool:
@@ -351,7 +358,15 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS):
     candidates = [p for p in pages if p.is_candidate and not p.is_face]
     parents: list[PageRecord] = []
     attached: dict[int, list[tuple[PageRecord, tuple[str, ...]]]] = {}
-    unattached: list[Unattached] = []
+
+    # Pages this module has no opinion about are named rather than dropped.
+    # They used to fall out of the two expressions above and land nowhere, so
+    # the run's totals came up twenty short of the pages it had read and paid
+    # for (DEFECTS #49). Declining to judge a page is a result; losing it is
+    # not.
+    unattached: list[Unattached] = [
+        Unattached(p, "not_a_candidate")
+        for p in pages if not p.is_face and not p.is_candidate]
 
     def place(candidate, pool):
         """Attach to the one eligible parent, or say why not."""

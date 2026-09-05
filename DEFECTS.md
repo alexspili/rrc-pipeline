@@ -2182,3 +2182,105 @@ force now rather than the cap in force when it was stored. That is the
 useful direction: it tells you the run needs repeating under today's cap.
 
 **Pin:** tests/tier2/test_extract_batch.py::test_a_cached_truncation_is_still_a_truncation
+
+---
+
+## #48 — 2026-09-05 — The run said "over 19 records" while reading 108
+
+**What happened:** `scripts/measure_reassemble.py` opens every run with a line
+saying what it is about to read:
+
+    say(f"{len(wanted)} pages over {len(RECORDS)} records\n")
+
+`wanted` is the page set actually being read. `RECORDS` is the hard-coded tuple
+of the nineteen records the module was developed against. The two halves of
+that sentence came from different places, and only one of them followed the
+`--all` flag that was added so the read could cover the whole corpus.
+
+So the corpus run printed **"532 pages over 19 records"**. The page count is
+right. The record count is the length of a constant. The 532 pages come from
+**141 records**, and the 218 documents the run built span **108** of them.
+
+Both of those are worth stating, because I got them the wrong way round on
+first pass and wrote 108 into this entry as the header's correct value. It is
+not: the header describes what was read, so it is 141, and 108 is the separate
+and also interesting fact that a third of the records read yielded no document
+at all.
+
+**Why it matters more than a cosmetic slip.** That line is the header of the
+report the run writes to `data/extract/reassemble_report.txt`, and it is the
+first thing read when the numbers are quoted. Quoted as printed, it says the
+corpus read covered nineteen records out of 202. It covered a hundred and
+eight. A reader would conclude the run had not done what it was asked to do,
+and the correction would arrive only if someone counted the output by hand.
+
+The corpus-consistency guard in tests/tier2/test_repo_consistency.py was
+written for the same shape of mistake — a stale count sitting next to a live
+one — but it reads prose in the docs, not f-strings in scripts, so it could
+not have caught this.
+
+**Found by:** reading the run's own header before quoting it, after the header
+disagreed with the 218 documents underneath it.
+
+**Fix:** the record count is derived from `wanted`, the same set the page count
+comes from, so the two halves of the sentence cannot disagree again. `RECORDS`
+keeps its job of naming the development set and loses its job of describing
+any run.
+
+**What remains, per standing rule 9:** this fixes one sentence, and checking
+the rest of the report found a second fault rather than a clean bill. The
+document count reconciles against `reassemble.jsonl` exactly: 218 faces plus
+39 attached pages is the 257 pages inside documents that the file holds. The
+four failed pages are reported by the run itself and are truncations, not
+silent drops. But 218 + 39 + 251 unattached + 4 failed is 512 against 532 read,
+and the missing 20 are DEFECTS #49.
+
+**Pin:** tests/tier2/test_reassemble_report.py::test_the_header_counts_the_records_it_read
+
+---
+
+## #49 — 2026-09-05 — Twenty pages were read, paid for, and left out of the total
+
+**What happened:** the corpus reassembly run reports three outcomes for the
+pages it read: they became a document, they attached to one, or they went
+unattached with a reason. Those come to 218 + 39 + 251 = 508. Four more failed
+and are named. The run read **532**.
+
+Twenty pages are in none of the four buckets.
+
+**Where they went.** `reassemble.group` builds its candidate list as
+
+    candidates = [p for p in pages if p.is_candidate and not p.is_face]
+
+A page that is neither a face nor a candidate falls out of that expression and
+is never seen again. It is not attached, and it is not in the leftovers, so it
+is not in the total either.
+
+**What the twenty are:** all of them are the printed instruction backs of
+forms — 15 on G-1s and 5 on W-2s, `part == "back_instructions"`. Those pages
+carry no filing data at all: they are the "read this before completing the
+form" side. Excluding them from attachment is correct and is not in question.
+
+**So the behaviour is right and the accounting is wrong, which is the harder
+version.** A page that should not attach and is reported as not attaching is
+fine. A page that should not attach and is reported as nothing has left the
+count silently, and the count is what the run is for. The run also paid to
+read all twenty: they went to the model like every other page.
+
+This is the same failure the module doc already records against `tubing` and
+that R16 records in the classifier, in a third place: a drop nobody counts is
+a drop nobody can argue with. It is also standing rule 9 exactly — the residue
+has to be characterised before the number is quoted, and here the residue was
+not even visible.
+
+**Found by:** adding up the run's own summary before quoting it to Alex,
+because the header above it had already turned out to be wrong (DEFECTS #48).
+Two faults in one report, and the first one is what made me add up the second.
+
+**Fix:** `group` returns pages it has no opinion about as a fourth outcome,
+with the reason `not_a_candidate`, so every page that goes in comes out
+somewhere. The run's summary asserts the sum closes against the pages read and
+fails loudly if it does not, which is the only version of this fix that stops
+the next such page from vanishing quietly.
+
+**Pin:** tests/tier1/test_reassemble.py::test_every_page_that_goes_in_comes_out_somewhere

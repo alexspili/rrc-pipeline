@@ -633,3 +633,34 @@ def test_a_document_is_a_real_face_plus_pages_that_are_not():
     assert ra.may_pair(
         classed(5, "g1", "face", FACE_BOXES),
         classed(6, "w2", "sec_iii", BACK_BOXES))
+
+
+# ---------------------------------- DEFECTS #49: every page comes out somewhere
+
+def test_every_page_that_goes_in_comes_out_somewhere():
+    """The corpus run read 532 pages and its summary accounted for 512.
+
+    The twenty missing ones were the printed instruction backs of forms, which
+    are neither a face nor a candidate and fell out of `group`'s candidate
+    expression without landing anywhere. Excluding them from attachment is
+    right. Excluding them from the count is not: the count is what the run is
+    for, and all twenty were read and paid for like any other page.
+    """
+    pages = [
+        page(1, part="face", sources=FACE_BOXES, **SUN),
+        page(2, part="sec_ii", sources=BACK_BOXES, **SUN),
+        page(3, part="back_instructions"),
+    ]
+    documents, unattached = ra.group(pages)
+    placed = {p.page for d in documents for p in d.pages}
+    placed |= {u.page.page for u in unattached}
+    assert placed == {1, 2, 3}, (
+        "a page the module has no opinion about still has to be counted")
+
+
+def test_a_page_that_is_neither_face_nor_candidate_says_so():
+    pages = [page(1, part="face", sources=FACE_BOXES, **SUN),
+             page(3, part="back_instructions")]
+    _, unattached = ra.group(pages)
+    reasons = {u.page.page: u.reason for u in unattached}
+    assert reasons[3] == "not_a_candidate"
