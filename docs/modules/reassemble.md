@@ -506,6 +506,60 @@ is `purpose_of_filing`, the field 11 checkboxes that say Initial Potential
 against Retest, which is the distinction four of the five failures turn on.
 Recorded, not built: adding a field changes the prompt and costs another run.
 
+## The physical signal, 2026-09-05: real, era-independent, and unextracted
+
+**Correction first.** On 2026-09-05 I told Alex the physical signal was
+era-dependent, present on 1966-1983 microfilm and absent from the clean 2009
+scans. **That was wrong, and wrong for a lazy reason:** I tested for a dark
+border at the page edge, which detects microfilm framing and is blind to small
+marks inside the page. Alex pointed at staple marks on a 2009 filing and they
+are plainly there.
+
+**What the paper carries.** Record 1774674, a 2009 G-1 with no punch holes, no
+border and no visible damage. Page 2 has a cluster in the top-left margin: a
+curl, a solid blob, a small `v` immediately right of it, a tick below-right.
+Page 6 carries the same cluster in the **bottom**-left, in the same relative
+geometry. One sheet seen from both sides.
+
+**First quantitative attempt, and it does not separate.** Small isolated blobs
+in the page margins, matched as a point set under a small shift:
+
+| | matched |
+|---|---|
+| 1774674 p2 vs p6 **flipped** | 5 of 22 (23%) |
+| 1774674 p2 vs p6 **not flipped** | **0** |
+| 2345595 p3 vs p8 flipped | 5 (22%) |
+| 1493639 p4 vs p5 flipped | 1 (4%) |
+| three unrelated-page controls | 2, 2, 3 (9-13%) |
+
+Restricting to the margins cut detections from 217 to 22 and took the true
+pair from 12% to 23%. **The zero when unflipped is the striking number**: it
+is the signature of one physical sheet, since marks that pass through paper
+only align when the sheet is turned over. But two of three true pairs at
+22-23% against controls at 9-13%, with the third below every control, is not
+something to threshold on.
+
+**The pattern across two attempts, which is the useful finding.** Punch rims:
+visibly the same hole, +0.911 on a clean pair, defeated by ink touching it.
+Staple marks: visibly the same cluster, zero when unflipped, drowned by
+detection noise. **Both times the signal was real and the extraction failed.**
+That is an image-processing problem, not a question about the paper, and it
+wants margin isolation, mark classification and cluster matching rather than
+global point counting.
+
+**Why it matters more than precision does now.** Every field the module
+compares is a fact about a class: operator and lease describe the well, the
+printed field numbers describe the form revision. In record 1495195 one back
+page ties between **six** candidate faces, all citing identical field numbers
+and identical identity values, because they are six filings on one well. No
+class-level fact can break that. The sheet is the only instance-level
+evidence, and it is what Alex used to verify all three sittings.
+
+**Parked deliberately, with the reason.** Its value is recall, recall cannot
+be measured on 39 records, and the corpus run is what creates the data a
+recall measurement would need. It is reopened after that, not abandoned, and
+the evidence above is its starting point.
+
 ## Road not taken: matching the punch holes, 2026-09-04
 
 Alex pairs a sheet's front and back by eye from the shape of the punch hole,
