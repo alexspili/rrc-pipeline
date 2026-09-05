@@ -1987,3 +1987,56 @@ the eight pairs Alex judged, so its score on those eight is a development
 number and decides nothing. The verdict comes from a fresh sample, and its
 rule is pre-registered in docs/labeling-protocol-reassemble.md.
 **Pin:** tests/tier1/test_reassemble.py::test_a_real_face_may_not_become_a_child
+
+---
+
+## #45 — 2026-09-04 — I probed one prompt and shipped a different one
+
+**What happened:** before spending $0.91 on adding `received_stamp` to the
+identity reader, I probed it on four pages for $0.029 against Alex's own
+readings. Two came back exact and the field went in.
+
+The probe used a **stamp-only prompt**: one field, a long description of what
+a received stamp looks like, nothing else. What shipped was an **eight-field
+prompt** where the stamp is one item among eight.
+
+They disagree. On record 1912687 page 2 the probe read `AUG 18 2009` and the
+shipped prompt read `JUN 09 2009`.
+
+**Neither is wrong, and that is the second defect inside the first.** The page
+carries **two** received stamps: `RECEIVED RRC OF TEXAS JUN 09 2009 O&G
+DIVISION HOUSTON` at the top left, and `RECEIVED CENTRAL RECORDS AUG 18 2009
+AUSTIN, TEXAS` in the middle. That is the ordinary filing path, a district
+office then Central Records, and the Austin stamp lands on the packet's top
+page. The field asks for "the" received stamp, which is not a thing the paper
+has.
+
+**Why the probe failed at its job.** A probe exists to de-risk a spend by
+testing the thing that will ship. Mine tested a different artifact, so its two
+exact matches licensed nothing about the prompt that ran, and the discrepancy
+only surfaced because the shipped run produced an attachment the probe's
+reading would have rejected.
+
+**What it cost.** The $0.91 run happened on a field that cannot do its job as
+specified. And it is worse than a wasted field: on record 1912687 pages 2 and
+6 the shipped prompt reported the same Houston stamp from both pages, so the
+field *added* agreement and helped attach a pair, which is the opposite of the
+veto it was added to be.
+
+**A third thing, and it is the most useful.** Alex judged that pair wrong
+during the verification sitting, and his stated reason was that the two pages
+carry different received dates. He was comparing page 2's Austin stamp against
+page 6's Houston stamp. Both pages carry the same Houston stamp. **A human
+expert reading the paper made the same mistake the field makes**, which is
+strong evidence that the ambiguity is in the document rather than in anybody's
+attention, and that verdict is now back with him.
+
+**Resolution:** open. Three options are with Alex: re-judge the pair, respecify
+the field as office-plus-date compared per office, or drop it and keep
+`purpose_of_filing`, which is the field the four clear failures actually turned
+on. Nothing further is spent until he rules.
+
+The general form, which stands whichever he picks: **a probe that does not run
+the artifact that will ship has not de-risked anything.** It measured a
+neighbour.
+**Pin:** pending, on whichever resolution is chosen.
