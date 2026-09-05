@@ -2121,3 +2121,64 @@ reading further records.
 ::test_a_page_of_another_form_may_not_attach, and
 ::test_a_child_crossing_form_families_is_a_known_limitation, which pins the
 hole that is staying open.
+
+---
+
+## #47 — 2026-09-05 — The guard the docstring said was shared was on one path only
+
+**What happened:** `extractor.extract_document` says in its own docstring:
+"One parse and one guard shared by the cached and fresh paths, which is
+DEFECTS #14's lesson: a cache that changes the answer is worse than no cache."
+
+The parse is shared. The guard is not. The guard is the check that refuses to
+treat a response cut off at `max_tokens` as a document, and it sits below the
+cache-hit return, on the fresh path only.
+
+**Why that is a defect and not a stale comment.** The guard exists because a
+truncated response arrives as malformed JSON and reports itself as malformed
+JSON, which sent me looking for a parser bug that was not there. Four of the
+first fourteen smoke documents were truncations wearing that disguise. The
+fix raised `MAX_TOKENS` from 8000 to 16000 and added the guard, and the guard
+also refuses to cache a truncation, on the reasoning that the cache key does
+not include `max_tokens` so a stored truncation would be served back forever
+with the cap already raised.
+
+That reasoning is right and it is only half-applied. Entries written before
+the guard existed are still in the cache, and every one of them is still
+served back as "malformed JSON" rather than as the truncation it is. The cache
+answers differently from the live call for exactly the case the guard was
+written for.
+
+**Found by:** design review while factoring `extract_document` so the Batch
+API path could share its cache and guard logic. Not by a failure. The
+duplication I was about to create is what made me read the guard's position.
+
+**Blast radius, measured, and it is not what I first wrote.** I wrote this
+entry with the words "the live corpus is clean and this is a latent fault, not
+damage", then measured before committing, and the measurement says the
+opposite on both numbers I had guessed.
+
+`data/extract/cache_smoke.jsonl` holds **54** entries under 54 distinct keys,
+and **four** of them are stored truncations: all four at exactly 8000 output
+tokens, which is the old cap. They are the four documents the cap was raised
+for. They were never evicted, because the cache file is append-only and
+nothing has been written over those keys.
+
+What limits the damage is not the guard. It is that all four sit under prompt
+hash `cbaf1068fc56d59c`, two prompts ago, so today's reader does not look under
+their keys. That is luck, and it is luck with a documented way of running out:
+`recorded_prompt_hash` exists precisely so a finished run can be read back
+under the hash it was made with (DEFECTS #28). Anything that re-reads that run
+walks straight into all four.
+
+The lesson is the one standing rule 9 keeps making: I described the residue
+before measuring it, and got both the count and the verdict wrong in the
+direction that made the fault sound smaller.
+
+**Fix:** the guard moves above the cache-hit return, so a cached truncation
+and a fresh truncation give the same answer. `MAX_TOKENS` is named in the
+error message either way, which means a cached truncation reports the cap in
+force now rather than the cap in force when it was stored. That is the
+useful direction: it tells you the run needs repeating under today's cap.
+
+**Pin:** tests/tier2/test_extract_batch.py::test_a_cached_truncation_is_still_a_truncation

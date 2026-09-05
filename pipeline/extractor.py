@@ -14,6 +14,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from pipeline import classify
 from pipeline import extract as ex
 from pipeline import pageclass as pc
 from pipeline import render
@@ -35,9 +36,20 @@ BATCH_DISCOUNT = 0.5
 IMAGE_CAP = 1568
 
 #: 8000 truncated 4 of the first 14 smoke documents mid-string, and each one
-#: surfaced as "malformed JSON" rather than as what it was. Completed
-#: documents average about 5,100 output tokens, so the old cap was roughly
-#: 1.6x the mean and not far enough above the tail.
+#: surfaced as "malformed JSON" rather than as what it was.
+#:
+#: Re-measured 2026-09-05 over the 20 documents of the finished smoke run,
+#: because the figure written here when the cap was raised ("about 5,100
+#: output tokens") was taken before the run completed and is not what the run
+#: produced. Split by page count, since the two differ a lot:
+#:
+#:   1-page documents  n=13   mean 5,851 output tokens   worst  9,706
+#:   2-page documents  n= 7   mean 8,480 output tokens   worst 13,122
+#:
+#: So this cap sits 1.22x above the worst document in a sample of 20, which is
+#: thin. `scripts/estimate_batch.py` prints that ratio every time it runs.
+#: Raising it is free until it is used, but it is not a decision to take
+#: quietly: a run that truncates pays full price and yields nothing.
 MAX_TOKENS = 16000
 
 SYSTEM = """\
@@ -196,60 +208,211 @@ def build_content(pdf: Path, pages, cap: int = IMAGE_CAP) -> list[dict]:
     return blocks
 
 
+def cache_key(cache, pdf: Path, pages, doc_hash: str | None = None) -> str:
+    """The one place the extraction cache key is spelled.
+
+    It was spelled inline in `extract_document` and nowhere else, which was
+    fine while there was one caller. The batch path is a second caller and a
+    second spelling would be a cache that silently misses.
+    """
+    pages = tuple(pages)
+    return cache.key(doc_hash or render.doc_hash(pdf), pages[0],
+                     f"extract-{'-'.join(map(str, pages))}")
+
+
+def payload_of(message) -> dict:
+    """A model response reduced to what the cache stores.
+
+    `stop_reason` is part of it because a truncation has to stay recognisable
+    after it has been written down. See `_extraction`.
+    """
+    body = "".join(b.text for b in message.content if b.type == "text")
+    return {"body": body,
+            "input_tokens": message.usage.input_tokens,
+            "output_tokens": message.usage.output_tokens,
+            "stop_reason": message.stop_reason}
+
+
+def _extraction(payload: dict, *, record_id: str, file_index: int,
+                pages: tuple[int, ...], cached: bool,
+                cache=None, key=None) -> Extraction:
+    """One parse and one guard, shared by every path that has a payload.
+
+    Three paths now have one: a cache hit, a live call and a batch result.
+    DEFECTS #14's lesson is that a cache which changes the answer is worse
+    than no cache, and the only way to keep that true with three paths is for
+    them to converge here before anything is decided.
+
+    **The truncation guard runs before the cache is consulted, not after.**
+    That is DEFECTS #47. A response cut off at max_tokens arrives as malformed
+    JSON and reports itself as malformed JSON, which is why the guard exists
+    at all. It also refuses to store the fragment, because the cache key does
+    not include max_tokens and a stored truncation would outlive every raise
+    of the cap. Both halves apply to a fragment that was stored before the
+    guard existed, and there are four of those on disk.
+    """
+    tokens = {"input_tokens": payload["input_tokens"],
+              "output_tokens": payload["output_tokens"]}
+
+    if payload.get("stop_reason") == "max_tokens":
+        return Extraction(
+            report=None, record_id=record_id, pages=pages, **tokens,
+            cached=cached,
+            error=f"truncated at max_tokens ({MAX_TOKENS}); "
+                  f"{payload['output_tokens']} output tokens")
+
+    if not cached and cache is not None and key is not None:
+        cache.put(key, payload)
+
+    try:
+        report = ex.parse_report(payload["body"], record_id=record_id,
+                                 file_index=file_index, pages=pages)
+        error = None
+    except ValueError as exc:
+        report, error = None, str(exc)
+    return Extraction(report=report, record_id=record_id, pages=pages,
+                      **tokens, cached=cached, error=error)
+
+
 def extract_document(api, pdf: Path, pages, *, record_id: str,
                      file_index: int, cache=None,
                      doc_hash: str | None = None) -> Extraction:
-    """One document, one call.
-
-    One parse and one guard shared by the cached and fresh paths, which is
-    DEFECTS #14's lesson: a cache that changes the answer is worse than no
-    cache.
-    """
+    """One document, one call."""
     pages = tuple(pages)
-
-    def build(payload: dict, cached: bool) -> Extraction:
-        try:
-            report = ex.parse_report(
-                payload["body"], record_id=record_id, file_index=file_index,
-                pages=pages)
-            error = None
-        except ValueError as exc:
-            report, error = None, str(exc)
-        return Extraction(
-            report=report, record_id=record_id, pages=pages,
-            input_tokens=payload["input_tokens"],
-            output_tokens=payload["output_tokens"],
-            cached=cached, error=error)
 
     key = None
     if cache is not None:
-        key = cache.key(doc_hash or render.doc_hash(pdf),
-                        pages[0], f"extract-{'-'.join(map(str, pages))}")
+        key = cache_key(cache, pdf, pages, doc_hash)
         hit = cache.get(key)
         if hit is not None:
-            return build(hit, cached=True)
+            return _extraction(hit, record_id=record_id,
+                               file_index=file_index, pages=pages, cached=True)
 
     response = api.messages.create(
         model=MODEL, max_tokens=MAX_TOKENS, system=SYSTEM,
         messages=[{"role": "user",
                    "content": build_content(pdf, pages)}])
-    body = "".join(b.text for b in response.content if b.type == "text")
-    payload = {"body": body,
-               "input_tokens": response.usage.input_tokens,
-               "output_tokens": response.usage.output_tokens,
-               "stop_reason": response.stop_reason}
+    return _extraction(payload_of(response), record_id=record_id,
+                       file_index=file_index, pages=pages, cached=False,
+                       cache=cache, key=key)
 
-    # A truncated response is a truncation, not malformed JSON, and it must
-    # never be cached: the cache key does not include max_tokens, so a stored
-    # truncation would be served back forever with the cap already raised.
-    if response.stop_reason == "max_tokens":
-        return Extraction(
-            report=None, record_id=record_id, pages=pages,
-            input_tokens=payload["input_tokens"],
-            output_tokens=payload["output_tokens"], cached=False,
-            error=f"truncated at max_tokens ({MAX_TOKENS}); "
-                  f"{payload['output_tokens']} output tokens")
 
-    if cache is not None and key is not None:
-        cache.put(key, payload)
-    return build(payload, cached=False)
+# ------------------------------------------------------------------ batch path
+
+#: Anthropic documents 256 MB and 100,000 requests per batch. The classifier
+#: holds both well clear for a one-page vision request; an extraction request
+#: carries every page of a document at 1568 px, so it is several times larger
+#: and the byte ceiling is the one that binds. Measured on this corpus rather
+#: than assumed: scripts/estimate_batch.py reports the real serialised size.
+BATCH_MAX_BYTES = classify.BATCH_MAX_BYTES
+BATCH_MAX_REQUESTS = 1_000
+
+#: How long to wait between polls of a submitted batch. Anthropic's stated
+#: ceiling is 24 hours and most batches finish inside one.
+BATCH_POLL_SECONDS = 30
+
+
+def build_request(pdf: Path, pages, *, custom_id: str) -> dict:
+    """One document as a batch request.
+
+    Same model, same cap and the same SYSTEM constant as the live call, which
+    is the point: DEFECTS #45 is what happens when two code paths build two
+    prompts and only one of them gets measured.
+    """
+    return {"custom_id": custom_id,
+            "params": {"model": MODEL, "max_tokens": MAX_TOKENS,
+                       "system": SYSTEM,
+                       "messages": [{"role": "user",
+                                     "content": build_content(pdf, pages)}]}}
+
+
+def run_batched(api, documents, *, cache=None, doc_hashes: dict | None = None,
+                on_progress=None, max_bytes: int = BATCH_MAX_BYTES,
+                max_requests: int = BATCH_MAX_REQUESTS) -> dict:
+    """Extract many documents through the Batch API. Returns {custom_id: Extraction}.
+
+    Half the price of the live path and that is the whole reason it exists.
+
+    `documents` is a sequence of dicts with custom_id, record_id, file_index,
+    pdf and pages. The custom_id names the document and is what results come
+    back keyed by; nothing here may rely on the order they arrive in, because
+    the API does not promise one. A document missing from the results comes
+    back as an Extraction carrying an error rather than vanishing, which is
+    standing rule 9 applied to a run of 238 documents: a hole nobody counts is
+    a hole nobody can argue with.
+
+    Cached documents never become requests (CLAUDE.md rule 7).
+    """
+    import time
+
+    out: dict[str, Extraction] = {}
+    requests: list[dict] = []
+    meta: dict[str, dict] = {}
+
+    for doc in documents:
+        custom_id = doc["custom_id"]
+        if custom_id in meta:
+            raise ValueError(
+                f"two documents share the custom_id {custom_id!r}; results "
+                "come back keyed by it and one would overwrite the other")
+        pages = tuple(doc["pages"])
+        meta[custom_id] = {"record_id": doc["record_id"],
+                           "file_index": doc["file_index"],
+                           "pages": pages, "pdf": doc["pdf"], "key": None}
+
+        if cache is not None:
+            hashes = doc_hashes or {}
+            key = cache_key(cache, doc["pdf"], pages, hashes.get(doc["pdf"]))
+            meta[custom_id]["key"] = key
+            hit = cache.get(key)
+            if hit is not None:
+                out[custom_id] = _extraction(
+                    hit, record_id=doc["record_id"],
+                    file_index=doc["file_index"], pages=pages, cached=True)
+                continue
+        requests.append(build_request(doc["pdf"], pages, custom_id=custom_id))
+
+    if not requests:
+        return out
+
+    chunks = classify.chunk_requests(requests, max_bytes=max_bytes,
+                                     max_requests=max_requests)
+    for n, chunk in enumerate(chunks, 1):
+        batch = api.messages.batches.create(requests=chunk)
+        if on_progress:
+            on_progress(f"batch {n}/{len(chunks)} submitted as {batch.id}, "
+                        f"{len(chunk)} documents")
+        while getattr(batch, "processing_status", "ended") != "ended":
+            time.sleep(BATCH_POLL_SECONDS)
+            batch = api.messages.batches.retrieve(batch.id)
+
+        seen = set()
+        for entry in api.messages.batches.results(batch.id):
+            custom_id = entry.custom_id
+            seen.add(custom_id)
+            info = meta[custom_id]
+            if entry.result.type != "succeeded":
+                out[custom_id] = Extraction(
+                    report=None, record_id=info["record_id"],
+                    pages=info["pages"], input_tokens=0, output_tokens=0,
+                    cached=False,
+                    error=f"batch result {entry.result.type}")
+                continue
+            out[custom_id] = _extraction(
+                payload_of(entry.result.message),
+                record_id=info["record_id"], file_index=info["file_index"],
+                pages=info["pages"], cached=False,
+                cache=cache, key=info["key"])
+
+        for request in chunk:
+            custom_id = request["custom_id"]
+            if custom_id in seen:
+                continue
+            info = meta[custom_id]
+            out[custom_id] = Extraction(
+                report=None, record_id=info["record_id"],
+                pages=info["pages"], input_tokens=0, output_tokens=0,
+                cached=False,
+                error="no result returned for this document in the batch")
+
+    return out
