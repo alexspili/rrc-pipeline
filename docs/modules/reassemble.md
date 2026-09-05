@@ -506,6 +506,59 @@ is `purpose_of_filing`, the field 11 checkboxes that say Initial Potential
 against Retest, which is the distinction four of the five failures turn on.
 Recorded, not built: adding a field changes the prompt and costs another run.
 
+## Road not taken: matching the punch holes, 2026-09-04
+
+Alex pairs a sheet's front and back by eye from the shape of the punch hole,
+and did so during the verification sitting: "Definitely face and back of the
+same form, I can tell by the shape of the punch holes." The idea was probed
+and **parked, not adopted**. The evidence is recorded because the parking is a
+judgement about cost, not about whether the signal exists.
+
+**The signal exists and was measured.** On record 1493608, the confirmed
+same-sheet pair, the second hole's rim outline correlates at **+0.911** between
+front and back under the flip a sheet physically performs. The same torn flap
+is visible at the lower right of both holes. Controls sit at zero: two holes
+punched by the same machine score -0.08, holes from unrelated records -0.04.
+
+**Two representations were tried and only one works.** Overlapping the filled
+hole gives nothing, because any two circles overlap well: unrelated records
+score 0.85. The rim has to be turned into a radial outline, the distance from
+the centre to the edge at each angle, which is where the tear becomes signal.
+
+**What stopped it: ink touching the hole.** The holes sit in the page margin,
+which is also where letterheads, received stamps and table rules live. A
+connected-component step swallows the hole and the touching type into one
+blob, and the measured rim is then partly typography.
+
+| Confirmed pair | Result |
+|---|---|
+| 1493608 p5+p6, both holes clean | **+0.911** |
+| 1493495 p9+p10, one hole fused to a `RECEIVED` stamp | not measurable |
+| 1495193 p7+p8, one hole fused to a letterhead | +0.023 |
+
+Three rounds of fixes each repaired one failure and created another, at which
+point the work was tuning against the only three labelled pairs there are,
+which is the trap this module already pre-registers everything to avoid.
+
+**What a real version needs**, since none of it is speculative: separating a
+disc from ink that touches it, by morphological opening or by fitting a circle
+and reading the rim only along the uncontaminated arc. The rim comparison
+itself is sound. The isolation step is what fails.
+
+**Why it was parked rather than finished.** Punch matching can only ever pair
+the front and back of one physical sheet. **Four of the five wrong attachments
+in the verification sitting were two separate sheets**, so a perfect hole
+matcher would not have caught them. It attacks a different problem from the one
+that is broken.
+
+Also measured and worth keeping: the punch pitch is a corpus-wide constant,
+2¾ inches across 19 unrelated pages, so hole *position* discriminates almost
+nothing. Unrelated pages agree on both offsets 16.9% of the time. Only the rim
+shape carries information.
+
+`numpy` and `scipy` were added for this and then removed with it, rather than
+left in `requirements.txt` for code that no longer exists.
+
 ## Rules
 
 All pins are pending: this module is designed and not built, and the pending
