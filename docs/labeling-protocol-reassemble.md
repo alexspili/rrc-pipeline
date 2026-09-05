@@ -497,3 +497,40 @@ the paper is the only way these can count as evidence afterwards.
 If both predictions hold, the module fails this sitting at 20 or 21 of 26 and
 the elected escape fires. If they do not hold, that is a stronger result than
 the count alone, because it was called in advance.
+
+### THE DECISION RULE ABOVE IS VOID. 2026-09-05, DEFECTS #51
+
+**The bar of 24 of 26 was unreachable.** Three faces on the sheet were given
+more than one page — five, two and two — and a face has one reverse side, so at
+most one page in each group can be right. The ceiling was 20 of 26, and the bar
+was set four above it. The module was going to fail before the paper was read.
+
+Alex saw it from the sheet before it was scored. I did not, and I checked the
+*escape* for vacuity in this same document while failing to check the bar for
+reachability, which is DEFECTS #41 arriving in a mirror.
+
+**The unit was also wrong, again.** It was corrected once, from documents to
+pairs. A pair is still not the thing being decided. The thing being decided is
+whether a face ends up with a correct and uncontaminated set of pages, and a
+face given five pages should be judged once, not five times.
+
+**Results are recorded in all three units** so that no one, including me, can
+pick the flattering one later:
+
+| Unit | Result |
+|---|---|
+| Pairs correct | 16 of 26 (62%), ceiling 20 |
+| Faces given at least one right page | 16 of 20 (80%) |
+| Faces clean — every page right, no wrong one | 13 of 20 (65%) |
+
+No replacement threshold is set here. Choosing one now would be choosing a bar
+after seeing the result. The decision passes to Alex as a judgement call and is
+recorded as one.
+
+**The two predictions stand**, having been committed before the sitting and
+being independent of the bar: 4 of the 5 on 1493451 wrong as predicted, and 1
+of the 2 on 1493399 wrong as predicted.
+
+**For the next pre-registration:** the threshold is checked against the maximum
+attainable score in the same pass that checks the escape can fire. Both halves
+or neither.

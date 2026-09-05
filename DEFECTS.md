@@ -2333,3 +2333,84 @@ from the smoke run's measured tokens, not from memory, so it is not exposed to
 this fault. It is still an estimate of a run that has not happened.
 
 **Pin:** tests/tier2/test_estimate_batch.py::test_a_page_is_priced_from_the_cap_the_module_actually_sends
+
+---
+
+## #51 — 2026-09-05 — I pre-registered a bar that was arithmetically unreachable
+
+**What happened:** the fourth sitting's rule said 24 of 26 attachments must
+verify. **The maximum attainable score was 20.** The bar sat four above the
+ceiling, so the module was going to fail before Alex read a single page.
+
+**Why the ceiling is 20.** Three of the twenty faces on the sheet were given
+more than one page: 1493451 face p10 got five, 1493399 face p41 got two,
+1494036 face p12 got two. A face has one reverse side, so **at most one of
+each group can be right**. Five mutually exclusive rows contribute at most one
+"yes" and at least four guaranteed "no", before anyone looks at the paper.
+17 faces with one page each, plus 3 faces contributing at most one each, is 20
+of 26 — a ceiling of 77% where I had set a bar of 92%.
+
+Alex spotted this from the sheet and said so before I scored it: "this can only
+have one right combination at most, so at least 4/5 will be no." He put the
+ceiling at 19; I count 20. The difference does not matter and I have not chased
+it, because the bar was above both.
+
+**This is DEFECTS #41 in a mirror, and I cited #41 while making it.** #41 was a
+pre-registered case that could not fail. This is a pre-registered bar that
+could not pass. While writing this rule I explicitly checked the *escape* for
+vacuity — the "three or more agreeing fields" fallback, rejected because 37 of
+39 attachments rest on exactly two — and wrote that check into the protocol as
+#41's lesson applied. **I checked the fallback and never checked the bar.**
+
+**The deeper fault is the unit, not the arithmetic.** I already corrected the
+unit once, from documents to pairs, and the correction was in the right
+direction and still wrong. A pair is not the thing being decided. The thing
+being decided is: **did this face end up with a correct and uncontaminated set
+of pages?** That is what extraction consumes and what a wrong answer corrupts.
+Scored per pair, a face given five pages is punished five times for one
+decision. Scored per face, it is one decision, judged once.
+
+**What the sitting measured, stated in all three units so none of them can be
+cherry-picked later:**
+
+| Unit | Result |
+|---|---|
+| Pairs correct | 16 of 26 (62%), against a ceiling of 20 |
+| Faces given at least one right page | 16 of 20 (80%) |
+| Faces clean — every page right and no wrong one | **13 of 20 (65%)** |
+
+The third row is the one that matters, because a face carrying one right page
+and one wrong page produces a document that mixes two wells and looks complete.
+All three of the multi-page faces are in that state: each found its correct
+page and each also picked up wrong ones.
+
+**Both predictions committed before the sitting held.** 1493451: predicted most
+of the five wrong, 4 of 5 wrong. 1493399: predicted at least one of two wrong,
+one wrong. Those were called from the sheet's structure before any verdict
+existed and they are not affected by the broken bar.
+
+**What this does to the gate.** The pre-registered decision rule is void. I
+will not pick a replacement threshold now and score against it — choosing a bar
+after seeing the numbers is the thing pre-registration exists to prevent, and I
+have just demonstrated I can get a bar wrong. **The decision returns to Alex,
+with the three numbers above and my recommendation, and it is recorded as a
+judgement call rather than as a rule firing.**
+
+**What is not damaged.** The 26 verdicts are real and were keyed against a
+sheet built before any of this was known. They do not depend on the threshold.
+What is lost is the ability to say "the module passed or failed a bar set in
+advance", which was the whole point of the exercise and is exactly the thing my
+mistake destroyed.
+
+**What remains, per standing rule 9:** the pool is now exhausted. All 39 corpus
+attachments have been judged, so no held-out pair exists to test any new rule
+on. Two patterns in the verdicts are strong — no backward attachment was ever
+correct, 0 of 6 here and 0 of 8 across four sittings; and faces given several
+pages are right 33% of the time against 76% for faces given one — and **neither
+can be adopted on this evidence** for the reason DEFECTS #46 records. Dropping
+every backward attachment would leave 16 of 20 pairs, which is 80%, so the
+direction signal is real and would not have been sufficient either.
+
+**Rule that comes out of this:** a pre-registered threshold is checked against
+the maximum attainable score before it is written down, in the same pass that
+checks the escape can fire. Both halves or neither.
