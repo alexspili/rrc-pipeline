@@ -740,3 +740,64 @@ R8. Two agreeing fields are required, and total depth may raise a score but
 ## RETIRED
 
 Nothing yet. The module is not built.
+
+## The paper outline does not identify the sheet. Probed 2026-09-05, $0
+
+**Why this was tried.** Identity fields can only exclude. They describe the
+well, and the failures are several filings for one well, so agreement between
+them is guaranteed rather than informative. Alex matched pages by eye using the
+paper itself and said it is the only direction that can confirm. This probe
+asked whether the outline of a sheet — every tear, fold and trimmed edge, read
+as the distance from the image border to the paper along each of the four
+sides — can say that two pages are one piece of paper.
+
+**Scope, measured first.** On the 71 pages involved in a multi-page document,
+**56% have a black scanner border on all four sides, 42% have none at all.**
+Where the scan is cropped tight to the paper there is no visible paper edge and
+the outline is a straight rectangle by construction. 23 of the 39 judged pairs
+have a usable border on both pages, so the channel could speak to 59% of pairs
+at best.
+
+**The result on the 18 pairs it could read**, 7 verified true and 11 verified
+false, after removing the linear trend so that scanner skew cancels:
+
+| | Predicted flip | Control flip |
+|---|---|---|
+| True pairs | 0.675 to 0.918 | 0.666 to 0.907 |
+| False pairs | 0.019 to 0.715 | 0.013 to 0.657 |
+
+Ranked on the predicted flip alone this looks like a working signal: six of
+seven true pairs score above every false pair.
+
+**The control says that ranking is not evidence, and this is the whole point of
+having run one.** A sheet flipped front-to-back about the horizontal axis maps
+(x, y) to (x, H − y). The control is the flip about the vertical axis, which a
+sheet cannot perform between these two scans. **Predicted minus control is
+−0.002 on true pairs and −0.010 on false ones.** The score is the same under a
+transform the paper can do and one it cannot, so it is not measuring the sheet.
+It is measuring something orientation-blind that pages scanned together share:
+feeder alignment, paper stock, batch geometry.
+
+High-pass filtering the profile, to keep only detail finer than 1.4 in and then
+finer than 0.35 in, does not change it: predicted minus control stays at −0.004
+on true pairs. And the highest-scoring pair in the whole table is a **false**
+one, 1493451 p19+p10 at 0.733, above four of the seven true pairs.
+
+**Without the control I would have reported six of seven as a success.** That
+is the same shape as DEFECTS #29, where well-formed geometry was mistaken for
+grounded geometry, and the reason a physically impossible transform is scored
+alongside every real one.
+
+**What this does not kill.** The outline was my generalisation of what Alex
+described, and it was the wrong one. Both matches he made himself used features
+**inside** the paper: punch-hole rim shape on 1493608, staple marks on 1774674.
+The punch-rim probe of 2026-09-04 showed exactly the signature this one lacks —
++0.911 under the predicted flip with every control collapsing to about zero —
+and failed on detection robustness rather than on signal, finding one hole 110
+px wide on one page and 82 on the other. Interior features remain the live
+candidate; the outline is closed.
+
+**What any further work needs first.** All 39 corpus attachments have now been
+judged, so there is no held-out pair left. A mechanism developed against these
+verdicts cannot be validated against them, and new labelled pairs would have to
+be produced before any number from it means anything.
