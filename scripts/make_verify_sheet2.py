@@ -40,8 +40,8 @@ RAW = ROOT / "data" / "raw"
 DOCS = ROOT / "data" / "extract" / "reassemble.jsonl"
 CACHE = ROOT / "data" / "extract" / "cache_identity.jsonl"
 FIRST = ROOT / "tests" / "fixtures" / "attachment_verify.csv"
-SHEET = ROOT / "tests" / "fixtures" / "attachment_verify_2.csv"
-OUT = ROOT / "data" / "labelset" / "verify_pairs_2"
+SHEET = ROOT / "tests" / "fixtures" / "attachment_verify_3.csv"
+OUT = ROOT / "data" / "labelset" / "verify_pairs_3"
 
 #: The three pairs judged correct in the first sitting. The pre-registered
 #: regression condition is that all three still attach.
@@ -49,14 +49,20 @@ REGRESSION = {("1493495", 0, 10, 9), ("1495193", 0, 8, 7),
               ("1493608", 0, 6, 5)}
 
 
+SECOND = ROOT / "tests" / "fixtures" / "attachment_verify_2.csv"
+
+
 def already_judged():
-    raw = FIRST.read_bytes().decode("utf-8", errors="replace")
     out = set()
-    for row in csv.DictReader(io.StringIO(raw)):
-        if row["part"] != "A":
+    for path in (FIRST, SECOND):
+        if not path.exists():
             continue
-        pages = tuple(sorted(int(x) for x in row["pages"].split()))
-        out.add((row["record_id"], int(row["file_index"])) + pages)
+        raw = path.read_bytes().decode("utf-8", errors="replace")
+        for row in csv.DictReader(io.StringIO(raw)):
+            if row.get("part", "A") != "A":
+                continue
+            pages = tuple(sorted(int(x) for x in row["pages"].split()))
+            out.add((row["record_id"], int(row["file_index"])) + pages)
     return out
 
 

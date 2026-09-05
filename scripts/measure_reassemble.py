@@ -27,6 +27,8 @@ from pipeline import pageclass as pc               # noqa: E402
 from pipeline import reassemble as ra              # noqa: E402
 from pipeline import render                        # noqa: E402
 
+EXTEND = False
+
 MANIFEST = ROOT / "data" / "manifest.jsonl"
 RAW = ROOT / "data" / "raw"
 CENSUS = ROOT / "data" / "census" / "vision_1000.jsonl"
@@ -39,6 +41,15 @@ RECORDS = ("1493495", "1493540", "1493608", "1494274", "1494690", "1494774",
            "1494847", "1494905", "1495193", "1495195", "1495350", "1499700",
            "1504957", "1505031", "1510666", "1511465", "1912687", "1995378",
            "1760703")
+
+#: The extension, drawn at random under seed 20260904 from the 89 records that
+#: hold a completion face and had not been read, and fixed in the protocol
+#: before any of them was looked at. Every attachment on these is held-out by
+#: construction: no page of any of them has ever been judged.
+EXTENSION = ("1493450", "1493524", "1493639", "1494015", "1494023", "1494028",
+             "1494058", "1494408", "1494459", "1494722", "1494811", "1496799",
+             "1501720", "1509403", "1512952", "1513275", "1774674", "1865660",
+             "2306415", "2345595")
 
 #: Fixed in the protocol before this ran. (record, file, page) -> face page.
 MUST_ATTACH = {
@@ -57,7 +68,7 @@ def census_pages():
             continue
         row = json.loads(line)
         record_id, file_index, page = pc.parse_page_id(row["page_id"])
-        if record_id in RECORDS:
+        if record_id in RECORDS + (EXTENSION if EXTEND else ()):
             out[(record_id, file_index, page)] = row
     return out
 
@@ -110,9 +121,13 @@ class Tee:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--extend", action="store_true",
+                    help="also read the 20 extension records")
     ap.add_argument("--offline", action="store_true",
                     help="cache only; make no API calls")
     args = ap.parse_args()
+    global EXTEND
+    EXTEND = args.extend
     say = Tee(REPORT)
 
     records = {json.loads(l)["record_id"]: json.loads(l)
