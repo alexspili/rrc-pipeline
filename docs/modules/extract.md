@@ -579,6 +579,84 @@ that reason.
 This reverses two earlier estimates, one of them 2.2x high and one 2x low, in
 opposite directions. See DEFECTS #21.
 
+### The batch path, and what the run weighs
+
+**Added 2026-09-05.** Extraction had no batch path until then, which meant the
+most expensive stage in the pipeline was the one stage not taking the 50%
+discount CLAUDE.md rule 7 makes the default. `extractor.run_batched` is a
+straight parallel of `classify.run_batched` and reuses its chunker rather than
+copying it.
+
+Two properties are load-bearing and both have tests:
+
+- **Results are keyed by `custom_id`, never by position.** The API does not
+  promise an order and the stub in the tier-2 test answers in reverse on
+  purpose, so anything reading results positionally pairs each document with
+  another document's values.
+- **A document missing from the results comes back carrying an error.** Not
+  absent. A hole nobody counts is a hole nobody can argue with, which is
+  standing rule 9 at the scale of a 238-document run.
+
+`scripts/estimate_batch.py` makes no API calls and answers both sizing
+questions from measurement. As of 2026-09-05, on twelve real one-page requests:
+
+| | Measured |
+|---|---|
+| One-page request, serialised | 0.57 MB mean, 0.68 MB max |
+| One-page documents per 180 MB chunk | 314 |
+| Two-page documents per 180 MB chunk | 157 |
+
+So the byte ceiling binds long before the request-count ceiling, which is the
+opposite of the classifier's situation and is why the two modules do not share
+a request limit.
+
+**Priced from the 20 documents of the finished smoke run**, split by page count
+because the two differ by half as much again:
+
+| Document | n | Input | Output | Worst output | Standard |
+|---|---|---|---|---|---|
+| One page | 13 | 3,647 | 5,851 | 9,706 | $0.0658 |
+| Two page | 7 | 6,152 | 8,480 | 13,122 | $0.0971 |
+
+At 238 predicted completion faces priced as one page each, that is **$15.66
+standard against $7.83 batched**; the real document count comes from
+reassembly and the script reads it off `reassemble.jsonl` when there is one.
+
+**The cap is thinner than it looks.** `MAX_TOKENS` is 16,000 and the worst
+document in that sample of 20 used 13,122 output tokens, which is 1.22x
+headroom. A document that hits the cap is refused rather than cached, and it
+costs full price for nothing. The estimate script prints the ratio on every
+run so the number cannot go stale again the way the previous one did: the
+comment on `MAX_TOKENS` said "about 5,100 output tokens" and was written before
+the run it described had finished.
+
+### found_in: which printed box each value came from
+
+**Added 2026-09-05.** Every value now carries `found_in`, the printed label of
+the box the model says it read it from, copied off the page with its field
+number when the form prints one.
+
+It is a claim and not proof, in exactly the way the geometry box was. The box
+grading of 2026-09-03 measured the model's own rectangles at hit+near 60.9%,
+and a label is no more self-verifying than a rectangle (DEFECTS #29, #42).
+What it buys is two things the extraction output could not do before:
+
+1. A value read out of the wrong box becomes **checkable by a human**. Before
+   this, a wrong-field read was invisible whenever the two fields agreed.
+2. Two filings for the same well can be **told apart by which boxes their
+   values came from**, even when every value matches. That is what DEFECTS #43
+   turned on, and it is the signal the reassembly module already uses.
+
+Keyed to the label text, never to the field number alone: the same box is
+numbered 24, 31 and 32 on three revisions of the same form.
+
+The prompt change moved the extraction prompt hash from `0a87da7d7aa17e1c` to
+`040b9aee458e80f0`, which invalidates the 20-document smoke cache by
+construction. **The scored extraction headline — 87.4% status, 82.5% value —
+therefore describes a prompt that no longer ships**, and re-running it to
+restore comparability is a separate costed step, not something that happened
+here.
+
 ## What the smoke set caught that the probe could not
 
 **Recorded 2026-08-31, after the first 20-document run failed completely.**
