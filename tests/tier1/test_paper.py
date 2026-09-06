@@ -385,3 +385,42 @@ def test_the_ambiguity_check_looks_at_area_too():
              paper.Mark(x=0.662, y=0.04, area_in2=0.40, fill=0.40,
                         kind="blot", outline=tuple(profile_of(one, cx, cy)))]
     assert not paper.ambiguous_under(marks[0], marks, "flip_h")
+
+
+# ------------------------------------ the frozen mechanism, 2026-09-06
+
+def test_the_frozen_constants_are_the_ones_measured_under():
+    """FROZEN before any held-out pair was drawn. A change to any of these is
+    a change to the statistic the pre-registration pinned, and it invalidates
+    the held-out run rather than improving it.
+    """
+    assert paper.MARGIN_THRESHOLD == 0.30
+    assert paper.MIN_MARKS_AGREEING == 2
+    assert paper.MIN_MARK_AREA == 0.02
+    assert paper.MAX_ASPECT == 3.0
+    assert paper.MIN_FILL == 0.30
+    assert paper.AREA_RATIO == 1.6
+    assert paper.POSITION_TOLERANCE == 0.02
+    assert paper.MAX_OFFSET == 0.06
+    assert paper.SAMPLES == 720
+    assert paper.STRIP == 2
+
+
+def test_the_threshold_still_admits_the_one_pair_it_confirms():
+    """The threshold's only empirical constraint is an upper bound from a
+    single true pair: 1495414 p6+p7 has a second margin of 0.359. Above that
+    the mechanism confirms nothing at all, which is the vacuous pass the
+    pre-registration exists to forbid.
+    """
+    assert paper.MARGIN_THRESHOLD < 0.359
+
+
+def test_the_statistic_is_frozen_not_just_the_number():
+    """A frozen threshold on an unfrozen statistic is not a firewall. These
+    are the pieces that define what the number is a number OF.
+    """
+    assert set(paper.TRANSFORMS) == {"flip_v", "flip_h"}
+    assert set(paper.CONTROLS) == {"same", "rot180"}
+    for name in ("outline_profile", "strip_harmonics", "orient", "correlate",
+                 "ambiguous_under", "pair_marks", "compare", "solid_marks"):
+        assert callable(getattr(paper, name)), name

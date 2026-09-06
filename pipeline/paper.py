@@ -95,8 +95,24 @@ MAX_OFFSET = 0.06
 #: the sheet, because a stack punched together shares its holes.
 MIN_MARKS_AGREEING = 2
 
-#: Frozen by scripts/probe_paper.py against development pairs, before any
-#: held-out pair is drawn. Provisional until that run lands.
+#: FROZEN 2026-09-06 by scripts/probe_paper.py, before any held-out pair was
+#: drawn. Every constant above is frozen with it, and the pre-registration in
+#: docs/labeling-protocol-paper.md pins the commit that implements `compare`,
+#: because a frozen number on an unfrozen statistic is not a firewall.
+#:
+#: **This number is barely constrained by evidence, and saying so is the
+#: point.** Over 517 hard negatives, after the ambiguity rule of DEFECTS #55,
+#: **not one negative ever reached two agreeing marks at all**. So no negative
+#: has ever been held out by this threshold; they are held out by
+#: MIN_MARKS_AGREEING and by the ambiguity rule. The threshold has one
+#: empirical constraint and it is an upper bound from a single true pair:
+#: 1495414 p6+p7 has a second margin of 0.359, so a threshold above that
+#: refuses the only pair the mechanism currently confirms.
+#:
+#: 0.30 is therefore the value every development measurement was taken under,
+#: with 0.059 of headroom below the one positive. It is not a value the
+#: negative distribution chose, because the negative distribution never had an
+#: opinion. The held-out run is what gives it one.
 MARGIN_THRESHOLD = 0.30
 
 #: Turning a sheet over is a reflection, and the operator may turn it about
