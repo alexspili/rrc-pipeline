@@ -2749,3 +2749,66 @@ this sheet would be fitting to the test and quoting the test, which is DEFECTS
 
 **Pin:** tests/tier3/test_paper_eval.py, which is the first content in tier 3
 and gives `make eval` something to run.
+
+---
+
+## #58 — 2026-09-06 — I pre-registered a recall bar against no baseline
+
+**What happened:** the paper matcher failed its pre-registered bar at 4 of 16
+and I reported that it does not ship. Alex pushed back: it made four
+confirmations, all correct, and no wrong ones anywhere. Why reject a mechanism
+that is never wrong for being often silent?
+
+He is right, and the fault is in the bar.
+
+**The bar measured recall against an implicit ideal instead of against the
+alternative.** "At least half of the pairs judged same-sheet" compares the
+mechanism to a hypothetical perfect one. The decision that actually matters is
+whether it adds correct attachments the current system misses. I never
+measured that, and never wrote it into the protocol, although the plan does say
+in its own limitations section that "the reach that actually matters is the
+rate among pairs where identity agreement is below the threshold". I wrote the
+right sentence and then pre-registered a different quantity.
+
+**Measured now, and it was never used to tune anything:**
+
+| | |
+|---|---|
+| Same-sheet pairs on the sheet | 16 |
+| Attached today by reassembly's identity fields | **0** |
+| Confirmed by the paper mechanism | 4 |
+| **Correct attachments it would add that identity misses** | **4** |
+
+Recall is 25% against a baseline of **zero**, not against 100%. Wilson 95%
+interval 10% to 49%, so the size of the gain is genuinely uncertain; that it is
+a gain is not.
+
+**What is and is not contaminated by measuring this after the fact.** The
+false-positive rate is independent of the sitting's positives: 0 of 325
+held-out guaranteed-false pairs and 0 of 517 development ones, 0 of 850 in
+total, below 0.92% at 95%. The four additions are a quantity that was never
+pre-registered and never tuned against, computed once, on held-out pairs. **No
+threshold was moved and nothing was refitted.** It is a different question
+answered on the same data, not the same question answered again until it came
+out right.
+
+I would be recording this the same way had the answer been zero additions. It
+would have been damning rather than exculpatory, and the flaw in the bar would
+have been identical.
+
+**Alex's second point, and it is half right.** He observed that the negatives
+he rejected were obviously different forms and so were easy. True of the eight
+on the sheet. Not true of Part A: 115 of its 325 held-out negatives are
+same-file stack-mates — same office, same punch, same stroke — which no form
+type separates. The safety claim does not rest on the easy eight.
+
+**What does not change.** The pre-registered rule failed as written and that is
+recorded as a failure, in tests/tier3/test_paper_eval.py, permanently. The rule
+is not rewritten and the sitting is not rescored. What changes is that the
+decision to ship is put to Alex on the measured quantity rather than settled by
+a bar that measured the wrong thing.
+
+**Rule that comes out of this:** a bar on a mechanism that supplements an
+existing system is stated against that system's current output, not against
+perfection. "Half of true pairs" and "more correct attachments than today"
+are different questions and only the second one decides anything.
