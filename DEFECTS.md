@@ -2642,3 +2642,47 @@ frozen mechanism before the pre-registration is written, and the held-out run
 is what tests it. Nothing about it is confirmed yet.
 
 **Pin:** tests/tier1/test_paper.py::test_a_mark_the_transform_maps_onto_its_own_twin_is_not_evidence
+
+---
+
+## #56 — 2026-09-06 — The blind sitting was built from pages Alex had already judged
+
+**What happened:** `scripts/make_paper_sheet.py` drew 30 held-out pairs for a
+blinded sitting. Checked before handing it over: **4 of the 30 rows are pairs
+Alex has already judged** in the four reassembly sittings, and **16 of 30 are
+in records whose page images he has already looked at.**
+
+Row `pair-03` is 1493399-0 p41+p42. He judged that exact pair "yes" on
+2026-09-05. The frozen mechanism confirms it. Had he recognised it, a
+remembered answer would have been recorded as an independent confirmation of
+the thing it was meant to test.
+
+**Where the reasoning went wrong, and it is a distinction worth keeping.** The
+frame excluded three records — the ones whose *marks* I had inspected — on the
+argument that a record used to develop the identity rules tells the paper
+matcher nothing, because knowing an operator name repeats says nothing about a
+punch hole. **That argument is correct about the rules and irrelevant to the
+human.** Alex did not read identity fields in those sittings. He looked at
+photographs of the paper, which is the same evidence this sitting asks him to
+judge, and he wrote down a verdict for each.
+
+The contamination vector is his memory, not the rules. I reasoned about which
+records had informed the *code* and never asked which records had informed the
+*judge*.
+
+**Measured cost of fixing it:** 54 likely-true pairs exist corpus-wide; 23 are
+in records he has never seen; at the measured 72% scoreable rate about 17
+survive screening. The pre-registered floor is 10 and the rule needs a
+denominator of 8, so the stricter frame still clears both.
+
+**Fix:** the held-out frame excludes every record appearing in any verification
+sheet, plus every record whose pages were displayed in conversation. The
+exclusion list is data, derived from the sheets themselves rather than
+remembered, so it cannot drift.
+
+**What remains:** exclusion is by record, not by page, which is stricter than
+strictly necessary and deliberately so. And it cannot cover pages Alex has seen
+that left no written trace; the list is built from the four sheets and from
+records named in conversation, and if there are others they are not recoverable.
+
+**Pin:** tests/tier2/test_paper_sheet.py::test_the_sitting_excludes_records_alex_has_seen
