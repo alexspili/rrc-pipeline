@@ -75,3 +75,49 @@ def test_completion_reports_clear_the_corpus_sufficiency_floor():
     assert counts.get("G-1", 0) + counts.get("W-2", 0) > 100, (
         "legible completion-report headers collapsed; the corpus may have "
         "changed or the OCR scan may be broken")
+
+
+# ------------ DEFECTS #60: a section heading and a form class must agree
+
+#: Read off the form design and measured on 55 pages with no crossover: a G-1
+#: carries Sections I and II on its face and Section III on the back; a W-2
+#: carries Section I on the face and Section II on the back.
+SECTION_FAMILY = {"sec_ii": "w2", "sec_iii": "g1"}
+
+
+def test_a_section_heading_and_a_form_class_must_not_contradict():
+    """Alex asked whether a W-2 back page ever starts with Section III. It
+    does not, in 31 pages. The classifier nonetheless called 28 of the 31
+    Section III pages a W-2, contradicting its own `part` field.
+
+    This pins the relationship, not the census file, so it holds for any run.
+    """
+    import json
+    census = ROOT / "data" / "census" / "vision_1000.jsonl"
+    if not census.exists():
+        pytest.skip("census absent; data/ is git-ignored (CLAUDE.md rule 3)")
+
+    contradictions = []
+    for line in census.open():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        expected = SECTION_FAMILY.get(row.get("part"))
+        if expected and row.get("form_class") in ("g1", "w2"):
+            if row["form_class"] != expected:
+                contradictions.append(
+                    (row["page_id"], row["part"], row["form_class"]))
+
+    # The census on disk was produced before this was understood, so the
+    # contradictions are expected to be there. What is pinned is the count, so
+    # that a re-run which does not improve it cannot pass unnoticed.
+    assert len(contradictions) == 31, (
+        f"{len(contradictions)} contradictions, expected the 31 recorded in "
+        f"DEFECTS #60; a re-classification should reduce this, and a change "
+        f"in either direction wants explaining")
+    third = [c for c in contradictions if c[1] == "sec_iii"]
+    assert len(third) == 28, "28 Section III pages were called W-2"
+
+
+def test_the_section_families_are_the_ones_measured():
+    assert SECTION_FAMILY == {"sec_ii": "w2", "sec_iii": "g1"}

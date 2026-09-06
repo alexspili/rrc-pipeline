@@ -2872,3 +2872,65 @@ development-only and a held-out check is cheap and not yet done.
 is proposed separately and not done here.
 
 **Pin:** tests/tier1/test_reassemble.py::test_the_location_box_number_names_the_form_family
+
+---
+
+## #60 — 2026-09-06 — The classifier reads the section heading and then contradicts it
+
+**Found by Alex asking a question I had not thought to ask.** Looking at
+`1494037-0 p9`, which the census calls a W-2, he said: the first thing on the
+page is "Section III" — have we ever seen a W-2 back page starting with
+Section III?
+
+**No. Not once.** Measured across every back page the identity reader has read,
+with the family taken from the printed field numbers (DEFECTS #59), which is an
+independent signal from a different model call reading a different thing:
+
+| Census `part` | field numbers say G-1 | say W-2 |
+|---|---|---|
+| `sec_ii` | 0 | **25** |
+| `sec_iii` | **30** | 0 |
+| `continuation` | 6 | 23 |
+
+**Section III is a G-1. Section II is a W-2. Fifty-five pages, no crossover.**
+That is the form design: a G-1 carries Sections I and II on its face and
+Section III on the back; a W-2 carries Section I on the face and Section II on
+the back.
+
+**So the classifier's own output contradicts itself, and often.** It reads the
+section heading off the page and records it in `part`. Then it assigns a
+`form_class` that the heading rules out:
+
+| | pages |
+|---|---|
+| `sec_ii` called `w2` — consistent | 31 |
+| `sec_ii` called `g1` — **contradicts** | 3 |
+| `sec_iii` called `g1` — consistent | 3 |
+| `sec_iii` called `w2` — **contradicts** | **28** |
+| **self-contradictory** | **31 of 65** |
+
+Nearly half, and overwhelmingly in one direction: 28 of the 31 Section III
+pages were called W-2. W-2 is the commoner form in this corpus, and a back page
+usually prints no form number, so the classifier appears to fall back on the
+base rate while its own `part` field already held the answer.
+
+**Validated against Alex's judgements.** On the 27 back pages whose family is
+derivable from a pair he judged one document, the section heading alone is
+right 10 times, **wrong 0 times**, and abstains 17 (the page was called
+`continuation`, which is genuinely mixed). The field-number rule on the same 27
+is right 24, wrong 0, abstains 3. Two independent signals, neither ever wrong,
+and they never disagree with each other.
+
+**Why this matters beyond tidiness.** `form_class` on back pages is what
+DEFECTS #44's open hole needs and what DEFECTS #37 already established could
+not be trusted. The information to fix it was inside the classifier's own
+output the whole time.
+
+**What remains.** Reach differs sharply: 65 corpus pages carry a `sec_ii` or
+`sec_iii` label, against 238 called `continuation`, where the heading says
+nothing and only the field numbers speak. Neither signal covers a page that
+cites no numbered box and carries no section heading. And all of this is
+development data — 27 pages of derived truth, from face labels that are
+themselves 94% precise for G-1 and never established for W-2.
+
+**Pin:** tests/tier2/test_taxonomy_coverage.py::test_a_section_heading_and_a_form_class_must_not_contradict
