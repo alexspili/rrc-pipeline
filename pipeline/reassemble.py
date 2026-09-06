@@ -80,6 +80,36 @@ FACE_BOXES = ("lease name", "operator's name", "well no", "well number",
 BACK_BOXES = ("notice of intention", "location of well", "location of the well",
               "total depth", "casing record", "data on well completion")
 
+#: The section heading names the form family, and it is the form design rather
+#: than a correlation: a G-1 carries Sections I and II on its face and Section
+#: III on the back; a W-2 carries Section I on the face and Section II on the
+#: back. Measured across 55 read pages with **no crossover** (DEFECTS #60).
+#:
+#: Alex found this by asking whether a W-2 back page ever starts with Section
+#: III. It does not. The classifier had been reading the heading correctly into
+#: `part` and then contradicting it in `form_class` on 31 of 65 such pages.
+SECTION_FAMILY = {"sec_ii": "w2", "sec_iii": "g1"}
+
+#: The printed field number on a back page also names the family. G-1 numbers
+#: Notice of Intention 19 and Location of Well 24; W-2 numbers them 26 and
+#: 31 or 32, the 31/32 split being the revision difference inside W-2
+#: (DEFECTS #59, which corrects a claim this repo asserted in seven places).
+#:
+#: **Total Depth is deliberately absent.** Ten of the eleven field numbers
+#: found outside the known sets across 528 read pages were Total Depth boxes,
+#: because many other forms carry one. Dropping it costs no coverage on any
+#: page measured.
+BACK_BOX_FAMILY = {("notice", 19): "g1", ("notice", 26): "w2",
+                   ("location", 24): "g1", ("location", 31): "w2",
+                   ("location", 32): "w2"}
+
+_BACK_BOX_KEYS = (("notice of intention", "notice"),
+                  ("location of well", "location"),
+                  ("location of the well", "location"))
+
+_LEADING_NUMBER = re.compile(r"^\s*(\d{1,2})\s*[.\s]")
+
+
 #: Things an operator writes to mean "there is no value here". A page that
 #: declines to answer is silent, not in disagreement, and letting it
 #: contradict lets it veto a true pairing (DEFECTS #39). Declared and listed:
@@ -202,6 +232,7 @@ class Document:
 class Unattached:
     page: PageRecord
     #: no_face | below_threshold | tie | contradicted | not_a_candidate
+    #: | different_form
     #:
     #: `not_a_candidate` is the module declining to have an opinion: the page
     #: is neither a face nor something that could be a child, so no rule here
@@ -209,6 +240,64 @@ class Unattached:
     #: count without leaving a trace (DEFECTS #49). They are almost all the
     #: printed instruction backs of forms.
     reason: str
+
+
+def family_of(record) -> str | None:
+    """Which form family this page belongs to, or None.
+
+    Three sources, in order of how directly they read the paper:
+
+      the section heading the classifier recorded in `part`
+      the printed field number the reader cited in `sources`
+      for a face, the `form_class` the classifier assigned
+
+    A face prints its form number in the corner, which is what the classifier
+    reads and where it was measured at 94% precision for G-1. A back page
+    usually prints no form number at all, which is why `form_class` is
+    untrustworthy there (DEFECTS #37) and why the first two exist.
+
+    **Abstains rather than guessing**, and abstains when the two back-page
+    signals disagree. That has never been observed in 55 pages, and if it
+    happens the honest answer is that we do not know.
+    """
+    heading = SECTION_FAMILY.get(record.part)
+
+    votes = set()
+    for label in (record.sources or {}).values():
+        if not label:
+            continue
+        match = _LEADING_NUMBER.match(str(label))
+        if not match:
+            continue
+        low = str(label).casefold()
+        for needle, box in _BACK_BOX_KEYS:
+            if needle in low:
+                family = BACK_BOX_FAMILY.get((box, int(match.group(1))))
+                if family:
+                    votes.add(family)
+                break
+    numbered = votes.pop() if len(votes) == 1 else None
+
+    if heading and numbered and heading != numbered:
+        return None
+    if heading or numbered:
+        return heading or numbered
+    return record.form_class if record.part == "face" else None
+
+
+def families_conflict(parent, child) -> bool:
+    """Two pages of different forms are not one document.
+
+    The check DEFECTS #44 left open, and could not take before, because it was
+    keyed to a `form_class` that is wrong on back pages: on the judged data
+    that version would have deleted 7 correct attachments to remove 9 wrong.
+    Read from the paper instead it keeps 6 of the 7 and removes 5 of the 9.
+
+    Abstention cuts one way only. Not knowing a page's family is never
+    evidence that it belongs somewhere else.
+    """
+    one, two = family_of(parent), family_of(child)
+    return bool(one and two and one != two)
 
 
 def looks_like_a_back_page(sources) -> bool:
@@ -387,9 +476,12 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS, confirms=None):
         pool = [f for f in pool if may_pair(f, candidate)]
         if not pool:
             return "no_face"
-        eligible, contradicted_any = [], False
+        eligible, contradicted_any, different_form = [], False, False
         for face in pool:
             if not may_pair(face, candidate):
+                continue
+            if families_conflict(face, candidate):
+                different_form = True
                 continue
             agreements, contradicted = score(candidate, face)
             if contradicted:
@@ -399,7 +491,9 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS, confirms=None):
             if confirmed or agreements >= min_agreements:
                 eligible.append(((1 if confirmed else 0, agreements), face))
         if not eligible:
-            return "contradicted" if contradicted_any else "below_threshold"
+            if contradicted_any:
+                return "contradicted"
+            return "different_form" if different_form else "below_threshold"
         # Paper first, then field agreement: physical evidence about this
         # sheet outranks agreement about this well.
         best = max(a for a, _ in eligible)

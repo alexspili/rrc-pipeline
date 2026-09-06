@@ -745,3 +745,100 @@ def test_the_location_box_number_names_the_form_family():
     w2 = {"notice": {26}, "location": {31, 32}, "depth": {35, 36}}
     for box in g1:
         assert not (g1[box] & w2[box]), box
+
+
+# --------------- the form family of a back page, shipped 2026-09-06
+
+def back(number, part=None, sources=None, form_class="w2", **identity):
+    """Same record and file as `page`, so the two can be grouped together."""
+    return ra.PageRecord(record_id="1495193", file_index=0, page=number,
+                         form_class=form_class, part=part,
+                         identity=identity, sources=sources or {})
+
+
+def test_section_three_is_a_g1_and_section_two_is_a_w2():
+    """The form design, measured on 55 pages with no crossover: a G-1 carries
+    Sections I and II on its face and Section III on the back; a W-2 carries
+    Section I on the face and Section II on the back. Alex asked whether a W-2
+    back page ever starts with Section III. It does not (DEFECTS #60).
+    """
+    assert ra.family_of(back(9, part="sec_iii", form_class="w2")) == "g1"
+    assert ra.family_of(back(9, part="sec_ii", form_class="g1")) == "w2"
+
+
+def test_the_printed_field_number_names_the_family():
+    """G-1 numbers Notice of Intention 19 and Location of Well 24; W-2 numbers
+    them 26 and 31 or 32 (DEFECTS #59).
+    """
+    g1 = {"operator_name": "19. Notice of Intention to Drill this Well was",
+          "lease_name": "24. Location of well, relative to nearest lease"}
+    w2 = {"operator_name": "26. Notice of Intention to Drill this Well was",
+          "lease_name": "32. Location of Well, Relative to Lease Boundaries"}
+    assert ra.family_of(back(9, part="continuation", sources=g1)) == "g1"
+    assert ra.family_of(back(9, part="continuation", sources=w2)) == "w2"
+
+
+def test_an_unfamiliar_field_number_abstains_rather_than_guessing():
+    """Swept across 528 read pages: four back pages carry numbering neither set
+    knows, such as a Location of Well numbered 25. The rule must decline, not
+    reach for the nearest.
+    """
+    odd = {"lease_name": "25. Location of Well, Relative to Nearest Lease"}
+    assert ra.family_of(back(9, part="continuation", sources=odd)) is None
+
+
+def test_the_total_depth_box_is_not_used():
+    """It is the unreliable one: ten of the eleven numbers outside the known
+    sets were Total Depth boxes, because many other forms carry one. Dropping
+    it costs no coverage at all on the pages measured.
+    """
+    depth = {"total_depth": "28. Total Depth"}
+    assert ra.family_of(back(9, part="continuation", sources=depth)) is None
+
+
+def test_a_page_with_neither_signal_has_no_family():
+    assert ra.family_of(back(9, part="continuation")) is None
+    assert ra.family_of(back(9, part="back_instructions")) is None
+
+
+def test_a_face_falls_back_to_the_class_the_classifier_gave_it():
+    """A face prints its form number in the corner, which is what the
+    classifier reads and where it is 94% precise for G-1.
+    """
+    assert ra.family_of(page(7, "face", form_class="g1", **SUN)) == "g1"
+
+
+def test_the_two_signals_disagreeing_abstains():
+    """Never observed in 55 pages. If it ever happens, the honest answer is
+    that we do not know, not that one of them wins."""
+    w2_boxes = {"operator_name": "26. Notice of Intention to Drill this Well"}
+    assert ra.family_of(back(9, part="sec_iii", sources=w2_boxes)) is None
+
+
+def test_two_different_forms_are_not_one_document():
+    """The check DEFECTS #44 left open, now that a back page's family can be
+    read. On the judged data it keeps 6 of 7 correct cross-family attachments
+    and removes 5 of 9 wrong ones, where the classifier's own label would have
+    deleted all 16.
+    """
+    face = page(7, "face", form_class="g1", **SUN)
+    section = back(8, part="sec_ii", sources=BACK_BOXES,
+                   form_class="w2", **SUN)
+    documents, unattached = ra.group([face, section])
+    assert all(len(d.pages) == 1 for d in documents)
+    assert any(u.reason == "different_form" for u in unattached)
+
+
+def test_an_unknown_family_never_refuses_a_pair():
+    """Abstention cuts one way only: not knowing a page's family is not
+    evidence that it belongs elsewhere.
+    """
+    # Back-page boxes with no printed number, on a page whose heading says
+    # nothing either: both signals are silent, so the family is unknown.
+    unnumbered = {"operator_name": "Notice of Intention to Drill this Well",
+                  "lease_name": "Location of well, relative to lease bounds"}
+    face = page(7, "face", form_class="g1", **SUN)
+    section = back(8, part="continuation", sources=unnumbered, **SUN)
+    assert ra.family_of(section) is None
+    documents, _ = ra.group([face, section])
+    assert [p.page for p in documents[0].pages] == [7, 8]
