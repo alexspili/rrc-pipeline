@@ -2414,3 +2414,41 @@ direction signal is real and would not have been sufficient either.
 **Rule that comes out of this:** a pre-registered threshold is checked against
 the maximum attainable score before it is written down, in the same pass that
 checks the escape can fire. Both halves or neither.
+
+---
+
+## #52 — 2026-09-05 — Three committed scripts import dependencies nobody declared
+
+**What happened:** `scripts/probe_sheet.py`, `scripts/score_outline.py` and
+`scripts/score_marks.py` are committed and all three `import numpy`; the last
+also imports `scipy.ndimage`. **Neither package is in `requirements.txt`, and
+`git log -S numpy -- requirements.txt` shows neither ever was.**
+
+They run here because both are installed in `.venv` (numpy 2.5.2, scipy
+1.18.1), left over from the punch-hole work of 2026-09-04. That work was
+abandoned and `docs/modules/reassemble.md` records the tidy-up: "`numpy` and
+`scipy` were added for this and then removed with it, rather than left in
+`requirements.txt` for code that no longer exists." The removal was right at
+the time. The scripts written on 2026-09-05 then re-introduced the imports and
+did not re-introduce the declaration.
+
+**Why it matters.** CLAUDE.md's Environment section says "No new deps without
+saying so". A checkout on a clean machine installs from `requirements.txt` and
+three committed scripts fail on import. Worse, nothing says so: the failure is
+an `ImportError` at run time, in scripts that produce measurements, so the
+first symptom is a measurement that did not happen.
+
+**Found by:** an inventory of repo conventions taken while planning the paper
+module, not by any failure. It has been latent since the scripts were
+committed earlier today.
+
+**Fix:** both packages declared in `requirements.txt` with the real reason, and
+a test that walks every third-party import in `pipeline/` and `scripts/` and
+fails if one is not declared. A rule enforced by a test rather than by memory,
+which is the only kind that survives (CLAUDE.md rule 6).
+
+**What remains:** the test checks declaration, not version compatibility. It
+would not have caught numpy 2.0 removing `ndarray.ptp()`, which cost a whole
+cycle on 2026-09-04 because an `except Exception` swallowed it.
+
+**Pin:** tests/tier2/test_requirements.py::test_every_third_party_import_is_declared

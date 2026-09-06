@@ -3,6 +3,16 @@ requests>=2.31          # fetch.py
 pillow>=10              # page image downscale (bilevel -> grayscale, area filter)
 anthropic>=1.0          # page classification (Haiku), extraction (Sonnet)
 
+# Matching two pages by the marks on the paper: pipeline/paper.py and the
+# probes under scripts/. Outline profiles, correlation across a fixed
+# transform, and connected-component labelling are all array work, and hand
+# rolling them is a great deal of unreviewable code inside a module whose only
+# output is a similarity score that nobody can eyeball. Added, then removed
+# with an abandoned experiment, then re-imported without being re-declared;
+# tests/tier2/test_requirements.py now stops that recurring (DEFECTS #52).
+numpy>=2.0              # array maths for pipeline/paper.py
+scipy>=1.11             # ndimage: connected components, morphological opening
+
 # Test runner
 pytest>=8
 
