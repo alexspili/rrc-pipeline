@@ -861,3 +861,44 @@ several times against the same 26 verdicts that would have to grade it. A rim
 matcher built now and scored on these pairs would be fitted to them. All 39
 corpus attachments are judged, so a real number needs pairs that do not exist
 yet.
+
+## The cross-form attachments are mislabelled pages, not wrong pairings
+## Measured 2026-09-06
+
+DEFECTS #44 left one hole open deliberately: a page the classifier calls a
+different form family may still attach. The rule that would close it — two
+pages are one document only when they are the same form family — was refused
+because it breaks this module's founding pin, record 1495193 pages 7 and 8,
+which the classifier calls `w2` and `g1` and which **are** one document.
+
+All 39 corpus attachments have now been judged, so the hole can be sized.
+
+| | |
+|---|---|
+| Attachments where child and face share a form family | 23 |
+| Attachments **crossing** form families | **16** |
+| of those 16, judged correct | **7** |
+| of those 16, judged wrong | 9 |
+
+**So a form-family rule would delete 7 correct attachments to remove 9 wrong
+ones.** That is the measurement the refusal was waiting for, and it confirms
+the refusal.
+
+**The label is what is wrong, not the pairing.** Four of the seven correct
+cross-family attachments are pairs confirmed from the paper itself — 1495414
+p6+p7 and 1774674 p2+p6 among them — so the two pages are physically one sheet
+and cannot be two different forms. The classifier is wrong about one of them
+in every such case.
+
+That is consistent with what classification already measured: G-1 face
+precision 94.0%, W-2 face precision 57.4% with an interval that still contains
+its own before-figure, so W-2 face precision was never established at all. And
+a back page frequently prints no form number anywhere, leaving the classifier
+nothing to read.
+
+`part` is no better a guide here: of the ten cross-family children the
+classifier calls a `face`, four are correct attachments and six are wrong.
+
+**What follows.** The hole stays open, now for a measured reason rather than a
+worked example. Closing it needs a form label that is right about back pages,
+which is a classification problem and not a reassembly one.
