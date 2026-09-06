@@ -151,7 +151,7 @@ class Value:
     #: values came from, which is what DEFECTS #43 turned on.
     #:
     #: The label text, never the field number on its own: the same box is
-    #: numbered 24, 31 and 32 on three revisions of the same form.
+    #: numbered 24 on a G-1 and 31 or 32 on a W-2 (DEFECTS #59).
     #:
     #: Defaults to None so every value already on disk keeps its meaning.
     #: Nothing recorded before this field existed carried a label.

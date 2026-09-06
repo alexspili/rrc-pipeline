@@ -694,7 +694,7 @@ What it buys is two things the extraction output could not do before:
    turned on, and it is the signal the reassembly module already uses.
 
 Keyed to the label text, never to the field number alone: the same box is
-numbered 24, 31 and 32 on three revisions of the same form.
+numbered 24 on a G-1 and 31 or 32 on a W-2 (DEFECTS #59).
 
 The prompt change moved the extraction prompt hash from `0a87da7d7aa17e1c` to
 `040b9aee458e80f0`, which invalidates the 20-document smoke cache by

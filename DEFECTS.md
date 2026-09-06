@@ -2812,3 +2812,63 @@ a bar that measured the wrong thing.
 existing system is stated against that system's current output, not against
 perfection. "Half of true pairs" and "more correct attachments than today"
 are different questions and only the second one decides anything.
+
+---
+
+## #59 — 2026-09-06 — "24, 31 and 32 on three revisions" is wrong, and it hid a working signal
+
+**The claim, asserted in seven places** across `pipeline/reassemble.py` (three
+times), `pipeline/extract.py`, `docs/modules/extract.md`, `DEFECTS.md` and a
+tier-1 test docstring:
+
+> the same printed box is numbered 24, 31 and 32 on three revisions of this
+> form, so a number-keyed rule is silently wrong on two of them
+
+**It is not three revisions of one form. It is two form families.** Measured on
+27 back pages whose true family is derivable from a pair Alex judged one
+document:
+
+| Printed box | G-1 | W-2 | overlap |
+|---|---|---|---|
+| Notice of Intention to Drill | 19 | 26 | none |
+| Location of Well relative to lease boundaries | 24 | 31, 32 | none |
+| Total Depth | 28 | 35, 36 | none |
+
+Six G-1 back pages, every one using 24. Eighteen W-2 back pages, using 31 or
+32. **Zero overlap on any of the three boxes.** The revision difference is real
+and it sits *inside* W-2, between 31 and 32; the 24 is a different form
+altogether.
+
+**What the mistake cost.** The claim was the stated justification for matching
+back-page boxes as text and throwing the number away. Matching as text is still
+correct and nothing about the existing rule was wrong. But the number carries
+**which form family this page belongs to**, and that is precisely the thing the
+classifier is worst at and the thing DEFECTS #44's open hole needs. We had the
+signal on disk since the identity run and discarded it on a false premise.
+
+**Measured against the classifier on the same 27 pages:**
+
+| | correct | wrong | abstained |
+|---|---|---|---|
+| Census `form_class` (Haiku, vision) | 20 (74%) | 7 | 0 |
+| Field number off the printed box | **24 (89%)** | **0** | 3 |
+
+Strictly better, and it never asserts a wrong family — it abstains, which is
+the discipline the rest of this pipeline runs on.
+
+**How the error was made.** The three numbers were collected from real pages
+across the corpus and I inferred "three revisions" without checking what form
+each page was. It is the same shape as DEFECTS #21 and #50: a fact assembled
+from real observations, generalised in the wrong direction, and then repeated
+until repetition made it look established.
+
+**What remains.** 27 pages, all development, and the "truth" is derived from
+face labels which are themselves 94% precise for G-1 and never established for
+W-2. The rule is a lookup off printed form numbers rather than a fitted model,
+so it generalises by construction, but the *measurement* of it is
+development-only and a held-out check is cheap and not yet done.
+
+**Fix:** the claim is corrected everywhere it appears. Shipping the family rule
+is proposed separately and not done here.
+
+**Pin:** tests/tier1/test_reassemble.py::test_the_location_box_number_names_the_form_family

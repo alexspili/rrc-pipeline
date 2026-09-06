@@ -437,7 +437,7 @@ def test_a_face_with_no_recorded_sources_may_not_become_a_child():
 
 
 def test_the_face_test_reads_the_label_text_not_its_number():
-    """The same printed box is 24, 31 and 32 on three revisions, so a
+    """The same printed box is 24 on a G-1 and 31 or 32 on a W-2, so a
     number-keyed rule is silently wrong on two of them."""
     for label in ("24. Location of well, relative to nearest lease boundary",
                   "31. Location of Well, Relative to Nearest Lease Boundaries",
@@ -727,3 +727,21 @@ def test_without_a_confirmer_nothing_changes():
     section = page(8, "sec_ii", sources=BACK_BOXES, **SUN)
     assert (len(ra.group([face, section])[0])
             == len(ra.group([face, section], confirms=None)[0]))
+
+
+def test_the_location_box_number_names_the_form_family():
+    """DEFECTS #59. This repo asserted in seven places that the location box is
+    "24, 31 and 32 on three revisions of this form". It is not three revisions.
+
+    Measured on 27 back pages whose family is derivable from a pair Alex judged
+    one document: G-1 uses 19 / 24 / 28 and W-2 uses 26 / 31 or 32 / 35 or 36,
+    with no overlap on any of the three boxes. The revision difference is real
+    and sits INSIDE W-2, between 31 and 32.
+
+    Kept as a test rather than a comment because the false version survived
+    long enough to be repeated into six other files.
+    """
+    g1 = {"notice": {19}, "location": {24}, "depth": {28}}
+    w2 = {"notice": {26}, "location": {31, 32}, "depth": {35, 36}}
+    for box in g1:
+        assert not (g1[box] & w2[box]), box

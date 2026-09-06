@@ -41,7 +41,7 @@ Four rules are enforced here rather than asked for.
   document, four times out of four in the verification sitting (DEFECTS #44).
   The reader's own report of which printed box each value came from is what
   separates the two cases, and it is read as text: the same box is numbered
-  24, 31 and 32 on three revisions of this form.
+  24 on a G-1 and 31 or 32 on a W-2 (DEFECTS #59).
 """
 
 from __future__ import annotations
@@ -75,7 +75,8 @@ FACE_BOXES = ("lease name", "operator's name", "well no", "well number",
 
 #: Printed boxes that only a back or section page carries. A page citing these
 #: is a back page whatever the classifier called it. Matched as text, never by
-#: field number: the location box is 24, 31 and 32 on three revisions.
+#: field number: the location box is 24 on a G-1 and 31 or 32 on a W-2, so a
+#: number-keyed rule would be family-specific (DEFECTS #59).
 BACK_BOXES = ("notice of intention", "location of well", "location of the well",
               "total depth", "casing record", "data on well completion")
 
@@ -214,8 +215,8 @@ def looks_like_a_back_page(sources) -> bool:
     """Do this page's values come out of back-page boxes?
 
     Read as text rather than by field number, because the same printed box is
-    numbered 24, 31 and 32 on three revisions and a number-keyed rule is
-    silently wrong on two of them. A page citing any face box is a face,
+    numbered 24 on a G-1 and 31 or 32 on a W-2, so a number-keyed rule
+    would need to know the family first (DEFECTS #59). A page citing any face box is a face,
     whatever else it cites: the identity block is the thing only a first page
     has.
     """
