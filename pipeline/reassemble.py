@@ -336,7 +336,7 @@ def _rank(page: PageRecord) -> tuple[int, int]:
     return (-richness(page), page.page)
 
 
-def group(pages, min_agreements: int = MIN_AGREEMENTS):
+def group(pages, min_agreements: int = MIN_AGREEMENTS, confirms=None):
     """Group one file's pages into documents, and say what was left over.
 
     Takes the pages of a single file. Mixing files is a caller error and is
@@ -369,7 +369,20 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS):
         for p in pages if not p.is_face and not p.is_candidate]
 
     def place(candidate, pool):
-        """Attach to the one eligible parent, or say why not."""
+        """Attach to the one eligible parent, or say why not.
+
+        Two kinds of evidence, and they do different jobs. Identity fields
+        describe the WELL, and a file holds several filings for one well, so
+        their agreement is guaranteed and can only ever exclude. `confirms`
+        carries evidence about the SHEET — the marks on the paper — which is
+        the only thing that can confirm. Measured 2026-09-06 on 16 pairs Alex
+        judged one sheet: identity attached none of them and the paper
+        confirmed four.
+
+        The identity veto is kept over a confirmation, deliberately (his
+        ruling of 2026-09-05): a contradiction means the reader got a field
+        wrong on one of the pages, and refusing is the safe reading.
+        """
         pool = [f for f in pool if may_pair(f, candidate)]
         if not pool:
             return "no_face"
@@ -381,10 +394,13 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS):
             if contradicted:
                 contradicted_any = True
                 continue
-            if agreements >= min_agreements:
-                eligible.append((agreements, face))
+            confirmed = bool(confirms and confirms(face, candidate))
+            if confirmed or agreements >= min_agreements:
+                eligible.append(((1 if confirmed else 0, agreements), face))
         if not eligible:
             return "contradicted" if contradicted_any else "below_threshold"
+        # Paper first, then field agreement: physical evidence about this
+        # sheet outranks agreement about this well.
         best = max(a for a, _ in eligible)
         winners = [f for a, f in eligible if a == best]
         if len(winners) > 1:

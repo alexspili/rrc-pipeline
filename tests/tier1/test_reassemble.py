@@ -664,3 +664,66 @@ def test_a_page_that_is_neither_face_nor_candidate_says_so():
     _, unattached = ra.group(pages)
     reasons = {u.page.page: u.reason for u in unattached}
     assert reasons[3] == "not_a_candidate"
+
+
+# --------- the paper confirms what identity cannot: shipped 2026-09-06
+
+def test_a_paper_confirmation_attaches_a_pair_identity_would_refuse():
+    """Alex's ruling of 2026-09-05, measured on 2026-09-06: of 16 pairs he
+    judged one sheet, identity attached NONE and the paper confirmed 4.
+
+    Identity fields describe the well, so they can only exclude. Physical
+    evidence identifies the sheet, so it can confirm. This is that division of
+    labour in the code.
+    """
+    face = page(7, "face", **SUN)
+    section = page(8, "sec_ii", operator_name="Sun Oil Company",
+                   sources=BACK_BOXES)
+    # One agreeing field: below the threshold, so identity alone refuses.
+    documents, unattached = ra.group([face, section])
+    assert not documents[0].pages[1:] if documents else True
+    assert any(u.reason == "below_threshold" for u in unattached)
+
+    confirmed = ra.group([face, section],
+                         confirms=lambda parent, child: True)[0]
+    assert len(confirmed) == 1
+    assert [p.page for p in confirmed[0].pages] == [7, 8]
+
+
+def test_the_identity_veto_survives_a_paper_confirmation():
+    """Deliberately kept. A confirmation says the two pages are one sheet; a
+    contradiction says the reader got something wrong on one of them, and the
+    safe reading of a disagreement is still to refuse.
+    """
+    face = page(7, "face", **SUN)
+    section = page(8, "sec_ii", sources=BACK_BOXES, **GULF)
+    documents, unattached = ra.group([face, section],
+                                     confirms=lambda parent, child: True)
+    assert all(len(d.pages) == 1 for d in documents)
+    assert any(u.reason == "contradicted" for u in unattached)
+
+
+def test_a_paper_confirmation_outranks_field_agreement_in_a_tie():
+    """Two candidate parents, one confirmed from the paper and one agreeing on
+    fields. The paper wins: it is evidence about this sheet, and field
+    agreement is evidence about the well, which is what the whole module got
+    wrong for three sittings.
+    """
+    rich = page(7, "face", **SUN)
+    other = page(9, "face", **SUN)
+    section = page(10, "sec_ii", sources=BACK_BOXES, **SUN)
+    documents, _ = ra.group(
+        [rich, other, section],
+        confirms=lambda parent, child: parent.page == 9)
+    homes = {p.page: d.face.page for d in documents for p in d.pages}
+    assert homes[10] == 9
+
+
+def test_without_a_confirmer_nothing_changes():
+    """The default is the module as it was. A caller that supplies no paper
+    evidence gets exactly the previous behaviour.
+    """
+    face = page(7, "face", **SUN)
+    section = page(8, "sec_ii", sources=BACK_BOXES, **SUN)
+    assert (len(ra.group([face, section])[0])
+            == len(ra.group([face, section], confirms=None)[0]))

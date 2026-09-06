@@ -100,15 +100,38 @@ def test_part_b_failed_the_pre_registered_bar():
     assert 2 * len(confirmed) < len(same), "this sitting did not pass"
 
 
-def test_the_mechanism_does_not_ship():
-    """The conjunction. Part A passed and Part B did not, so it does not ship,
-    and no part of the module may change reassembly's output.
+def test_the_pre_registered_rule_failed_and_alex_shipped_it_anyway():
+    """Both facts, and they are not in tension.
+
+    The conjunction failed: Part A passed, Part B did not. That is recorded
+    above and is not rewritten.
+
+    Alex then shipped it, on 2026-09-06, on a quantity the bar never measured.
+    "At least half of the pairs judged same-sheet" compares the mechanism to a
+    perfect one; what decides is whether it adds correct attachments the
+    current system misses. Of the 16 same-sheet pairs, reassembly attaches
+    NONE and the paper confirms four, so all four are additions (DEFECTS #58).
+
+    This test exists so that neither half of that can be quietly dropped: not
+    the failure, and not the reason it shipped regardless.
     """
+    sheet, sealed = rows(), verdicts()
+    same = [k for k, v in sealed.items() if call(sheet[k]) == "same-sheet"]
+    confirmed = [k for k in same if sealed[k]["confirmed"]]
+    assert 2 * len(confirmed) < len(same), "the bar failed"
+    assert len(confirmed) == 4, "and four correct additions is why it shipped"
+
+
+def test_reassembly_takes_the_confirmer_without_depending_on_it():
+    """Shipped as a caller-supplied callable, so `pipeline/reassemble.py` stays
+    pure and tier-1 testable and the default behaviour is unchanged.
+    """
+    import inspect
+
     from pipeline import reassemble
+    assert "confirms" in inspect.signature(reassemble.group).parameters
     source = Path(reassemble.__file__).read_text()
-    assert "paper" not in source.split("MIN_AGREEMENTS")[0].lower() or True
-    assert "import paper" not in source
-    assert "papermatch" not in source
+    assert "import paper" not in source and "papermatch" not in source
 
 
 def test_the_human_judged_on_a_channel_the_module_cannot_read():
