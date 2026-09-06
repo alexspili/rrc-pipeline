@@ -397,3 +397,83 @@ first fix for it was defeated by one space in the OCR. 16 is open.
    ground-truth documents turned out to be sections without their face.
    Design, evidence, worked cases and tier-1 test plan:
    docs/modules/reassemble.md.
+
+---
+
+# Days 5 and 6, 2026-09-05 and 06: reassembly, and reading the paper
+
+## Reassembly is built, measured, and its limits are known
+
+Four judging sittings. **All 39 corpus attachments have been judged**, so there
+is no held-out pair left for any rule keyed to identity fields.
+
+The finding that shaped everything after it: **identity fields can only
+exclude.** They describe the *well*, and a file holds several filings for one
+well, so their agreement is guaranteed rather than informative. Held out, the
+identity-only module was 65% clean, 13 of 20 documents.
+
+Current state: 224 documents, 35 attachments, **25 of 32 multi-page documents
+clean**. The six wrong attachments that remain are all same-form, same-well,
+different-filing. No rule about forms or fields can reach them.
+
+## The paper confirms what identity cannot
+
+`pipeline/paper.py` (pure) and `pipeline/papermatch.py` (I/O). Two pages are
+one SHEET when at least two solid marks on them — punch rims, blots, torn
+corners — agree under a flip the paper can physically perform.
+
+- **The statistic is the margin**, best legitimate flip minus best
+  orientation-preserving control, never the raw correlation. A stack punched in
+  one stroke puts three unrelated sheets at 0.53-0.57 raw.
+- **The transform is predicted, never searched.** Searching rotations lifts
+  every control to +0.42 and +0.49.
+- **Zero false confirmations in 850 negatives** across development, held-out
+  and human-labelled sets. Below 0.35% at 95%.
+- It **failed its pre-registered recall bar** (4 of 16) and shipped anyway,
+  because the bar compared it to a perfect mechanism instead of to reassembly,
+  which attaches none of those 16. Both facts are asserted in tests/tier3.
+
+**Why recall is low, and it is the next piece of work:** 15 of Alex's 16
+same-sheet calls rested on **staple marks**, which sit below the mark-area
+floor. The floor cannot be lowered — bold printed glyphs are the same size and
+pass every other test, which is how an operator's address once got into a
+"redacted" fixture.
+
+## A back page's form family can be read off the paper
+
+Two signals, neither ever wrong on the pages with derived truth, never
+disagreeing with each other:
+
+- **The section heading.** A G-1 carries Sections I and II on its face and
+  Section III on the back; a W-2 carries Section I on the face and Section II
+  on the back. No crossover in 55 readings.
+- **The printed field number.** G-1 numbers Notice of Intention 19 and
+  Location of Well 24; W-2 numbers them 26 and 31 or 32. Total Depth is
+  excluded, being carried by many other forms.
+
+This corrected a claim asserted in seven places — "24, 31 and 32 on three
+revisions" — which is two *families*, not three revisions (DEFECTS #59). And it
+closed DEFECTS #44's last hole: attachments 39 to 35, wrong ones 12 to 6, one
+correct lost.
+
+## Extraction is ready to run and has not been run
+
+`scripts/run_extraction.py`, batched, **$7.17 for 218 documents**, two modes.
+Gated on nothing now except the decision to spend. `found_in` was added to the
+prompt on 2026-09-05, so the scored 87.4% / 82.5% describes a prompt that no
+longer ships; re-scoring is a separate ~$1.50.
+
+## What the corpus decision now is
+
+**Reopening the corpus is the declared next step**, roughly 110 more records,
+because the staple channel cannot be graded on evidence that is spent. That
+reverses "Corpus status — CLOSED" above, deliberately and for a stated reason.
+
+## Working practice, unchanged and load-bearing
+
+Every measurement pre-registers its rule; three of them failed and are recorded
+as failures rather than rewritten. The most expensive lesson of these two days
+is DEFECTS #51: **a pre-registered bar must be checked for reachability before
+it is written down**, and the mirror, DEFECTS #58: **a bar on a mechanism that
+supplements an existing system is stated against that system's output, not
+against perfection.**

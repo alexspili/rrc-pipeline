@@ -26,32 +26,33 @@ must be defensible line by line in an interview.
 
 ## Current state
 
-- fetch.py works end to end; corpus is CLOSED: 202 records, 249 files,
-  3,689 pages in data/raw (git-ignored), manifest at data/manifest.jsonl.
-- Classifier and census DONE. **115 of 202 records (57%) contain a completion
-  report**, hand-verified 15/15. Corpus sufficient; fetch.py stays closed.
-- Stage-2 labels and the abstention fix DONE 2026-08-31. G-1 face precision
-  64.7% -> **94.0%**, W-2 44.0% -> **57.4%**, whose interval still contains
-  its own before figure so W-2 is not claimed. The failure was an unreadable
-  form number, not a confused layout. Never quote the 83.6% arm accuracy as
-  accuracy on the target classes. All of it, with the caveats that travel
-  with each number: docs/modules/classify.md.
-- Extraction: schema, extractor and validation rules built. Ground truth DONE
-  2026-09-01, 405 rows over 15 documents, keyed blind from page images.
-- Extraction SCORED 2026-09-01: headline (excl. doc 1 per DEFECTS #23)
-  status 87.4%, value 82.5% where both present, reported BY ERA, never
-  blended: 1983 near-perfect, 1966/1975 far worse. `make score`.
-- Provenance boxes MEASURED 2026-09-03: not field locators (hit+near 60.9%
-  vs the pre-registered 90%; 1966 bucket 11.4%). Values grounded, geometry
-  confabulated (DEFECTS #29). **Mechanism decision OPEN** — five candidates
-  measured and recorded, none adopted; a new approach is being tried next
-  and is graded by the same instruments. docs/modules/extract.md → "The
-  mechanism decision is OPEN".
-- Then validation output review -> cross-form disagreement -> eval
-  (`make eval`) -> TypeScript span viewer -> optional Postgres projection.
-- Biggest known gap, unbuilt: page reassembly. Pair in both directions and
-  settle by identity-field agreement, never by position.
-  docs/modules/reassemble.md.
+- fetch.py works end to end. Corpus 202 records, 249 files, 3,689 pages in
+  data/raw (git-ignored), manifest at data/manifest.jsonl. Closed since
+  2026-08-31; **reopening it is the declared next step** for the staple
+  channel, about 110 more records.
+- Classifier and census DONE. 115 of 202 records (57%) hold a completion
+  report. G-1 face precision **94.0%**, W-2 **57.4%** whose interval contains
+  its own before-figure, so W-2 is NOT established. Never quote 83.6% arm
+  accuracy as accuracy on the target classes. Its `form_class` contradicts its
+  own section heading on 31 of the 65 section labels it gave (DEFECTS #60).
+- Extraction built and SCORED 2026-09-01: status **87.4%**, value **82.5%**,
+  reported BY ERA and never blended. Those numbers describe a prompt that no
+  longer ships — `found_in` was added 2026-09-05 — and re-scoring them is an
+  unspent ~$1.50.
+- Provenance CLOSED 2026-09-03: snap, then the widened model band, then page
+  plus raw text, every region source-tagged. 77.3% highlight coverage.
+- Extraction runs **batched**, scripts/run_extraction.py, $7.17 for 218
+  documents. NOT YET RUN. It is the gated spend everything downstream waits
+  behind.
+- Reassembly BUILT and measured across four judging sittings; all 39 corpus
+  attachments are judged. 25 of 32 multi-page documents clean. The six wrong
+  ones left are same-form, same-well, different filing, which no form rule
+  can reach.
+- pipeline/paper.py confirms two pages are ONE SHEET from the marks on it:
+  0 false confirmations in 850 negatives. It failed its pre-registered recall
+  bar and shipped anyway on a measured gain, both facts recorded (DEFECTS
+  #57, #58). `make eval` runs tests/tier3.
+- Next: the staple channel, then the TypeScript span viewer, still unbuilt.
 
 ## Standing rules
 
