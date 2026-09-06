@@ -44,9 +44,27 @@ SAMPLES = 720
 #: unmirrored score from 0.295 to 0.164.
 STRIP = 2
 
-#: Smallest mark worth reading, square inches. Below this a speck of scanner
-#: noise starts to look like evidence.
-MIN_MARK_AREA = 0.008
+#: Smallest mark worth reading, square inches, and the shape it has to have.
+#: Together these are the envelope of physical damage to paper, and their job
+#: is to keep **printing** out (DEFECTS #53).
+#:
+#: The area floor sits where measurement put the gap: individual bold glyphs on
+#: page 6 of 1495414 run 750 to 1,500 px and real marks start at 4,292. It was
+#: 0.008 in² (720 px) and let every bold letter through.
+#:
+#: Area alone cannot do it. An underline joins a text line into one component,
+#: and the operator's address on that page came through at **5,628 px, larger
+#: than either punch hole**. Shape separates them: that line's bounding box is
+#: 465x38, an aspect of 12.2, against 1.3 for the corner blot and 1.1 for the
+#: punch holes. A limit of 3 removes every text line and printed rule on both
+#: pages and keeps every real mark.
+#:
+#: Known cost, recorded rather than discovered later: **staple holes are below
+#: this floor** and this module cannot read them. Bold glyphs are the same size
+#: and pass every other test, so the floor cannot be lowered to recover them.
+#: Staples need their own discriminator and do not have one.
+MIN_MARK_AREA = 0.02
+MAX_ASPECT = 3.0
 
 #: Ink density, filled area over bounding box. A printed form rule is one
 #: enormous hollow shape at 0.03 to 0.12; the 1495414 corner blot is 0.37 on
@@ -226,6 +244,10 @@ def solid_marks(mask, dpi: float = 300.0) -> list[Mark]:
             continue
         fill = area / (box_h * box_w)
         if fill < MIN_FILL:
+            continue
+        # Damage to paper is roughly equant. Printing is not: a text line or a
+        # printed rule runs 12:1 and 180:1 (DEFECTS #53).
+        if max(box_h, box_w) / min(box_h, box_w) > MAX_ASPECT:
             continue
         cy, cx = ndimage.center_of_mass(blob)
         cx, cy = box[1].start + cx, box[0].start + cy

@@ -2452,3 +2452,84 @@ would not have caught numpy 2.0 removing `ndarray.ptp()`, which cost a whole
 cycle on 2026-09-04 because an `except Exception` swallowed it.
 
 **Pin:** tests/tier2/test_requirements.py::test_every_third_party_import_is_declared
+
+---
+
+## #53 — 2026-09-05 — "Redacted by construction" put an address in a fixture
+
+**What happened:** `scripts/make_paper_fixtures.py` builds a tier-2 fixture by
+blanking a page and pasting back only the marks `pipeline/paper.solid_marks`
+detects. Its own docstring says the result is "redacted by construction rather
+than by hand" and prints, on every run, "No form text, no handwriting, no
+names".
+
+I rendered the fixture and looked at it before committing. It contains
+**"Lamar Street, Suit"** — part of the operator's business address — along with
+"RAI AD", "EXAS", "W B", "R m R Log", "NAM", a signature fragment and a dozen
+checkbox squares.
+
+**Why the redaction leaked.** The claim rests entirely on `solid_marks` finding
+paper damage. It does not. It finds any connected component over 0.008 in²
+with an ink density above 0.30, and that admits bold printed glyphs, checkbox
+outlines and — the damaging one — a whole underlined text line, because the
+underline joins the letters into a single component. Measured on page 6 of
+1495414: the address line is **5,628 px, larger than either punch hole at
+4,432 and 4,292 px**. No area threshold can separate them.
+
+Shape can. The address line's bounding box is 465x38, an aspect of **12.2**.
+The corner blot is 197x148, aspect 1.3, and the punch holes are 1.1. A limit
+of 3 removes every text line and printed rule on both pages while keeping every
+real mark.
+
+**Two defects in one, and the second is the worse one.**
+
+The fixture leak is a CLAUDE.md rule 3 near-miss: raw pages are never committed
+because they carry personal and business information, and I was about to commit
+one under a label asserting the opposite. It was caught by looking at the image,
+not by any test, and nothing in the pipeline would have caught it.
+
+The detector fault is larger than the fixture. **`solid_marks` was treating
+printing as paper.** Printing is shared between two pages of the same form
+revision, so it is a false-confirmation channel; the margin statistic happens to
+defend against it, because printing matches under the orientation-preserving
+control rather than under a flip, but that is a defence the module was relying
+on without anyone saying so.
+
+**Fix:** `MAX_ASPECT = 3.0` applied to every mark, and `MIN_MARK_AREA` raised
+from 0.008 to 0.02 in², which is the gap the measurement shows between printed
+glyphs and real marks. The fixture generator asserts the redaction rather than
+claiming it: it refuses to write a fixture whose surviving marks are not all
+within the size and shape envelope of paper damage.
+
+**What remains, and it is a real loss.** Staple holes are small — a few hundred
+pixels — and the new floor excludes them. Individual bold glyphs are the same
+size and pass every other test, so area is the only thing separating the two and
+staples cannot be recovered by loosening it. Staple marks need their own
+discriminator and do not have one yet. Recorded rather than quietly dropped:
+the physical-signal work of 2026-09-05 identified staples as a real channel and
+this module cannot currently read them.
+
+**Resolution: the fixture approach is abandoned, and that is the real lesson.**
+With the aspect limit in place I regenerated and looked again. Page 6 came back
+clean — the torn corner and two punch holes, nothing else. **Page 9 did not.**
+It still carried a printed "rm" at 2,178 px, fill 0.46, comfortably inside the
+envelope, and a handwritten squiggle that may be someone's initials.
+
+The envelope can be tightened again, and something else will get through,
+because **the detector's whole failure mode is mistaking ink for paper.**
+Redaction by detection asks the component that is wrong in exactly this
+direction to certify that it was not wrong. No threshold makes that sound.
+
+So there are no page fixtures. Tier 2 reads the corpus and skips when `data/`
+is absent, which is the pattern the repo already uses in eight places in
+tests/tier2/test_textlayer.py; the only committed test data is synthetic arrays
+in tier 1. `scripts/make_paper_fixtures.py` is deleted rather than left as a
+trap for someone who reads its docstring and believes it.
+
+**The detector fix stands on its own merits** and is unaffected: printed text
+lines and printed rules were being read as marks on the paper, and they no
+longer are.
+
+**Pin:** tests/tier1/test_paper.py::test_a_line_of_text_is_not_a_mark_on_the_paper,
+::test_a_printed_rule_is_not_a_mark_on_the_paper,
+::test_a_bold_glyph_is_not_a_mark_on_the_paper

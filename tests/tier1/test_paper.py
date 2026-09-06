@@ -251,3 +251,58 @@ def test_two_agreeing_marks_on_a_turned_sheet_are_confirmed():
     assert verdict.transform == "flip_v"
     assert verdict.marks_agreeing >= 2
     assert all(m > paper.MARGIN_THRESHOLD for m in verdict.margins)
+
+
+# ------------------------------- DEFECTS #53: printing is not damage to paper
+
+def bar(width, height, size=400):
+    """A filled rectangle: a line of underlined text, or a printed rule."""
+    mask = np.zeros((size, size), dtype=bool)
+    top = (size - height) // 2
+    left = (size - width) // 2
+    mask[top:top + height, left:left + width] = True
+    return mask
+
+
+def test_a_line_of_text_is_not_a_mark_on_the_paper():
+    """An underline joins the letters of a text line into one component. On
+    page 6 of 1495414 the operator's address came through that way at 5,628 px
+    — larger than either punch hole — so no area threshold separates them. Its
+    bounding box is 465x38, an aspect of 12.2, against 1.1 for a punch hole.
+    """
+    marks = paper.solid_marks(bar(465, 38))
+    assert marks == [], "a text line was read as a mark on the paper"
+
+
+def test_a_printed_rule_is_not_a_mark_on_the_paper():
+    marks = paper.solid_marks(bar(2342, 13, size=2600))
+    assert marks == []
+
+
+def test_a_bold_glyph_is_not_a_mark_on_the_paper():
+    """Individual bold letters passed every test but area, which is why the
+    floor is where it is.
+    """
+    assert paper.solid_marks(bar(30, 40)) == []
+
+
+def test_a_punch_hole_and_a_blot_both_survive_the_same_filter():
+    """The envelope has to keep the real thing. Both shapes are the ones
+    measured on 1495414: a 73x79 hole and a 197x148 corner blot.
+    """
+    hole, cx, cy = disc(size=200, radius=38)
+    assert len(paper.solid_marks(hole)) == 1
+    assert paper.solid_marks(hole)[0].kind == "hole"
+
+    blot = np.zeros((300, 300), dtype=bool)
+    yy, xx = np.mgrid[0:300, 0:300]
+    blot |= ((xx - 150) ** 2 / 98 ** 2 + (yy - 150) ** 2 / 74 ** 2) <= 1
+    found = paper.solid_marks(blot)
+    assert len(found) == 1
+    assert found[0].area_in2 > paper.MIN_MARK_AREA
+
+
+def test_the_shape_envelope_is_stated_as_constants():
+    """So a change to it is a diff, not a discovery."""
+    assert paper.MAX_ASPECT == 3.0
+    assert paper.MIN_MARK_AREA == 0.02
