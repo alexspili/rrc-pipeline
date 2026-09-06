@@ -199,3 +199,40 @@ enforces it, and not before.
 ## RETIRED
 
 Nothing yet.
+
+## The held-out sitting, 2026-09-06: safe, blind, does not ship
+
+Rule fixed before the sheet was drawn, mechanism frozen in commit `4868fdd`,
+verdicts sealed and hashed at `943d12256c7e20de` before Alex saw an image.
+
+| | |
+|---|---|
+| Part A, held-out guaranteed-false pairs | **0 false confirmations of 325** |
+| Part A, pairs Alex judged not-same-sheet | 0 of 8 |
+| Part A, development negatives | 0 of 517 |
+| Part B | **4 of 16 same-sheet pairs, 25%** |
+| Rule needed | at least half of at least 8 |
+| cannot-tell | 6 of 30, 20%, under the 30% trip |
+
+**It does not ship**, and it changes no output. Part A passed; Part B did not.
+
+**The evidence column explains it.** Of the 16 pairs judged same-sheet, **15
+cite staple marks** — the one channel this module structurally cannot read,
+because staples sit below `MIN_MARK_AREA` and bold printed glyphs are the same
+size, so the floor cannot be lowered to reach them. The human and the machine
+were reading different evidence, and the machine had the minority channel.
+
+Three of the refused same-sheet pairs held a strong single margin — 0.944,
+0.684, 0.456 — and failed on the two-mark rule alone. That rule is correct: a
+one-mark rule leaked at every threshold that confirmed anything. It is also the
+binding constraint on reach.
+
+**What stands:** zero false confirmations across 850 negatives, development,
+held-out and human-labelled. Zero of 325 held-out licenses a false-positive
+rate below 0.92% at 95%. That is a real property and it is not the property
+that was needed.
+
+**What may not happen next:** these 30 pairs are spent. Lowering the floor,
+relaxing the two-mark rule, or adding a staple channel and rescoring here would
+be fitting to the test and quoting the test. A retune needs a fresh record
+split and a re-run of both halves.

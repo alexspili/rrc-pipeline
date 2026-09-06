@@ -2686,3 +2686,66 @@ that left no written trace; the list is built from the four sheets and from
 records named in conversation, and if there are others they are not recoverable.
 
 **Pin:** tests/tier2/test_paper_sheet.py::test_the_sitting_excludes_records_alex_has_seen
+
+---
+
+## #57 — 2026-09-06 — The paper matcher is safe, blind, and does not ship
+
+**The pre-registered rule** (docs/labeling-protocol-paper.md, fixed before the
+sheet was drawn; mechanism frozen in commit `4868fdd`, verdicts sealed and
+hashed at `943d12256c7e20de` before Alex saw a single image):
+
+> Ships if and only if **both**: Part A returns zero false confirmations on
+> held-out records, **and** Part B confirms at least half of the pairs judged
+> same-sheet, with a denominator of at least 8.
+
+**Result.**
+
+| | |
+|---|---|
+| Part A, held-out guaranteed-false pairs | **0 false confirmations of 325** |
+| Part A, pairs Alex judged not-same-sheet | **0 of 8** |
+| Part A, development negatives | 0 of 517 |
+| Part B | **4 of 16 same-sheet pairs confirmed, 25%** |
+| Rule needed | at least 8 of 16 |
+| cannot-tell | 6 of 30, 20%, under the 30% trip |
+
+**It does not ship.** One clause, a conjunction, and half of it failed.
+
+**Why it failed, and it is not a tuning problem.** The evidence column was on
+the sheet so that a verdict could be read alongside what produced it. Of the 16
+pairs Alex judged same-sheet, **15 cite staple marks**:
+
+    11  staple
+     3  torn edge, staple
+     1  staple, show-through
+     1  fold
+
+**Staples are the one physical channel this module structurally cannot read.**
+They sit below `MIN_MARK_AREA`, and DEFECTS #53 established that the floor
+cannot be lowered to reach them, because individual bold printed glyphs are the
+same size and pass every other test. That cost was recorded when the floor was
+set. What this sitting measures is how large it is: the human and the machine
+were reading almost entirely different evidence, and the machine's channel —
+punch rims and blots — was the minority one.
+
+Three same-sheet pairs were refused holding a **strong single margin**: pair-11
+at 0.944, pair-01 at 0.684, pair-30 at 0.456. All three failed on the two-mark
+rule alone. That rule is right — a one-mark rule leaked at every threshold that
+confirmed anything, measured on 86 hard negatives — and it is also the binding
+constraint on reach.
+
+**What is genuinely established.** The safety property held everywhere it was
+tested: **zero false confirmations in 850 negatives** across development,
+held-out, and human-labelled sets. Zero of 325 held-out licenses a false
+positive rate below 0.92% at 95%. When this mechanism speaks, on this evidence,
+it has not yet been caught being wrong.
+
+**What may not now happen.** The rule says a retune requires a fresh record
+split and a re-run of both parts. These 30 pairs are spent. Lowering the mark
+floor, relaxing the two-mark rule, or adding a staple channel and re-scoring on
+this sheet would be fitting to the test and quoting the test, which is DEFECTS
+#46 for the fourth time in this project.
+
+**Pin:** tests/tier3/test_paper_eval.py, which is the first content in tier 3
+and gives `make eval` something to run.
