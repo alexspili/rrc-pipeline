@@ -142,6 +142,12 @@ class Verdict:
     marks_agreeing: int = 0
     marks_compared: int = 0
 
+    #: Marks the winning transform mapped onto a twin of their own page, and
+    #: so could not be used (DEFECTS #55). Reported because "nothing paired"
+    #: and "nothing was allowed to pair" are different facts, and a refusal
+    #: that conflates them cannot be audited.
+    marks_ambiguous: int = 0
+
 
 # ------------------------------------------------------------ shape of an edge
 
@@ -272,6 +278,30 @@ def _compatible(a: Mark, b: Mark) -> bool:
     return max(a.area_in2, b.area_in2) / smaller <= AREA_RATIO
 
 
+def ambiguous_under(mark: Mark, page: list[Mark], transform: str) -> bool:
+    """Does the transform map this mark onto another mark of its own page?
+
+    If it does, the mechanism cannot tell the mark from its twin, and its
+    agreement says nothing about which sheet this is.
+
+    Origin: DEFECTS #55. A two-hole punch is symmetric about the page centre
+    line, so `flip_h` maps each hole onto the other hole and the positional
+    pairing succeeds between any two punched pages in the archive. That is how
+    two sheets from different counties were confirmed as one sheet.
+    """
+    move = TRANSFORMS.get(transform) or CONTROLS[transform]
+    tx, ty = move(mark.x, mark.y)
+    for other in page:
+        if other is mark:
+            continue
+        if not _compatible(mark, other):
+            continue
+        if ((other.x - tx) ** 2 + (other.y - ty) ** 2) ** 0.5 < \
+                POSITION_TOLERANCE:
+            return True
+    return False
+
+
 def pair_marks(a: list[Mark], b: list[Mark], transform: str):
     """Marks of b that land on a mark of a, once b's page is turned over.
 
@@ -279,8 +309,15 @@ def pair_marks(a: list[Mark], b: list[Mark], transform: str):
     manufacture agreement. A rigid offset between the two scans is estimated
     from the marks themselves and removed first; the crop is a property of the
     scanner and is not evidence about the sheet.
+
+    Marks the transform maps onto a twin of their own page are dropped first
+    (DEFECTS #55): under such a transform the pairing constrains nothing, and
+    R2's division of labour — position pairs, the outline decides — has quietly
+    stopped holding.
     """
     move = TRANSFORMS.get(transform) or CONTROLS[transform]
+    a = [m for m in a if not ambiguous_under(m, a, transform)]
+    b = [m for m in b if not ambiguous_under(m, b, transform)]
     moved = [(m, move(m.x, m.y)) for m in b]
 
     offsets = {(0.0, 0.0)}
@@ -357,24 +394,44 @@ def compare(a: list[Mark], b: list[Mark],
     # Best of the two real transforms, ranked on how many marks clear the
     # margin and then on how many were paired at all, so that a refusal still
     # reports how much evidence it actually looked at.
-    best: tuple[int, int, tuple[float, ...], str | None] = (0, 0, (), None)
+    # Seeded from the first transform rather than from zeros: when nothing
+    # pairs under either flip, a zero-initialised best is never replaced and
+    # the count of marks set aside as ambiguous is silently reported as none.
+    best: tuple[int, int, tuple[float, ...], str | None, int] | None = None
+    set_aside = 0
     for transform in TRANSFORMS:
+        dropped = (sum(1 for m in a if ambiguous_under(m, a, transform))
+                   + sum(1 for m in b if ambiguous_under(m, b, transform)))
+        # The most any single flip had to set aside, not the winner's count:
+        # the winning flip is usually the one that had to set aside nothing,
+        # so reporting its zero hides the reason the other flip was refused.
+        set_aside = max(set_aside, dropped)
         pairs = pair_marks(a, b, transform)
         margins = [_margin(front, back, transform) for front, back in pairs]
         clearing = tuple(sorted((m for m in margins
                                  if not np.isnan(m) and m >= threshold),
                                 reverse=True))
-        candidate = (len(clearing), len(pairs), clearing, transform)
-        if candidate[:2] > best[:2]:
+        candidate = (len(clearing), len(pairs), clearing, transform, dropped)
+        if best is None or candidate[:2] > best[:2]:
             best = candidate
 
-    _, compared, margins, transform = best
+    _, compared, margins, transform, _ = best
+    dropped = set_aside
     if len(margins) >= minimum:
         return Verdict(confirmed=True, reason="marks agree under one flip",
                        margins=margins, transform=transform,
-                       marks_agreeing=len(margins), marks_compared=compared)
+                       marks_agreeing=len(margins), marks_compared=compared,
+                       marks_ambiguous=dropped)
+
+    # "Nothing paired" and "nothing was allowed to pair" are different facts.
+    if not compared:
+        note = (f"no mark could be paired under either flip; {dropped} were "
+                f"set aside as ambiguous under it (DEFECTS #55)"
+                if dropped else "no mark could be paired under either flip")
+    else:
+        note = (f"only {len(margins)} of {compared} paired marks cleared the "
+                f"margin threshold {threshold}, {minimum} needed")
     return Verdict(
         confirmed=False, margins=margins, transform=transform,
         marks_agreeing=len(margins), marks_compared=compared,
-        reason=f"only {len(margins)} of {compared} paired marks cleared the "
-               f"margin threshold {threshold}, {minimum} needed")
+        marks_ambiguous=dropped, reason=note)

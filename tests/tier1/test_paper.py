@@ -141,19 +141,27 @@ def test_the_margin_is_the_statistic_not_the_raw_score():
     one file scored 0.53 to 0.57 raw, as high as a true pair. What separates
     them is that a true pair matches MIRRORED and a stack-mate matches PLAIN.
     """
-    mask, cx, cy = disc(notches=[(40.0, 14, 0.12), (200.0, 9, 0.10)])
-    stack_mate = profile_of(mask, cx, cy)            # same rim, never flipped
-    front = profile_of(mask, cx, cy)
-    a = [mark(mask, cx, cy, x=0.2, y=0.1),
-         mark(mask, cx, cy, x=0.6, y=0.1)]
-    b = [paper.Mark(x=0.2, y=0.1, area_in2=0.05, fill=0.8, kind="hole",
-                    outline=tuple(stack_mate)),
-         paper.Mark(x=0.6, y=0.1, area_in2=0.05, fill=0.8, kind="hole",
-                    outline=tuple(stack_mate))]
+    one, cx, cy = disc(notches=[(40.0, 14, 0.12), (200.0, 9, 0.10)])
+    two, _, _ = disc(notches=[(310.0, 16, 0.14), (95.0, 11, 0.11)])
+    front_one, front_two = profile_of(one, cx, cy), profile_of(two, cx, cy)
+
+    # Positions that DO pair under flip_v, so the marks genuinely get compared
+    # and the verdict turns on the statistic rather than on the pairing.
+    a = [mark(one, cx, cy, x=0.2, y=0.1), mark(two, cx, cy, x=0.6, y=0.1)]
+    # ...but the rims are the unflipped ones, as a sheet scanned face up has.
+    b = [paper.Mark(x=0.2, y=0.9, area_in2=0.05, fill=0.8, kind="hole",
+                    outline=tuple(front_one)),
+         paper.Mark(x=0.6, y=0.9, area_in2=0.05, fill=0.8, kind="hole",
+                    outline=tuple(front_two))]
+
     verdict = paper.compare(a, b)
+    assert verdict.marks_compared == 2, "the marks must actually be compared"
     assert not verdict.confirmed
     assert "margin" in verdict.reason
-    assert paper.correlate(front, stack_mate) > 0.9   # raw score would confirm
+
+    # A rule on the raw correlation would confirm this outright: the rims are
+    # identical, so an orientation-blind score is a perfect 1.0.
+    assert paper.correlate(front_one, front_one) > 0.99
 
 
 # --------------------------------------------------- abstention is load-bearing
@@ -306,3 +314,74 @@ def test_the_shape_envelope_is_stated_as_constants():
     """So a change to it is a diff, not a discovery."""
     assert paper.MAX_ASPECT == 3.0
     assert paper.MIN_MARK_AREA == 0.02
+
+
+# ------------- DEFECTS #55: a transform that maps a page onto itself proves nothing
+
+def test_a_mark_the_transform_maps_onto_its_own_twin_is_not_evidence():
+    """A two-hole punch is symmetric about the page centre line, so flip_h
+    maps each hole onto the other hole. The pairing then succeeds between any
+    two punched pages and constrains nothing, which is how 1865938-0 p2 and
+    1495009-1 p1 -- different leases, different counties -- were confirmed as
+    one sheet.
+    """
+    one, cx, cy = disc(notches=[(40.0, 14, 0.12), (200.0, 9, 0.10)])
+    two, _, _ = disc(notches=[(310.0, 16, 0.14), (95.0, 11, 0.11)])
+
+    def punched(first, second, flip):
+        """Two holes at mirror-symmetric x, as a real punch leaves them."""
+        return [paper.Mark(x=0.338, y=0.04, area_in2=0.05, fill=0.75,
+                           kind="hole",
+                           outline=tuple(profile_of(first, cx, cy))),
+                paper.Mark(x=0.672, y=0.04, area_in2=0.05, fill=0.75,
+                           kind="hole",
+                           outline=tuple(profile_of(second, cx, cy)))]
+
+    a = punched(one, two, False)
+    b = punched(one, two, False)
+    # Under flip_h each hole lands on the other hole of its OWN page, so both
+    # are ambiguous and neither may be used.
+    assert paper.pair_marks(a, b, "flip_h") == []
+    assert not paper.compare(a, b).confirmed
+
+
+def test_self_symmetry_is_judged_per_transform_not_globally():
+    """The same marks are ambiguous under one flip and perfectly usable under
+    the other. Holes along the top edge map to the bottom edge under flip_v,
+    where there is nothing to be confused with.
+    """
+    one, cx, cy = disc(notches=[(40.0, 14, 0.12), (200.0, 9, 0.10)])
+    two, _, _ = disc(notches=[(310.0, 16, 0.14), (95.0, 11, 0.11)])
+    height = one.shape[0]
+
+    def top(first, second):
+        return [paper.Mark(x=0.338, y=0.04, area_in2=0.05, fill=0.75,
+                           kind="hole",
+                           outline=tuple(profile_of(first, cx, cy))),
+                paper.Mark(x=0.672, y=0.04, area_in2=0.05, fill=0.75,
+                           kind="hole",
+                           outline=tuple(profile_of(second, cx, cy)))]
+
+    front = top(one, two)
+    back = [paper.Mark(x=0.338, y=0.96, area_in2=0.05, fill=0.75, kind="hole",
+                       outline=tuple(profile_of(np.flipud(one), cx,
+                                                height - 1 - cy))),
+            paper.Mark(x=0.672, y=0.96, area_in2=0.05, fill=0.75, kind="hole",
+                       outline=tuple(profile_of(np.flipud(two), cx,
+                                                height - 1 - cy)))]
+    assert len(paper.pair_marks(front, back, "flip_v")) == 2
+    verdict = paper.compare(front, back)
+    assert verdict.confirmed
+    assert verdict.transform == "flip_v"
+
+
+def test_the_ambiguity_check_looks_at_area_too():
+    """A mark is only confusable with a twin it could actually be mistaken
+    for. A hole landing on a blot four times its size is not ambiguous.
+    """
+    one, cx, cy = disc(notches=[(40.0, 14, 0.12), (200.0, 9, 0.10)])
+    marks = [paper.Mark(x=0.338, y=0.04, area_in2=0.05, fill=0.75,
+                        kind="hole", outline=tuple(profile_of(one, cx, cy))),
+             paper.Mark(x=0.662, y=0.04, area_in2=0.40, fill=0.40,
+                        kind="blot", outline=tuple(profile_of(one, cx, cy)))]
+    assert not paper.ambiguous_under(marks[0], marks, "flip_h")

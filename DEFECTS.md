@@ -2533,3 +2533,112 @@ longer are.
 **Pin:** tests/tier1/test_paper.py::test_a_line_of_text_is_not_a_mark_on_the_paper,
 ::test_a_printed_rule_is_not_a_mark_on_the_paper,
 ::test_a_bold_glyph_is_not_a_mark_on_the_paper
+
+---
+
+## #54 — 2026-09-06 — The probe printed "Zero of 517" in the same breath as reporting one
+
+**What happened:** `scripts/probe_paper.py` ran 517 scoreable hard negatives and
+found **one false positive**. Its closing summary read:
+
+    scoreable negatives: 517   false positives: 1
+    ...
+    Zero of 517 licenses a false-positive rate below 0.58% at 95% (rule of three).
+
+The rule-of-three line is printed unconditionally. It says "Zero of 517"
+whatever the count above it says, because I wrote it while assuming the answer
+would be zero and never made it read the number it was standing next to. Two
+lines apart, one of them says 1 and the other says zero.
+
+**And the pair it found cannot be identified from the output.** Rows are
+labelled `f"{ra}-{fa} p{pa}+p{pb}"` — the first record, the first file, and both
+page numbers. For the cross-record stratum, where the two pages come from
+*different* records, that prints the second record's page number under the
+first record's id. The offending row reads `record 1865938-0 p2+p1`, which
+looks like two adjacent pages of one file and is nothing of the sort. The
+second record is not written down anywhere, so the one result that matters
+most is the one I cannot go and look at.
+
+**Why this is the same defect twice.** Both halves are a number or a name
+printed next to data it does not describe. DEFECTS #48 was a header counting a
+constant while the run counted something else. This is a summary line counting
+an assumption while the run counted the truth, and an identifier naming half a
+pair. The corpus-consistency guard scans prose in `docs/`; nothing scans an
+f-string in a script, which is what #48 already said and what I did not act on.
+
+**Found by:** reading the probe's own output rather than its headline, after
+the false-positive count and the rule-of-three sentence disagreed.
+
+**Fix:** the rule-of-three line derives from the measured count and states the
+bound for that count, or says plainly that a bound is not available. Every row
+carries both sides of the pair, `ra-fa pPA + rb-fb pPB`, so any result can be
+found and looked at.
+
+**What remains:** this fixes two lines in one script. Every other script in
+`scripts/` builds its own labels the same way, and none of them is scanned by
+anything. That is a standing exposure, not a fixed one.
+
+**Pin:** tests/tier2/test_probe_paper.py::test_a_pair_label_names_both_sides
+and ::test_the_false_positive_bound_uses_the_measured_count
+
+---
+
+## #55 — 2026-09-06 — A two-hole punch is symmetric, so one flip pairs any two pages
+
+**What happened:** the development measurement ran 517 hard negatives and
+produced **one false confirmation**: 1865938-0 p2 against 1495009-1 p1. Lease
+VAN WART B in Fayette county against lease HAINES, LYDIE GRABOW in Burleson
+county, different operators. Two sheets that cannot be one sheet.
+
+**It is not a coincidence and a higher threshold does not fix it.** Both pages
+carry a standard two-hole punch, and a two-hole punch is symmetric about the
+page's centre line:
+
+    1865938-0 p2   holes at x = 0.338, 0.672
+    1495009-1 p1   holes at x = 0.344, 0.670
+
+Under `flip_h`, the reflection about the vertical axis, 0.672 maps to 0.328 and
+0.338 maps to 0.662. **Each hole lands on the other hole.** The positional
+pairing therefore succeeds between *any* two pages punched by *any* standard
+punch, which is most of the archive.
+
+R2 says position locates and pairs marks and the outline decides. That rule
+assumes the pairing constrains something. Here it constrains nothing: the
+transform maps the mark pattern onto itself, so the assignment is free and the
+outline correlation is asked to carry the whole claim alone. Two rims that
+happen to agree then become a confirmation.
+
+**Why raising the threshold is the wrong fix.** The false pair's second margin
+is +0.316. The one true pair that currently confirms has a second margin of
++0.359. A threshold between them leaves 0.04 of headroom on a sample of two,
+which is not a threshold, it is a coincidence waiting to be re-measured.
+
+**The fix is to say what the transform is allowed to be evidence for.** A mark
+that the transform maps onto *another mark of its own page* is ambiguous under
+that transform: the mechanism cannot tell the mark from its twin, so its
+agreement is not evidence about which sheet this is. Such marks are excluded
+from pairing under that transform, and if too few remain the pair abstains.
+
+Checked against everything already measured:
+
+  1865938 p2 / 1495009 p1   both holes self-symmetric under flip_h, both
+                            excluded, nothing left, refused
+  1495414 p6+p7             matched under flip_v, where the marks sit at
+                            y = 0.016, 0.033, 0.034 and map to 0.98 and 0.97
+                            where there are no marks. Nothing excluded, still
+                            confirms.
+  the stack negatives       unaffected: they never reached two marks anyway
+
+So it removes the false positive and costs none of the evidence in hand. That
+is the test of a fix found by looking at a failure: it has to be justified by
+what the paper does, not by which row it deletes.
+
+**Found by:** reading the one failing row rather than the summary line, after
+DEFECTS #54 made the row identifiable.
+
+**What remains:** this is a development-set fix, discovered after seeing the
+failure, and it therefore has no held-out support at all. It goes into the
+frozen mechanism before the pre-registration is written, and the held-out run
+is what tests it. Nothing about it is confirmed yet.
+
+**Pin:** tests/tier1/test_paper.py::test_a_mark_the_transform_maps_onto_its_own_twin_is_not_evidence

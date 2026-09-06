@@ -106,10 +106,25 @@ def test_a_sheet_punched_in_the_same_stroke_is_refused(page):
 
 
 def test_the_refusals_say_how_much_evidence_they_looked_at():
-    """A refusal that does not report what it compared cannot be audited, and
-    the count came back zero for a while whatever had actually been paired.
+    """A refusal that does not report what it compared cannot be audited.
+
+    p6 and p9 are both punched pages, and under flip_h a two-hole punch maps
+    each hole onto the other hole of its own page, so every hole is set aside
+    as ambiguous (DEFECTS #55). "Nothing paired" and "nothing was allowed to
+    pair" are different facts and the refusal has to distinguish them.
     """
     verdict = paper.compare(marks(FACE), marks(9))
+    assert not verdict.confirmed
+    assert verdict.marks_ambiguous >= 2
+    assert "ambiguous" in verdict.reason
+
+
+def test_a_refusal_on_the_margin_says_so_instead():
+    """The other kind of refusal: marks paired, and did not agree well enough.
+    It must not be reported as an ambiguity."""
+    front, back = marks(FACE), marks(BACK)
+    verdict = paper.compare(front, back, threshold=0.99)
+    assert not verdict.confirmed
     assert verdict.marks_compared >= 1
     assert "margin" in verdict.reason
 

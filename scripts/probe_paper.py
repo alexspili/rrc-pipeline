@@ -114,6 +114,38 @@ def held_out_records(by_file) -> set:
     return out
 
 
+def pair_label(ra, fa, pa, rb, fb, pb) -> str:
+    """Both sides of a pair, always.
+
+    DEFECTS #54: this used to print only the first record, so a cross-record
+    pair read as two adjacent pages of one file and the second record was
+    written down nowhere. The one result that mattered was the one that could
+    not be looked at.
+    """
+    if (ra, fa) == (rb, fb):
+        return f"{ra}-{fa} p{pa}+p{pb}"
+    return f"{ra}-{fa} p{pa} + {rb}-{fb} p{pb}"
+
+
+def false_positive_bound(count: int, scored: int) -> str:
+    """What this many events in this many trials actually licenses.
+
+    Derived from the measured count. DEFECTS #54: the sentence used to say
+    "Zero of N" unconditionally, and printed it two lines below a line
+    reporting one.
+    """
+    if not scored:
+        return "no scoreable negatives, so there is no bound to state."
+    if count == 0:
+        return (f"Zero of {scored} licenses a false-positive rate below "
+                f"{3.0 / scored:.2%} at 95% (rule of three).")
+    # Upper end of a one-sided 95% interval, near enough for a report.
+    upper = (count + 1.96 * (count ** 0.5) + 1.5) / scored
+    return (f"{count} of {scored} is a false-positive rate of "
+            f"{count / scored:.2%}, upper 95% bound about {upper:.2%}. "
+            f"Not zero, and not to be reported as zero.")
+
+
 def scoreable(pages, needed: int = paper.MIN_MARKS_AGREEING) -> bool:
     """Does this page carry enough marks to say anything at all?
 
@@ -228,8 +260,8 @@ def main() -> None:
                 continue
             ranked = sorted((m for m in v.margins), reverse=True)
             rows.append((ranked[0] if ranked else float("nan"), ranked,
-                         v.marks_agreeing, f"{ra}-{fa} p{pa}+p{pb}",
-                         v.confirmed))
+                         v.marks_agreeing,
+                         pair_label(ra, fa, pa, rb, fb, pb), v.confirmed))
             if n % 100 == 0:
                 print(f"    {label}: {n}/{len(pairs)}", flush=True)
         return rows, unscoreable, failed
@@ -280,7 +312,7 @@ def main() -> None:
         print("\nknown same-sheet pairs, both from records already inspected:")
         for ra, fa, pa, pb in KNOWN_TRUE:
             v, _, _ = verdict(ra, fa, pa, ra, fa, pb)
-            writer.writerow(["true", f"{ra}-{fa} p{pa}+p{pb}",
+            writer.writerow(["true", pair_label(ra, fa, pa, ra, fa, pb),
                              round(max(v.margins), 4) if v.margins else "",
                              round(sorted(v.margins)[-2], 4)
                              if len(v.margins) > 1 else "", v.marks_agreeing])
@@ -296,10 +328,7 @@ def main() -> None:
     else:
         print("no negative ever reached two agreeing marks, so the threshold "
               "is not\nwhat is holding them out -- the two-mark rule is.")
-    if scored_total:
-        print(f"\nZero of {scored_total} licenses a false-positive rate below "
-              f"{3.0 / scored_total:.2%} at 95% (rule of three).")
-        print("That is the honest claim. Not 'no false positives'.")
+    print("\n" + false_positive_bound(confirmed_total, scored_total))
     print(f"\ndevelopment rows: {OUT / 'paper_development.csv'}")
 
 
