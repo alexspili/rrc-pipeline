@@ -24,6 +24,7 @@ sys.path.insert(0, str(ROOT))
 from pipeline import classify                      # noqa: E402
 from pipeline import identity                      # noqa: E402
 from pipeline import pageclass as pc               # noqa: E402
+from pipeline import papermatch                    # noqa: E402
 from pipeline import reassemble as ra              # noqa: E402
 from pipeline import render                        # noqa: E402
 
