@@ -1,6 +1,13 @@
 # CLAUDE.md — context index
-Line budget for this file: 120. It is an index, not a manual. Detail lives in
+Line budget for this file: 145. It is an index, not a manual. Detail lives in
 the files it points to. If this file grows past budget, move content out.
+
+Raised from 120 once, on 2026-09-07, by Alex, for standing rules 11 to 13, and
+the state section was compressed to pay for most of it. The rule on hitting the
+budget is still to move content out rather than raise the ceiling: detail can
+move out because a thread can be told to go and read it, but a standing rule
+cannot, since its job is to be in context before anybody asks. Raise it again
+only for that reason.
 
 ## What this project is
 
@@ -9,53 +16,54 @@ records: fetch scanned well files from the state archive, classify pages,
 extract G-1/W-2 completion reports to structured JSON with per-value source
 spans, validate with deterministic rules, cross-check facts that repeat
 across forms in the same file, and measure accuracy and cost against a
-hand-labeled set. Built by one engineer with AI assistance; this repo also
-carries the working practice that keeps that output reviewable (this file,
-DEFECTS.md, three-tier tests). It is a portfolio project: every claim in it
-must be defensible line by line in an interview.
+hand-labeled set. Built by one engineer with AI assistance; the repo also
+carries the practice that keeps the output reviewable (this file, DEFECTS.md,
+three-tier tests). Portfolio project: every claim must be defensible line by
+line in an interview.
 
 ## Read next
 
 - HANDOFF.md — all project knowledge: API chain, corpus facts, document
-  findings, design decisions, costs, cut order. Read it before proposing.
-- DEFECTS.md — append-only defect log. Five entries predate the code.
+  findings, design decisions, costs, cut order, and the open work in order.
+  Read it before proposing.
+- DEFECTS.md — append-only defect log; 5 entries predate the code.
 - SETUP.md — repo mechanics, guardrails, commit rules in full.
 - docs/modules/ — per-module rules with defect origins; docs/recon/ — raw
   captures behind fetch.py, tokens redacted.
 
 ## Current state
-
 - fetch.py works. Corpus 357 records, 405 files, 6,443 pages in data/raw
   (git-ignored). TWO populations, never blended: district 03 closed, which
   every measurement rests on, and district 02, 155 records from 2026-09-07.
   paper_record_split.csv: 91 dev / 111 held out / 155 frame, last two barred.
-- Classifier and census DONE. 115 of the 202 records in district 03 (57%) hold
-  a completion report. G-1 face precision **94.0%**; W-2 NOT established;
-  never quote 83.6% as accuracy on the target classes. `form_class` on back
-  pages self-contradicts 31 times in 65 and MAY NOT define a negative (#60,
-  #62).
-- Extraction SCORED 2026-09-01: **87.4%** status, **82.5%** value, by era, on
-  a prompt that no longer ships; re-scoring ~$1.50. Provenance CLOSED. Batched
-  run **$7.17, NOT YET RUN**: the gated spend everything waits on.
+- Classifier and census DONE. 115 of the 202 records in district 03 (57%) hold a
+  completion report. G-1 face precision **94.0%**; W-2 NOT established; never
+  quote 83.6% as accuracy on the target classes. `form_class` on back pages
+  self-contradicts 31 times in 65 and MAY NOT define a negative (#60, #62).
+- Extraction SCORED 2026-09-01: **87.4%** status, **82.5%** value, by era, on a
+  prompt that no longer ships. Provenance CLOSED. Batched run **$7.17, NOT YET
+  RUN**: the gated spend everything waits on.
 - Reassembly BUILT, 25 of 32 multi-page documents clean; the six wrong are
   same-form same-well different-filing, beyond any form rule.
 - pipeline/paper.py confirms two pages are ONE SHEET from the marks on it: 0
   false confirmations in 850. It failed its pre-registered recall bar and
   shipped anyway on a measured gain (#57, #58). `make eval` runs tier3.
 - A SECOND channel, `compare_small`, reads marks under MIN_MARK_AREA, frozen
-  1a01829, and PASSED both pre-registered bars: cross-record 1 of 400 (bound
-  1.180%) and the district 02 sitting 1 of 20 false, 3 of 17 same-sheet. Not a
-  staple detector. **WIRED IN 2026-09-07** via papermatch.sheet_confirmer,
-  restricted to ADJACENT pairs (R8): unrestricted it attached pages 31 and 56
-  apart. It adds 7 attachments, 6 judged correct, 86% against reassembly's
-  78%. What had blocked it was never #63/#64/#66 (#67) but the missing
-  document-level measurement.
-- Its real findings are not the pass. `same-bundle` was used 0 times so the
-  bundle confusion is STILL unmeasured; the adjacent false rate is 5.0% against
-  0.25% and 20 pairs cannot resolve it; and page parity (74% even-start vs 17%
-  odd on d02, Fisher p=0.0008) does NOT replicate on d03, 3 of 7. Not adopted.
-- The area floor never kept printing out, MAX_ASPECT did; pages are read at their own dpi (#61).
-- Next: decide on the parity prior, then the TypeScript span viewer, unbuilt.
+  1a01829, passed both bars, and is **WIRED IN 2026-09-07** via
+  papermatch.sheet_confirmer, restricted to ADJACENT pairs (R8): unrestricted
+  it attached pages 31 and 56 apart. Adds 7 attachments, 6 correct, 86% against
+  reassembly's 78%. What blocked it was never #63/#64/#66 (#67).
+- Not the pass but its findings: `same-bundle` used 0 times so the bundle
+  confusion is STILL unmeasured; adjacent false rate 5.0% vs 0.25% and 20 pairs
+  cannot resolve it; page parity (74% vs 17% on d02) does NOT replicate on d03.
+- The area floor never kept printing out, MAX_ASPECT did; pages read at their
+  own dpi (#61).
+- Next, in order: the **$7.17 extraction run**, 218 documents, batched, the only
+  thing costing money. The pipeline has never been run over its own corpus, and
+  that run re-scores the 15 ground-truth documents, whose published figures
+  describe a prompt retired 2026-09-05. Then the **TypeScript span viewer**,
+  cut-order 7, unbuilt, the only TypeScript here and the only way to see any
+  output. Then README with the real numbers.
 
 ## Standing rules
 
@@ -100,6 +108,23 @@ must be defensible line by line in an interview.
    check called it well-formed, here the mechanism was wrongly silent and
    the silence looked like integrity. Confidently wrong and wrongly silent
    are one pair, and a measurement is defended against both.
+11. A noisy label may choose which rows a human looks at. It may never stand
+   in for the human. Origin: DEFECTS #62 — a "these are not one sheet"
+   stratum built from the census `form_class` returned seven rows, six of
+   which Alex had judged the SAME sheet. Sampling and truth are different
+   jobs and a label good enough for one can be inverted for the other.
+12. An open defect is not a gate. A gate names the measurement that would
+   close it. Origin: DEFECTS #67 — three entries explaining WHY false
+   confirmations happen were turned into a shipping gate, though every
+   measured rate already included all three unfixed, so closing them could
+   only improve the number. What actually blocked shipping was a
+   document-level measurement nobody had run, and it cost nothing.
+13. A measurement answers the question it measured, and saying which cases it
+   did not cover is part of reporting it. Origin: DEFECTS #64 measured the
+   spread of agreeing marks along the axis the transform PRESERVES, found
+   them spread out, and concluded the band effect was not what drove the
+   false rate. DEFECTS #66 then found the mirrored axis, which #64 could not
+   have seen. Half an answer presented as a whole one.
 
 ## Commit message format
 
