@@ -69,3 +69,35 @@ def test_a_built_sheet_contains_no_record_alex_has_seen():
     offenders = sorted({v["record_id"] for v in sealed.values()
                         if v["record_id"] in excluded})
     assert not offenders, f"sitting rows from records Alex has seen: {offenders}"
+
+
+# ------------------------------ the development / held-out split, 2026-09-06
+
+SPLIT = FIXTURES / "paper_record_split.csv"
+
+
+def _split_rows():
+    if not SPLIT.exists():
+        pytest.skip("split not written yet")
+    return list(csv.DictReader(io.StringIO(SPLIT.read_text())))
+
+
+def test_every_record_alex_has_seen_is_in_the_development_half():
+    """The split's one load-bearing property. A record whose pages he has
+    looked at can never supply a positive again (DEFECTS #56), so it is worth
+    nothing held out and everything in development. Derived from the sheets,
+    not remembered, so it cannot drift.
+    """
+    rows = _split_rows()
+    half = {r["record_id"]: r["half"] for r in rows}
+    seen = judged_records() & set(half)
+    assert seen, "the derivation found no judged records, which cannot be right"
+    wrong = sorted(r for r in seen if half[r] != "development")
+    assert wrong == [], f"held out but already seen: {wrong}"
+
+
+def test_the_split_covers_every_record_exactly_once():
+    rows = _split_rows()
+    ids = [r["record_id"] for r in rows]
+    assert len(ids) == len(set(ids))
+    assert set(r["half"] for r in rows) == {"development", "held_out"}
