@@ -16,6 +16,11 @@ scipy>=1.11             # ndimage: connected components, morphological opening
 # Test runner
 pytest>=8
 
+# Undefined-name check, tests/tier2/test_names_resolve.py. A call added inside
+# a function body passes every import-shaped test and fails at runtime; commit
+# ce99e47 shipped exactly that (DEFECTS #70). Pure Python, no transitive deps.
+pyflakes>=3.2
+
 # Tooling. openpyxl builds the labelling workbook (scripts/make_label_workbook.py);
 # nothing in pipeline/ imports it and the tests skip if it is absent.
 openpyxl>=3.1

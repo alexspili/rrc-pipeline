@@ -3509,3 +3509,51 @@ has had the same amount of checking, which is none since it was written. Its
 other page numbers are unverified.
 
 **Pin:** tests/tier2/test_taxonomy_coverage.py::test_the_demo_document_section_iii_is_where_handoff_says
+
+## #70 — 2026-09-07 — The wiring commit calls a module it never imports
+
+**What happened:** commit ce99e47, "wire the paper confirmer into
+reassembly", added three references to `papermatch` inside
+`scripts/measure_reassemble.py`'s `main()` and no import of `papermatch`.
+The module imports cleanly, so every import-shaped check passes; the
+NameError fires on any actual run, at the line that builds the confirmer.
+As committed, the script that produces `data/extract/reassemble.jsonl`
+cannot run at all.
+
+**The numbers in that commit message are still real.** The 7 attachments, 6
+correct, came from `scripts/wiring_effect.py`, which imports `papermatch`
+properly. The measurement path and the production path were two paths, and
+only the measurement path ever ran. This is #45's shape again: there I probed
+one prompt and shipped a different one; here I measured one code path and
+shipped another.
+
+**The artifact was stale as well.** `data/extract/reassemble.jsonl` on disk
+is dated 2026-09-06, before the wiring. So the shipped grouping existed
+nowhere: not on disk, and not producible by the committed code. HANDOFF's
+"$7.17 for 218 documents" describes that stale file and the extraction
+runner's own dry run priced it at $7.87 for 224.
+
+**Why the hook passed:** nothing in tiers 1 or 2 executes
+`measure_reassemble.main`. The tier-2 test nearest to it exercises the
+extraction runner's document builder, which reads the jsonl this script
+writes, not the script.
+
+**Found by:** trying to regenerate the grouping for the extraction run,
+offline, with the output paths pointed at scratch space.
+
+**Fix:** the failing test first, then the one-line import. The test is not
+"import every script", which passes today and catches nothing of this class;
+it is an undefined-name check over the whole repo, pyflakes restricted to
+exactly that message. pyflakes is a new dependency and is declared in
+requirements.txt with its reason, per the discipline #52 bought. Surveyed
+before the test was written: 3 undefined names repo-wide, all three this
+defect, none besides.
+
+**What remains:** the checker sees a name that resolves nowhere. A call that
+resolves and is wrong, in its arguments or its object, is untouched, and so
+is the general class this belongs to: a committed path nobody re-ran after
+the last edit. What would catch that class is running the path, and the path
+reads data/ and spends, so no commit-time tier can hold it. The runbook
+compensation is that a regeneration now precedes the spend it feeds.
+
+**Pin:** tests/tier2/test_names_resolve.py::test_every_name_referenced_resolves_somewhere
