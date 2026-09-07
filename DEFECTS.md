@@ -2934,3 +2934,89 @@ development data — 27 pages of derived truth, from face labels that are
 themselves 94% precise for G-1 and never established for W-2.
 
 **Pin:** tests/tier2/test_taxonomy_coverage.py::test_a_section_heading_and_a_form_class_must_not_contradict
+
+---
+
+## #61 — 2026-09-06 — The mark detector assumes 300 dpi and 53 corpus pages are not
+
+**What happened:** `pipeline/paper.solid_marks` takes `dpi` and defaults it to
+300. `pipeline/papermatch.page_marks` is the only caller that reads real pages
+and it never passes one:
+
+    marks = paper.solid_marks(np.asarray(image) < 128)
+
+**Measured across all 3,689 corpus pages with `pdfimages -list`:**
+
+| x-ppi, y-ppi | pages |
+|---|---|
+| 300, 300 | 3,610 |
+| **200, 200** | **53** |
+| 300, 301 | 24 |
+| 301, 300 | 2 |
+
+The 200 dpi pages are not a separate class of file. **Every one of them sits
+inside a file that is otherwise 300 dpi**, in eight files across six records,
+and **11 adjacent page pairs straddle the change**, one of them in 1501720, the
+demo document.
+
+**Three consequences.**
+
+*The floor is converted at the wrong scale.* `MIN_MARK_AREA` becomes
+`0.02 * 300 * 300` = 1,800 px. On a 200 dpi page 1,800 px is **0.045 in²**, so
+the effective floor there is more than twice what the module documents.
+
+*Areas are not comparable across the change, so `_compatible` refuses every
+cross-dpi pair.* `area_in2` is `area / dpi ** 2`, so one physical mark reports
+2.25x smaller on a 200 dpi page than on a 300 dpi one. `AREA_RATIO` is **1.6**,
+and 2.25 > 1.6, so two readings of one physical mark can never be paired across
+the change and a true pair straddling it **cannot be confirmed by
+construction**. There are 11 such adjacent pairs. This is the damaging half.
+
+*`kind` is mislabelled there.* `HOLE_AREA` is an inch band, so a punch hole on
+a 200 dpi page falls outside it and is recorded as a blot. That travels into
+the report only and changes no decision.
+
+**What the fix actually gains, and it is the opposite of what I predicted.**
+I wrote this entry expecting the corrected floor to recover real marks the
+assumption was dropping. Measured on all 53 pages: 11 of them change, gaining
+19 marks. **All 19 were rendered and looked at, and all 19 are printing.**
+
+    1501720 p31   five fragments of large bold sideways fax-header text,
+                  "williamt", "Turner Williams", "18 PM"; two called `hole`
+    1501720 p19   two pieces of a printed casing schematic's hatching
+    1501720 p35   a filled wedge and a fragment of survey linework on a plat
+    1498123 p6    part of a RECEIVED stamp, and handwriting
+
+So on these pages an honestly converted floor does not admit damage, it admits
+ink. That is DEFECTS #53's fault in miniature and it carries #53's lesson
+further than #53 stated it: **the area floor was never what kept printing out.
+`MAX_ASPECT` was.** The address line of #53 was 0.0625 in², well over the
+floor, and was excluded by its 12.2 aspect. These fax-header fragments are
+chunky rather than long, so no aspect test reaches them, and the only reason
+300 dpi pages do not show the same thing is that they do not happen to carry
+fax headers.
+
+**It changes no verdict.** All 494 within-file pairs across the six affected
+records were compared under both readings: **0 verdicts changed**. The two-mark
+rule and the margin absorb the extra components, which is the defence #53 noted
+the module was relying on without anyone saying so. It is now said.
+
+**Found by:** an inventory taken while planning the staple channel, not by any
+failure. The staple channel is why it matters: its discriminator is a leg
+separation measured in millimetres, so a page read at the wrong scale puts
+every staple on it outside the band. It also sharpens the staple design, which
+goes *below* the area floor where `MAX_ASPECT` cannot help, and must therefore
+carry structural discriminators rather than a size envelope.
+
+**Fix:** the page's real resolution is read from the file and passed. The
+resolution is a property of the page rather than of the detector, so it goes in
+the per-page cache key and not in `papermatch.DETECTOR`.
+
+**What remains:** the 19 printed components stay. They are found, they are
+carried, and nothing downstream currently distinguishes them from damage; what
+stops them mattering is the margin, measured over 494 pairs on these records
+and over 850 negatives before that. No test asserts that they are harmless,
+because a test that asserted it would be asserting a coincidence.
+
+**Pin:** tests/tier1/test_paper.py::test_the_area_floor_is_read_at_the_page_s_own_resolution
+and tests/tier2/test_papermatch.py::test_a_page_is_read_at_its_own_resolution

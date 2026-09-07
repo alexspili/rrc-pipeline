@@ -163,7 +163,78 @@ def test_changing_a_detection_constant_invalidates_the_cache(tmp_path,
     cache = papermatch.MarkCache(tmp_path)
     papermatch.page_marks(pdf(), FACE, cache)
     before = papermatch.DETECTOR
+    dpi = papermatch.page_dpi(pdf(), FACE)
     monkeypatch.setattr(papermatch, "DETECTOR", "0000000000000000")
-    assert cache.get(render.doc_hash(pdf()), FACE) is None
+    assert cache.get(render.doc_hash(pdf()), FACE, dpi) is None
     monkeypatch.setattr(papermatch, "DETECTOR", before)
-    assert cache.get(render.doc_hash(pdf()), FACE) is not None
+    assert cache.get(render.doc_hash(pdf()), FACE, dpi) is not None
+
+
+# ------------------------- DEFECTS #61: the page's own resolution, not 300
+
+#: 53 corpus pages are 200 dpi and every one sits inside a file that is
+#: otherwise 300. This is one of them, with a 300 dpi page beside it.
+MIXED_RECORD, MIXED_FILE = "1498123", 1
+PAGE_300, PAGE_200 = 4, 6
+
+
+def mixed_pdf() -> Path:
+    if not MANIFEST.exists():
+        pytest.skip("manifest absent; data/ is git-ignored (CLAUDE.md rule 3)")
+    for line in MANIFEST.open():
+        row = json.loads(line) if line.strip() else None
+        if row and row["record_id"] == MIXED_RECORD:
+            path = RAW / MIXED_RECORD / row["files"][MIXED_FILE]["name"]
+            if not path.exists():
+                pytest.skip(f"{path} is git-ignored corpus, not present here")
+            return path
+    pytest.skip(f"record {MIXED_RECORD} not in this manifest")
+
+
+def test_the_corpus_really_does_mix_resolutions_inside_one_file():
+    """The premise of the defect, asserted rather than remembered."""
+    resolutions = render.page_resolutions(mixed_pdf())
+    assert resolutions[PAGE_300 - 1] == 300.0
+    assert resolutions[PAGE_200 - 1] == 200.0
+
+
+def test_a_page_is_read_at_its_own_resolution():
+    """`page_marks` used to call `solid_marks` with the default dpi of 300 on
+    every page. On a 200 dpi page that converts the 0.02 in² floor to 0.045
+    in², and it reports every mark 2.25x smaller than it is, which is outside
+    AREA_RATIO and so stops one physical mark pairing with itself across the
+    change.
+
+    This page gains two components when it is read correctly, and both of them
+    were rendered and looked at: they are part of a RECEIVED stamp and a piece
+    of handwriting, not damage to the paper. The test asserts that the page is
+    read at its own resolution. It does not assert that what the corrected
+    floor admits is a mark on the paper, because measured across all 53 pages
+    it is not (DEFECTS #61).
+    """
+    pdf = mixed_pdf()
+    image = render.extract_page_image(pdf, PAGE_200).convert("L")
+    mask = np.asarray(image) < 128
+
+    found = papermatch.page_marks(pdf, PAGE_200)
+    at_own = paper.solid_marks(mask, dpi=200.0)
+    at_assumed = paper.solid_marks(mask, dpi=300.0)
+    assert len(at_own) != len(at_assumed), (
+        "this page must be one where the reading differs, or the test is "
+        "asserting nothing")
+    assert len(found) == len(at_own)
+    assert [round(m.area_in2, 6) for m in found] == [
+        round(m.area_in2, 6) for m in at_own]
+
+
+def test_the_cache_key_separates_two_resolutions_of_one_page(tmp_path):
+    """Resolution is a property of the page, not of the detector, so it goes
+    in the per-page key. Folding it into DETECTOR would invalidate every
+    cached page in the corpus at 1.2 s each.
+    """
+    cache = papermatch.MarkCache(tmp_path)
+    doc = render.doc_hash(mixed_pdf())
+    a = cache.path(doc, PAGE_200, dpi=200.0)
+    b = cache.path(doc, PAGE_200, dpi=300.0)
+    assert a != b
+    assert papermatch.DETECTOR in a.name and papermatch.DETECTOR in b.name

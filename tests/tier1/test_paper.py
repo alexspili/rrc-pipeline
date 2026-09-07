@@ -424,3 +424,77 @@ def test_the_statistic_is_frozen_not_just_the_number():
     for name in ("outline_profile", "strip_harmonics", "orient", "correlate",
                  "ambiguous_under", "pair_marks", "compare", "solid_marks"):
         assert callable(getattr(paper, name)), name
+
+
+# ---------------------------- DEFECTS #61: read the page at its own resolution
+
+def test_the_area_floor_is_read_at_the_page_s_own_resolution():
+    """MIN_MARK_AREA is square inches, so it has to be converted with the
+    resolution of the page it is applied to.
+
+    Measured: 53 of 3,689 corpus pages are 200 dpi, every one of them inside a
+    file that is otherwise 300 dpi. Converted at an assumed 300, the floor on
+    those pages is 1,800 px, which is 0.045 in² at 200 dpi.
+    """
+    # 0.02 in² is 800 px at 200 dpi and 1,800 px at 300. A disc sized between
+    # the two is a mark on one page and not on the other, and the only thing
+    # that decides is which resolution the page was scanned at.
+    mask, _, _ = disc(size=100, radius=20)
+    area = int(mask.sum())
+    assert paper.MIN_MARK_AREA * 200 ** 2 < area < paper.MIN_MARK_AREA * 300 ** 2
+
+    assert paper.solid_marks(mask, dpi=200.0), (
+        f"{area} px is over the 0.02 in² floor at 200 dpi and must be found")
+    assert not paper.solid_marks(mask, dpi=300.0), (
+        f"{area} px is under it at 300 dpi and must not be")
+
+
+def test_one_physical_mark_read_at_two_resolutions_still_pairs():
+    """The damaging half of #61. `area_in2` is area/dpi**2, so if the detector
+    is told 300 for a page scanned at 200, one physical mark reports 2.25x
+    smaller on one side of the pair than the other. AREA_RATIO is 1.6, so
+    `_compatible` refuses it and a true pair straddling the change cannot be
+    confirmed at all. Eleven adjacent corpus pairs straddle it.
+    """
+    shape, _, _ = disc(size=300, radius=60, notches=[(40.0, 14, 0.12)])
+    small, _, _ = disc(size=200, radius=40, notches=[(40.0, 14, 0.12)])
+
+    told_wrong = paper.solid_marks(small, dpi=300.0)
+    at_300 = paper.solid_marks(shape, dpi=300.0)
+    assert at_300, "the 300 dpi side is over the floor"
+    assert told_wrong, "and so is the 200 dpi side, even read at the wrong dpi"
+    assert not paper._compatible(at_300[0], told_wrong[0]), (
+        "this is the defect: told the wrong resolution, one physical mark is "
+        "not compatible with itself")
+
+    told_right = paper.solid_marks(small, dpi=200.0)
+    assert told_right
+    assert paper._compatible(at_300[0], told_right[0]), (
+        f"read at its own resolution it must pair: "
+        f"{at_300[0].area_in2:.4f} in² against {told_right[0].area_in2:.4f}")
+
+
+def test_a_half_turn_never_moves_a_page_between_the_two_sets():
+    """Why a page stored upside down costs nothing, and a quarter turn does.
+
+    The two legitimate flips are closed under rot180 and so are the two
+    controls: rot180 after flip_v is flip_h, and rot180 after `same` is
+    rot180. A 180 degree difference in how two pages were stored therefore
+    permutes within each set and never moves a page from the legitimate set
+    into the control set.
+
+    Measured on the corpus, 2.9% of adjacent pairs differ by a quarter turn,
+    which the mechanism cannot read and abstains on; half-turn differences are
+    harmless and need no handling. Written down because the census records an
+    `orientation` per page and nothing in this module consults it, and the
+    reason that is safe is this closure rather than luck.
+    """
+    half = paper.CONTROLS["rot180"]
+    points = [(0.13, 0.29), (0.71, 0.04), (0.5, 0.5), (0.02, 0.97)]
+
+    for group in (paper.TRANSFORMS, paper.CONTROLS):
+        for name, move in group.items():
+            other = [t for t in group if t != name][0]
+            composed = [half(*move(x, y)) for x, y in points]
+            expected = [group[other](x, y) for x, y in points]
+            assert np.allclose(composed, expected), f"rot180 after {name}"
