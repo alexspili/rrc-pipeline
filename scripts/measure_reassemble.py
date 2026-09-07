@@ -36,6 +36,8 @@ CENSUS = ROOT / "data" / "census" / "vision_1000.jsonl"
 CACHE = ROOT / "data" / "extract" / "cache_identity.jsonl"
 OUT = ROOT / "data" / "extract" / "reassemble.jsonl"
 REPORT = ROOT / "data" / "extract" / "reassemble_report.txt"
+SMALL_CACHE = ROOT / "data" / "cache" / "paper_small"
+MARK_CACHE = ROOT / "data" / "cache" / "paper"
 
 #: The records the ground-truth documents come from, plus the worked cases.
 RECORDS = ("1493495", "1493540", "1493608", "1494274", "1494690", "1494774",
@@ -179,9 +181,20 @@ def main() -> None:
     for key, record in built.items():
         by_file.setdefault(record.file_key, []).append(record)
 
+    # The paper confirmer, wired in 2026-09-07 after the document-level
+    # measurement its own protocol demanded (DEFECTS #67). Restricted to
+    # adjacent pairs: offered every candidate it attaches pages 31 and 56
+    # apart, and 18 of the 19 attachments Alex judged wrong are non-adjacent.
+    # Restricted, it makes 7 attachments of which 6 are judged correct.
+    confirms = papermatch.sheet_confirmer(
+        lambda rec: RAW / rec.record_id
+        / records[rec.record_id]["files"][rec.file_index]["name"],
+        small_cache=papermatch.SmallMarkCache(SMALL_CACHE),
+        mark_cache=papermatch.MarkCache(MARK_CACHE))
+
     documents, unattached, contradicted = [], [], []
     for file_key, group in sorted(by_file.items()):
-        docs, left = ra.group(group)
+        docs, left = ra.group(group, confirms=confirms)
         documents += [(file_key, d) for d in docs]
         unattached += [(file_key, u) for u in left]
         contradicted += ra.contradicted_but_agreeing(group)

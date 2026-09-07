@@ -415,6 +415,33 @@ R7. A page is read at its own resolution, and no caller takes a default.
     change unconfirmable by construction.
     Pinned by: tests/tier2/test_papermatch.py::test_a_page_is_read_at_its_own_resolution
 
+R8. The confirmer is offered adjacent pairs only, and it never denies.
+    Origin: offered every candidate it attached pages 31 and 56 apart, which
+    is DEFECTS #63's bundle-mate failure at document level; and 18 of the 19
+    attachments Alex judged WRONG across the four verification sheets are
+    non-adjacent, against 24 of 27 right ones being adjacent. Restricted, it
+    makes 7 attachments of which 6 are judged correct, 86%, against
+    reassembly's own 78%.
+    The limit is MEASURED, not physical. A duplex scanner does not always take
+    the two sides of a sheet consecutively here: 1501720 p2 is a G-1 face and
+    p4 its Section III, with an unrelated P-4 scanned between. The cost is
+    that a true non-adjacent sheet can never be confirmed.
+    Pinned by: tests/tier3/test_adjacent_eval.py::test_the_adjacency_limit_is_measured_and_not_physical
+
+## Wired in, 2026-09-07
+
+`pipeline/reassemble.py` attaches a pair on `(identity agreement >=
+MIN_AGREEMENTS or paper confirms) and not contradicted`. The confirmer is built
+in `papermatch.sheet_confirmer` and passed in, so the domain module imports
+neither channel and stays pure.
+
+**What took so long, and it was not the defects.** DEFECTS #67: #63, #64 and
+#66 were made into a shipping gate they do not justify, since every rate on
+record was measured with all three unfixed. What actually blocked it was that
+every paper number is per pair while reassembly's is per document, and nobody
+had measured the difference. `scripts/wiring_effect.py` did, from caches
+already on disk, for nothing.
+
 ## Not yet a rule, because nothing enforces it
 
 If this module passes its pre-registered bar, `pipeline/reassemble.py` attaches
@@ -423,10 +450,9 @@ contradicted` — Alex's ruling of 2026-09-05, which deliberately keeps the
 identity veto over a paper confirmation.
 
 That is written here as an intention and not as a numbered rule, because no
-test pins it and nothing in the code does it. **The module changes no output
-today.** It becomes R8 in the commit that wires it in, with the test that
-enforces it, and not before. It was written here as R7, and R7 was taken on
-2026-09-06 by DEFECTS #61, which is a rule with a test behind it today.
+test pinned it and nothing in the code did it. **That is now done**: it became
+R8 above, in the commit that wired it in, with the tests that enforce it. It
+was originally written as R7, and R7 was taken on 2026-09-06 by DEFECTS #61.
 
 ## RETIRED
 

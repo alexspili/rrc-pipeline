@@ -160,3 +160,38 @@ def test_form_class_may_not_define_a_negative_stratum():
         f"{contradicting}/{labelled} back pages. If a re-classification has "
         f"genuinely fixed this, DEFECTS #62 needs re-reading before the label "
         f"is trusted to define a negative anywhere.")
+
+
+def test_the_demo_document_section_iii_is_where_handoff_says():
+    """DEFECTS #69. HANDOFF put 1501720's G-1 Section III on p5; p5 is a Form
+    G-5. It is on p4.
+
+    Pins the correction against the census rather than against the prose, so a
+    re-classification that disagrees has to be looked at. p4 is the page the
+    classifier calls a `g1` face while it opens with Section III, which is
+    DEFECTS #60 on the very page.
+    """
+    import json
+    import re
+
+    census = ROOT / "data" / "census" / "vision_1000.jsonl"
+    if not census.exists():
+        pytest.skip("census absent; data/ is git-ignored (CLAUDE.md rule 3)")
+
+    seen = {}
+    for line in census.open():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row["page_id"].startswith("1501720-0-"):
+            seen[int(row["page_id"].rsplit("-", 1)[1])] = row
+
+    assert seen.get(2, {}).get("form_class") == "g1", "p2 is the G-1 face"
+    assert seen.get(3, {}).get("form_class") == "p4", "p3 is the P-4 between"
+    assert seen.get(4, {}).get("form_class") == "g1", "p4 is the G-1's other side"
+    assert seen.get(5, {}).get("form_class") == "g5", (
+        "p5 is a Form G-5, which is why HANDOFF's p5 was wrong")
+
+    text = (ROOT / "HANDOFF.md").read_text()
+    entry = re.search(r"\*\*1501720\*\*.{0,400}", text, re.S).group(0)
+    assert "Section III **p4**" in entry

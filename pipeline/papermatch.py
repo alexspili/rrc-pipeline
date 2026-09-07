@@ -84,11 +84,16 @@ class MarkCache:
     def put(self, doc_hash: str, page: int, dpi: float,
             marks: list[paper.Mark]) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
+        # Widths are stated rather than inferred. A page on which the
+        # detector finds nothing is a normal result -- it is what R3's
+        # abstention rests on -- and `reshape(0, -1)` cannot infer a width from
+        # an empty array, so the cache raised on it (DEFECTS #68).
+        width = len(marks[0].outline) if marks else paper.SAMPLES
         meta = np.array([[m.x, m.y, m.area_in2, m.fill] for m in marks],
                         dtype=np.float64).reshape(len(marks), 4)
         kinds = np.array([m.kind for m in marks], dtype="U8")
         outlines = np.array([m.outline for m in marks],
-                            dtype=np.float32).reshape(len(marks), -1)
+                            dtype=np.float32).reshape(len(marks), width)
         np.savez_compressed(self.path(doc_hash, page, dpi), meta=meta,
                             kinds=kinds, outlines=outlines)
 
@@ -190,3 +195,67 @@ def compare_pages(pdf_a: Path, page_a: int, pdf_b: Path, page_b: int,
     a = page_marks(pdf_a, page_a, cache, hashes.get(pdf_a))
     b = page_marks(pdf_b, page_b, cache, hashes.get(pdf_b))
     return paper.compare(a, b)
+
+
+# ------------------------------------------------- the confirmer reassembly uses
+
+#: How far apart two pages may be for the paper channels to be asked about
+#: them at all. Measured, not physical, and the difference matters.
+#:
+#: The physical story -- a duplex scanner takes the two sides of a sheet
+#: consecutively -- is FALSE for this archive. 1501720 p2 is a G-1 face and p4
+#: is its Section III, which a G-1 carries on its back (DEFECTS #60), with an
+#: unrelated P-4 scanned between them. Sheets do get separated and interleaved.
+#:
+#: What justifies the limit is where the errors are. Offered every candidate,
+#: `compare_small` attaches pages 31 and 56 apart, which is DEFECTS #63's
+#: bundle-mate failure at document level; and across the four reassembly
+#: verification sheets 18 of the 19 attachments Alex judged WRONG are
+#: non-adjacent, against 24 of the 27 he judged right being adjacent.
+#:
+#: Restricted to adjacent pairs the confirmer makes 7 attachments of which 6
+#: are judged correct, 86%, against reassembly's own 78% of documents clean.
+#:
+#: The cost is stated rather than hidden: a true non-adjacent sheet like
+#: 1501720 p2+p4 can never be confirmed. That pair carries one small mark and
+#: no solid marks, so neither channel could score it anyway, but the next one
+#: might.
+MAX_PAGE_GAP = 1
+
+
+def sheet_confirmer(pdf_for, small_cache=None, mark_cache=None, hashes=None):
+    """(face, candidate) -> bool for `pipeline.reassemble.group`.
+
+    `pdf_for` maps a page record to its file. Both paper channels are asked and
+    either may confirm: they read different marks, and on the 2026-09-06
+    sitting their confirmations were disjoint.
+
+    Abstains rather than raising on anything it cannot read (R3). A page the
+    detector cannot open is not evidence about the sheet.
+    """
+    hashes = {} if hashes is None else hashes
+
+    def confirms(face, candidate) -> bool:
+        if (face.record_id, face.file_index) != \
+                (candidate.record_id, candidate.file_index):
+            return False
+        if abs(face.page - candidate.page) > MAX_PAGE_GAP:
+            return False
+        pdf = pdf_for(face)
+        if pdf is None or not pdf.exists():
+            return False
+        if pdf not in hashes:
+            hashes[pdf] = render.doc_hash(pdf)
+        doc = hashes[pdf]
+        try:
+            small_a = page_small_marks(pdf, face.page, small_cache, doc)
+            small_b = page_small_marks(pdf, candidate.page, small_cache, doc)
+            if paper.compare_small(small_a, small_b).confirmed:
+                return True
+            marks_a = page_marks(pdf, face.page, mark_cache, doc)
+            marks_b = page_marks(pdf, candidate.page, mark_cache, doc)
+            return paper.compare(marks_a, marks_b).confirmed
+        except Exception:                                   # noqa: BLE001
+            return False
+
+    return confirms

@@ -169,16 +169,24 @@ def test_page_parity_predicts_same_sheet_better_than_the_mechanism():
     assert sum(1 for k in same if verdicts[k]["confirmed"]) == 3
 
 
-def test_the_channel_is_still_wired_into_nothing():
-    """Asserted rather than intended. The fact is true; for WHY, see the test
-    below, because the reason first attached to it was wrong (DEFECTS #67).
+def test_the_confirmer_is_wired_in_and_restricted():
+    """Wired 2026-09-07, after the document-level measurement its own protocol
+    demanded (DEFECTS #67) and after 6 of its 7 adjacent attachments were
+    judged correct.
+
+    `pipeline/reassemble.py` stays pure and imports neither channel: the
+    confirmer is built in papermatch and passed in, which is how the hook was
+    designed. What this pins is that it is restricted to adjacent pairs, since
+    unrestricted it attached pages 31 and 56 apart.
     """
     import inspect
 
-    from pipeline import reassemble
+    from pipeline import papermatch, reassemble
     source = inspect.getsource(reassemble)
-    assert "compare_small" not in source
-    assert "small_marks" not in source
+    assert "import paper" not in source and "papermatch" not in source
+    assert "confirms" in inspect.signature(reassemble.group).parameters
+    assert papermatch.MAX_PAGE_GAP == 1
+    assert callable(papermatch.sheet_confirmer)
 
 
 def test_what_blocks_wiring_is_the_missing_document_measurement():
@@ -208,3 +216,49 @@ def test_what_blocks_wiring_is_the_missing_document_measurement():
         "the channel's precision and reassembly's own document accuracy are "
         "within ten points of each other, which is why the false rate cannot "
         "be the reason to withhold it")
+
+
+# ------------------------------- the wiring check, 2026-09-07
+
+#: The seven attachments the restricted confirmer adds, and the verdicts.
+#: Two came from the 2026-09-06 sitting, five from tests/fixtures/wiring_check.csv.
+ADJACENT_ATTACHMENTS = 7
+JUDGED_CORRECT = 6
+BAR = 5
+
+
+def test_the_restricted_confirmer_earned_its_wiring():
+    """Pre-registered in docs/labeling-protocol-adjacent.md before the five
+    pairs were judged: wired in if and only if at least 5 of the 7 adjacent
+    attachments are judged same-sheet.
+
+    Six were. Precision 86%, against reassembly's own 78% of documents clean,
+    which is the comparator DEFECTS #58 says to use.
+    """
+    assert JUDGED_CORRECT >= BAR
+    assert JUDGED_CORRECT / ADJACENT_ATTACHMENTS > 25 / 32
+
+
+def test_the_adjacency_limit_is_measured_and_not_physical():
+    """The physical story is false and the limit stands anyway.
+
+    A duplex scanner does NOT always take the two sides of a sheet
+    consecutively here: 1501720 p2 is a G-1 face and p4 is its Section III,
+    which a G-1 carries on its back, with an unrelated P-4 scanned between
+    them. What justifies the limit is where the errors are, and the cost is
+    that a true non-adjacent sheet can never be confirmed.
+    """
+    from pipeline import papermatch
+    assert papermatch.MAX_PAGE_GAP == 1
+    reason = papermatch.sheet_confirmer.__doc__ or ""
+    assert "Abstains" in reason
+
+
+def test_page_parity_does_not_replicate_on_district_03():
+    """Measured on district 02 the prior was 74% against 17%, Fisher p=0.0008.
+    On the seven district 03 attachments judged here it is right 3 of 7, which
+    is no better than guessing. It is a district 02 finding until something
+    else says otherwise, and this is why it was not adopted.
+    """
+    parity_correct, total = 3, 7
+    assert parity_correct / total < JUDGED_CORRECT / ADJACENT_ATTACHMENTS

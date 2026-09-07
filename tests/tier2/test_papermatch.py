@@ -275,3 +275,20 @@ def test_changing_a_small_mark_constant_invalidates_only_its_own_cache(
     assert cache.get(doc, FACE, dpi) is not None
     monkeypatch.setattr(papermatch, "SMALL_DETECTOR", "0000000000000000")
     assert cache.get(doc, FACE, dpi) is None
+
+
+def test_a_page_with_no_marks_round_trips_through_the_cache(tmp_path):
+    """DEFECTS #68. A detector that finds nothing is a normal result: it is
+    what R3's abstention rests on. The cache turned it into a ValueError,
+    because an empty float array cannot be reshaped with an inferred width.
+    """
+    cache = papermatch.MarkCache(tmp_path)
+    cache.put("deadbeefdeadbeef", 1, 300.0, [])
+    assert cache.get("deadbeefdeadbeef", 1, 300.0) == []
+
+
+def test_an_empty_small_mark_page_round_trips_too(tmp_path):
+    """The other cache never had the bug, asserted so it cannot acquire it."""
+    cache = papermatch.SmallMarkCache(tmp_path)
+    cache.put("deadbeefdeadbeef", 1, 300.0, [])
+    assert cache.get("deadbeefdeadbeef", 1, 300.0) == []

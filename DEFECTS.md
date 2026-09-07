@@ -3411,3 +3411,101 @@ closing them would improve the false rate. That is a reason to do them, not a
 reason to withhold the channel.
 
 **Pin:** tests/tier3/test_adjacent_eval.py::test_what_blocks_wiring_is_the_missing_document_measurement
+
+---
+
+## #68 — 2026-09-07 — Caching a page with no marks raises, and one caller drops it silently
+
+**What happened:** running both channels on 1501720 p2 and p4, `MarkCache.put`
+raised:
+
+    ValueError: cannot reshape array of size 0 into shape (0,newaxis)
+
+`np.array([], dtype=np.float32).reshape(0, -1)` cannot infer the second
+dimension of an empty array. A page on which `solid_marks` finds **nothing** is
+therefore uncacheable, and the exception surfaces from the cache rather than
+from the detector, which is the last place a caller expects it.
+
+`SmallMarkCache` does not share the bug: it writes a JSON list and an empty
+list is just `[]`.
+
+**Where it has been hiding.** Two callers wrap `page_marks` in
+`except Exception`. `scripts/probe_paper.py` counts those separately and prints
+them as "unreadable", so any occurrence in the measured runs is on the record.
+`scripts/make_paper_sheet.py::screen` does **not**: it `continue`s without
+counting, so such a pair vanishes from the accounting entirely.
+
+**Footprint is small and should be stated as small.** A page with zero marks
+also fails `min(len(ma), len(mb)) >= MIN_MARKS_AGREEING`, so it would have been
+excluded from the sitting frame anyway. What the silent drop changes is the
+*count*: a pair excluded for being unreadable was reported as though it had
+never been considered, rather than as one of the thin ones. No published number
+moves.
+
+**Why it matters more than its footprint.** The cache is supposed to be
+invisible. A detector that finds nothing is a normal, meaningful result -- it is
+what R3's abstention is built on -- and the storage layer turning that into an
+exception makes an ordinary outcome look like a failure. Every caller then has
+to guard, and one of the two guards loses information.
+
+**Fix:** `put` reshapes with an explicit width for the empty case, so a page
+with no marks round-trips as an empty list like any other result. The silent
+`continue` in `make_paper_sheet.screen` counts what it drops.
+
+**What remains:** the other `except Exception` blocks in `scripts/` are
+unaudited. DEFECTS #54 said the same thing about f-string labels and I did not
+act on it then either.
+
+**Pin:** tests/tier2/test_papermatch.py::test_a_page_with_no_marks_round_trips_through_the_cache
+
+---
+
+## #69 — 2026-09-07 — HANDOFF put the demo document's Section III on the wrong page
+
+**What happened:** Alex asked for an example of a document spanning several
+sheets. The one documented example is in HANDOFF.md's fixture list:
+
+> **1501720** Ducroz/Endeavor: 22pp combined file. G-1 face p2, its Section III
+> p5 (NON-CONTIGUOUS, P-4 between).
+
+**Page 5 is a Form G-5, Gas Well Classification Report.** Rendered and read.
+The Section III is on **p4**, which I also rendered: it opens "SECTION III --
+DATA ON WELL COMPLETION AND LOG", with boxes numbered 19 and 24, the G-1
+signature from DEFECTS #59.
+
+So the structural claim is right and the page number is wrong by one, in the
+document CLAUDE.md tells a fresh thread to read before proposing anything, in
+the record that same file calls "THE demo document". The page count is wrong
+too: the file is 35 pages, not 22.
+
+**It is not a harmless typo.** That entry is the only recorded case of a
+document whose two sides are non-contiguous in the scan, and it was the
+evidence I reached for when justifying a restriction. Had I quoted p5 instead
+of checking it, the example would have been a G-5, the reasoning would have
+collapsed, and I would not have known why.
+
+**Two further things fell out of checking it.**
+
+The census calls p4 a `g1` **face**. It opens with Section III, so it is a back
+page. DEFECTS #60 predicted exactly this failure and here it is, on the very
+page the entry describes.
+
+And **the hand-labelled ground truth contains no multi-sheet document at all**:
+all 13 documents in `tests/fixtures/extract_truth.csv` are one or two pages. The
+three documents of three pages or more in reassembly's own output are either
+already judged wrong (1493399 p13+p41) or recorded as wrong in HANDOFF
+(1912687 p2+p8). So the answer to the question asked was: no verified example
+existed, and the one written down was wrong.
+
+**Found by:** Alex asking a question that could only be answered by opening the
+file. The claim had survived since the recon session of 2026-08-28 and is
+repeated in the corpus notes.
+
+**Fix:** the entry is corrected in place with the correction dated and its
+reason given, rather than silently edited.
+
+**What remains:** the rest of that fixture list is from the same session and
+has had the same amount of checking, which is none since it was written. Its
+other page numbers are unverified.
+
+**Pin:** tests/tier2/test_taxonomy_coverage.py::test_the_demo_document_section_iii_is_where_handoff_says

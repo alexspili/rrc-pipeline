@@ -45,16 +45,16 @@ must be defensible line by line in an interview.
 - A SECOND channel, `compare_small`, reads marks under MIN_MARK_AREA, frozen
   1a01829, and PASSED both pre-registered bars: cross-record 1 of 400 (bound
   1.180%) and the district 02 sitting 1 of 20 false, 3 of 17 same-sheet. Not a
-  staple detector. **Wired into nothing**, and what blocks it is NOT #63/#64/
-  #66 — those are priced into the measured rates (#67) — but the absence of a
-  DOCUMENT-level measurement: every paper number is per pair.
+  staple detector. **WIRED IN 2026-09-07** via papermatch.sheet_confirmer,
+  restricted to ADJACENT pairs (R8): unrestricted it attached pages 31 and 56
+  apart. It adds 7 attachments, 6 judged correct, 86% against reassembly's
+  78%. What had blocked it was never #63/#64/#66 (#67) but the missing
+  document-level measurement.
 - Its real findings are not the pass. `same-bundle` was used 0 times so the
   bundle confusion is STILL unmeasured; the adjacent false rate is 5.0% against
-  0.25% and 20 pairs cannot resolve it; and page parity predicts same-sheet at
-  14 of 19 even-start against 3 of 18 odd (Fisher p=0.0008), a 78% prior, so a
-  screen and not a confirmer. Unbuilt, not to be adopted from its own sheet.
-- The area floor never kept printing out, MAX_ASPECT did; every page is read at
-  its own resolution (#61).
+  0.25% and 20 pairs cannot resolve it; and page parity (74% even-start vs 17%
+  odd on d02, Fisher p=0.0008) does NOT replicate on d03, 3 of 7. Not adopted.
+- The area floor never kept printing out, MAX_ASPECT did; pages are read at their own dpi (#61).
 - Next: decide on the parity prior, then the TypeScript span viewer, unbuilt.
 
 ## Standing rules

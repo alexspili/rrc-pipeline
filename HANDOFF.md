@@ -208,8 +208,13 @@ accuracy, stage 2 owns per-class numbers.
 
 ## Documents seen (fixture candidates, on Alex's machine + this thread)
 
-- **1501720** Ducroz/Endeavor (Brazoria, 2007–09): 22pp combined file. G-1
-  face p2, its Section III p5 (NON-CONTIGUOUS, P-4 between). W-4/W-4A/W-5/
+- **1501720** Ducroz/Endeavor (Brazoria, 2007–09): 35pp combined file. G-1
+  face p2, its Section III **p4** (NON-CONTIGUOUS, P-4 between). Corrected
+  2026-09-07: this said p5, and p5 is a Form G-5 Gas Well Classification
+  Report, rendered and read. The structure was right and the page number was
+  wrong by one, in the file a fresh thread is told to read first. The census
+  calls p4 a `g1` FACE; it opens with SECTION III, so it is a back page, which
+  is DEFECTS #60 firing on the very page this entry describes. W-4/W-4A/W-5/
   W-6/G-5/W-15, Rule 37 complaint, shut-in letters, internal RRC emails,
   surveyor plat, schematic. REAL ERRORS: G-5 API 42-309-31674 vs 039-31674
   everywhere else (transposed digit; county prefix check catches);

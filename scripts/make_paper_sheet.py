@@ -164,12 +164,16 @@ def main() -> None:
         return papermatch.page_marks(pdf, page, cache, hashes[pdf])
 
     def screen(pairs, label):
-        keep, thin = [], 0
+        keep, thin, unreadable = [], 0, 0
         for n, (record_id, file_index, a, b) in enumerate(pairs, 1):
             try:
                 ma, mb = (marks(record_id, file_index, a),
                           marks(record_id, file_index, b))
             except Exception:                           # noqa: BLE001
+                # Counted, not swallowed. It used to `continue` silently, so a
+                # pair dropped for being unreadable was reported as though it
+                # had never been considered (DEFECTS #68).
+                unreadable += 1
                 continue
             if min(len(ma), len(mb)) >= paper.MIN_MARKS_AGREEING:
                 keep.append((record_id, file_index, a, b))
@@ -177,6 +181,9 @@ def main() -> None:
                 thin += 1
             if n % 40 == 0:
                 print(f"    {label}: {n}/{len(pairs)}", flush=True)
+        if unreadable:
+            print(f"    {label}: {unreadable} pairs unreadable, excluded "
+                  f"and counted (DEFECTS #68)")
         return keep, thin
 
     print(f"held-out frame, from the protocol:")
