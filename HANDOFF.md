@@ -793,7 +793,8 @@ channels.
 candidates kills one axis whether the transform preserves it or mirrors it.
 Closing it would lower the false-confirmation rate. It is not a gate, and
 treating it as one was #67. Any fix is post-hoc by construction and needs a
-fresh frame; district 02 has about 28,000 records untouched.
+fresh frame; the district 02 window holds roughly 28,000 matches
+and only 155 were pulled.
 
 **The bundle confusion has never been measured.** `same-bundle` was offered on
 a 40-pair sheet and used zero times, so DEFECTS #63's central prediction is
