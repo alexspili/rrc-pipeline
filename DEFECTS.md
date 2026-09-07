@@ -3069,3 +3069,78 @@ not-one-sheet pairs.** That gap is real, it is not closed here, and it is one
 of the things the fetch has to buy.
 
 **Pin:** tests/tier2/test_taxonomy_coverage.py::test_form_class_may_not_define_a_negative_stratum
+
+---
+
+## #63 — 2026-09-07 — The edge filter puts every candidate in a band, and a flip along that band constrains nothing
+
+**What happened:** the pre-registered held-out run of the small-mark channel
+(docs/labeling-protocol-staple.md, frozen at `1a01829`) scored 400
+guaranteed-false cross-record pairs and returned **1 false confirmation**. The
+95% upper bound is 1.180% against a bar of 2%, so **the rule passed as
+written**. This entry is about the one pair, per the protocol's own clause that
+a confirmed pair gets read.
+
+    1494811-0 p12   PLEDGER GAS FIELD UNIT, Chambers, Union Texas Petroleum
+    1505186-0 p2    Union Oil Company of California
+
+    the two agreeing marks, under flip_v:
+      A(0.9514, 0.1399)  29 px    B(0.9509, 0.8637)  26 px
+      A(0.9310, 0.6252)  31 px    B(0.9336, 0.3707)  75 px
+
+**Every one of the four is at x ≈ 0.93 to 0.95.** They are all on the sheet's
+right-hand edge. `flip_v` maps (x, y) to (x, 1 − y) and **leaves x alone**, so
+for marks that share a vertical band the x agreement is free and the pairing
+constrains **y only**. Two independent one-dimensional coincidences at a
+tolerance of 0.008 are cheap.
+
+**Measured, 4,000 simulated pairs at the observed candidate counts of 38 and
+16:**
+
+| Candidate distribution | P(two or more agree under flip_v) |
+|---|---|
+| Spread over the sheet | **0.62%** |
+| Confined to one edge band | **85.65%** |
+
+**And the mechanism creates the condition it is defeated by.**
+`SMALL_EDGE_IN = 0.8` exists to keep candidates near the paper's edge, which is
+where damage is. Its effect is to confine them to a rim, and a rim is a
+one-dimensional structure aligned with the very axes the flips act on. The
+filter that makes the channel possible is the filter that makes this hole.
+
+**This is DEFECTS #55 generalised and I did not generalise it.** #55 says a
+mark the transform maps onto a *twin of its own page* is ambiguous, because the
+mechanism cannot tell it from its twin. The same argument covers a coordinate:
+if the winning transform leaves a coordinate unchanged and every candidate
+shares that coordinate, the transform has been asked to explain nothing along
+that axis. I wrote #55, cited it in this channel's design, implemented the
+twin case, and did not ask whether the axis case existed.
+
+**What this does and does not do to the run.** It does not change its
+arithmetic; the protocol says so in advance and that clause is the reason it
+was written. The measured rate is 1 of 400 whatever caused it. What it damages
+is the **reachability model in the protocol**, which put the per-pair chance at
+0.46% from a two-dimensional catchment. That model does not describe the
+candidate distribution the mechanism produces, and it is wrong in the unsafe
+direction. The bar passed anyway, and passed harder than the model deserved.
+
+**Where it will hurt, which is exactly the untested place.** The two pages of a
+true adjacent pair come from one file, one scanner and one filing, so their
+candidates sit in the *same* bands far more often than two pages drawn from
+different records do. The regime with no measured false-confirmation rate
+(DEFECTS #62) is also the regime where this mechanism is most likely to fire.
+That is now the strongest reason the district 02 fetch has to happen before
+anything is wired into reassembly.
+
+**Fix: not made, deliberately.** The obvious one is #55's rule applied to axes:
+under a transform that preserves a coordinate, marks whose spread along the
+*other* coordinate is all the evidence must be discounted, or the pair abstains.
+It has no held-out support, it would be chosen by looking at a failure, and the
+split it would need to be tested on is the split just spent. It waits for the
+fetch, a new freeze and a new pre-registered run.
+
+**What remains:** the channel as frozen has this hole, `compare_small` is wired
+into nothing, and nothing downstream may use it until the hole is closed and
+measured. That is recorded here rather than in a comment nobody reads.
+
+**Pin:** tests/tier1/test_paper.py::test_marks_in_one_edge_band_agree_too_easily_under_the_flip_along_it

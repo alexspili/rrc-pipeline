@@ -477,3 +477,126 @@ is DEFECTS #51: **a pre-registered bar must be checked for reachability before
 it is written down**, and the mirror, DEFECTS #58: **a bar on a mechanism that
 supplements an existing system is stated against that system's output, not
 against perfection.**
+
+---
+
+# Day 7, 2026-09-07: under the mark-area floor
+
+## What was asked for and what the paper actually supports
+
+The task was a staple channel for `pipeline/paper.py`. The evidence for it was
+the 2026-09-06 sitting's evidence column: 15 of the 16 pairs Alex judged
+same-sheet cite staple marks, which sit below `MIN_MARK_AREA`.
+
+**The staple model did not survive measurement.** "Two marks about 10 mm apart
+near a corner, with pitch and angle as the signature" fires on **1 of the 8**
+development pairs where a flip beat the control. The other seven have their
+agreeing marks 1.6, 3.4, 5.0, 8.7 and 9.2 inches apart. Rendered and looked at,
+the marks are specks, nicks and show-through rather than staple holes. Pitch
+appears nowhere in the shipped code because it earned no place there. Same
+shape as DEFECTS #59: a fact assembled from real observations, generalised in
+the wrong direction, repeated until repetition made it look established.
+
+What ships instead is a **small-mark channel**: marks under `MIN_MARK_AREA`, on
+the sheet rather than the scanner surround, roughly equant, near the paper's
+own edge, and with at most one comparable neighbour within a character pitch.
+Printing comes in runs and damage does not, and that one test took 2,357
+candidates to 37 on a real page.
+
+## Two things that had to be got right, both measured
+
+**Count replaces shape.** These marks are a few dozen pixels and have no rim to
+sample, so position carries the whole claim, which R2 forbids it to do alone.
+Several marks agreeing at once under one transform stands in for the outline,
+with the controls given the same freedom, and the statistic is still the margin.
+
+**No offset is searched**, and this is R1 turning up in a new place:
+
+| | cross-record | same file | positives |
+|---|---|---|---|
+| Marks matched one at a time | **0 of 120** | 3 of 160 | 4 of 16 |
+| A shared rigid offset searched | 2 of 120 | 11 of 160 | 5 of 16 |
+
+## Development result
+
+On the 91 development records, fires on **4 of the 16** pairs Alex judged
+same-sheet, and those four are **disjoint** from the four `compare` already
+confirms, so on the sitting's own pairs the two channels together reach 8 of
+16. Fires on **0 of the 8** pairs he judged not-same-sheet and **0 of 120**
+guaranteed-false cross-record pairs. Three of 160 non-adjacent same-file pairs
+fire; those are not guaranteed false and the protocol's standing rule is that
+Alex adjudicates them.
+
+Every constant was chosen while looking at that data and the firing rule was
+chosen after seeing both halves. Frozen at commit `1a01829`; pre-registration
+in `docs/labeling-protocol-staple.md`.
+
+## The corpus is split, and the split is committed
+
+`tests/fixtures/paper_record_split.csv`: **91 development, 111 held out**, seed
+20260906. Every record whose pages Alex has looked at, 35 of them, is
+forced into
+development, derived from `seen_by_alex` rather than remembered, because such a
+record can never supply a positive again (DEFECTS #56). The split guards one thing and
+one only: that the false-confirmation number is measured on records nobody
+tuned on. Negatives never reach Alex, so nothing here protects the positives.
+
+## The bar is a bound, not a zero, and that was checked first
+
+A mark's catchment at `SMALL_TOLERANCE` is 0.000201 of the sheet, so the chance
+of two independent agreements arising and beating the control is about **0.46%
+per pair**. Over 400 pairs the expected count of false confirmations is **1.8**.
+A pre-registered bar of "zero" would therefore have been unreachable, which is
+DEFECTS #51 in the other direction. The rule is a **95% upper bound below 2%**
+on the held-out cross-record rate: met by 0 of 150, 1 of 250, 2 of 350 or 3 of
+400, above the expected value at every size, and failed at twice it.
+
+**If it passes, the module's safety claim still gets worse.** `compare` alone
+is 0 of 850, below 0.92%. Two per cent is a looser bound. The trade is roughly
+double the reach for a weaker safety claim, it is Alex's to make rather than
+the rule's, and the protocol says so before the number exists.
+
+## Two defects, both found by reading rather than by failure
+
+**#61.** `papermatch.page_marks` called `solid_marks` with the default 300 dpi
+on every page. Measured over all 3,689 pages: **53 are 200 dpi**, every one
+inside a file that is otherwise 300, and 11 adjacent pairs straddle the change.
+The damaging half is not the floor but `area_in2`, which came out 2.25x small
+and so put one physical mark outside `AREA_RATIO` from itself, making those 11
+pairs unconfirmable by construction. Fixed; 0 of 494 verdicts changed.
+
+It also settled something larger. Reading those pages honestly admits 19
+components and **all 19, rendered and inspected, are printing**: fax-header
+text, casing-schematic hatching, part of a RECEIVED stamp, plat linework. So
+**the area floor was never what kept printing out. `MAX_ASPECT` was.** That is
+why the small-mark channel carries structural discriminators instead of a size
+envelope.
+
+**#62.** I built the adjacent-negative stratum from census `form_class` and 6
+of its 7 rows were pairs Alex judged **same**-sheet, because `form_class`
+contradicts its own section heading on 31 of 65 back pages (#60). A noisy label
+may choose which rows a human looks at; it may never stand in for the human.
+The 2026-09-06 sitting is unaffected: it used that stratum to sample and took
+the blind verdict as truth.
+
+## What is still missing, and what buys it
+
+**There is no measured false-confirmation rate on genuinely adjacent pairs that
+are not one sheet.** None exists with a trustworthy label: the eight negatives
+Alex judged are all three or more pages apart, and DEFECTS #62 sets out what
+happened when the classifier was asked to supply the label instead. That gap is the main
+thing the fetch has to buy.
+
+**Orientation** is a recorded limitation rather than a defect. The two flips
+and the two controls are each closed under `rot180`, so a page stored upside
+down costs nothing; only a quarter turn breaks it, and that is 2.9% of adjacent
+corpus pairs and 0 of the 54 in the 2026-09-06 frame.
+
+## The fetch, when it happens
+
+**District 02**, Alex's choice on 2026-09-07, adjacent on the coast, so a
+generalization test across offices with a population close enough to compare.
+The confound is written down in advance: a regression there has two possible
+causes and this run cannot separate them. Needs a fresh `NEUBUS_TOKEN` on the
+day. `fetch.py --dry-run` first to size it. No census and no model money: the
+frame is adjacent pairs screened by the detector.

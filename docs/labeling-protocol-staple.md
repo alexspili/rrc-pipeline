@@ -121,3 +121,32 @@ every record in the corpus.
 A confirmed pair may reveal a mechanism nobody has seen. **That gets a defect
 entry and a failing test, and it does not change this run's arithmetic.** One
 clause. It is above.
+
+
+---
+
+## Result, 2026-09-07
+
+| | |
+|---|---|
+| Held-out guaranteed-false pairs scored | 400 |
+| False confirmations | **1** |
+| 95% upper bound | **1.180%** |
+| Rule | below 2% |
+
+**The rule passed.** The observed count sits below the modelled expectation of
+1.8, and no constant was moved.
+
+**The one pair was read, as the clause above requires.** 1494811-0 p12 against
+1505186-0 p2, different operators and different counties. All four agreeing
+marks lie at x between 0.93 and 0.95, on the right-hand edge, and `flip_v`
+preserves x, so the pairing constrained y alone. Simulated at the observed
+candidate counts, two agreements arise 0.62% of the time when marks are spread
+over the sheet and 85.65% of the time when they share one edge band.
+
+**That damages the reachability model in this document, not the measurement.**
+The 0.46% per-pair figure assumed a two-dimensional catchment and the channel's
+own edge filter does not produce one. The bar passed anyway and passed harder
+than the model deserved. Written up as DEFECTS #63, pinned in tier 1, asserted
+in tier 3, and **not fixed here**: the fix would be chosen by looking at a
+failure and the split it needs to be tested on is the one just spent.

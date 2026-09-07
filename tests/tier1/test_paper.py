@@ -714,3 +714,41 @@ def test_the_small_channel_uses_the_same_transforms_and_controls():
     import inspect
     source = inspect.getsource(paper.small_agreeing)
     assert "TRANSFORMS" in source and "CONTROLS" in source
+
+
+# ------------- DEFECTS #63: a flip along the band the candidates sit in
+
+def test_marks_in_one_edge_band_agree_too_easily_under_the_flip_along_it():
+    """The hole the held-out run found, asserted so it cannot be forgotten.
+
+    `SMALL_EDGE_IN` confines candidates to a rim, and a rim is one dimensional.
+    `flip_v` leaves x alone, so two marks sharing a vertical band agree in x
+    for free and only y has to line up. Simulated at the observed candidate
+    counts, two agreements arise 0.62% of the time when marks are spread over
+    the sheet and **85.65%** of the time when they share one edge band.
+
+    **This test asserts the defect, not the fix.** The pair below is two
+    unrelated sheets and `compare_small` confirms it. The fix is DEFECTS #55's
+    rule applied to axes, it has no held-out support, and it waits for the
+    district 02 fetch and a new pre-registered run. When it lands, this
+    assertion inverts and cites that commit.
+    """
+    front = blank_sheet()
+    back = blank_sheet()
+    # Four marks, all on the right-hand edge, from two sheets that share
+    # nothing. Only their y values are asked to agree.
+    for y in (500, 2100):
+        front |= speck(front.shape, 2400, y, radius=6)
+    for y in (3299 - 500, 3299 - 2100):
+        back |= speck(back.shape, 2400, y, radius=6)
+
+    verdict = paper.compare_small(paper.small_marks(front),
+                                  paper.small_marks(back))
+    assert verdict.confirmed, (
+        "if this now abstains, the axis rule has landed: invert this test and "
+        "cite the commit (DEFECTS #63)")
+    assert verdict.transform == "flip_v"
+
+    # The x coordinate carried none of it: every mark shares the band.
+    marks = paper.small_marks(front)
+    assert max(m.x for m in marks) - min(m.x for m in marks) < 0.01

@@ -253,6 +253,42 @@ control, not the filter.
 seeing both the positive and the negative results. Frozen at commit `1a01829`;
 pre-registration in `docs/labeling-protocol-staple.md`.
 
+### The held-out run, 2026-09-07: the rule passed and the failure taught more
+
+| | |
+|---|---|
+| Held-out guaranteed-false pairs, two different records | **1 false confirmation of 400** |
+| 95% upper bound | **1.180%** |
+| Pre-registered bar | below 2% |
+
+The bar was a bound rather than a zero because zero is not attainable at 400
+pairs: the modelled expectation was 1.8, and a bar of zero would have been
+DEFECTS #51 in the other direction.
+
+**The one failure showed a hole and it is the reason this channel is wired
+into nothing.** All four agreeing marks sat at x between 0.93 and 0.95, on the
+sheet's right edge. `flip_v` leaves x alone, so marks sharing a vertical band
+agree in x for free and only y is asked to line up:
+
+| Candidates | P(two or more agree under flip_v) |
+|---|---|
+| Spread over the sheet | 0.62% |
+| Confined to one edge band | **85.65%** |
+
+`SMALL_EDGE_IN` is what puts them in the band, so the filter that makes the
+channel possible is the filter that makes the hole. It is DEFECTS #55
+generalised from a twin mark to a twin coordinate, and #55 was cited in this
+design without being generalised. DEFECTS #63.
+
+**Where it will hurt is the place with no measurement.** Two pages of a true
+adjacent pair share a file, a scanner and a filing, so their candidates sit in
+the same bands far more often than two pages from different records do. The
+regime with no measured false-confirmation rate is the regime where this fires
+most easily.
+
+The fix is not made. It would be chosen by looking at a failure, it has no
+held-out support, and the split it needs is the split just spent.
+
 ## Rules
 
 R1. The transform is predicted, never searched. No rotation offset.

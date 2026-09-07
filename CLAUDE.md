@@ -27,32 +27,35 @@ must be defensible line by line in an interview.
 ## Current state
 
 - fetch.py works end to end. Corpus 202 records, 249 files, 3,689 pages in
-  data/raw (git-ignored), manifest at data/manifest.jsonl. Closed since
-  2026-08-31; **reopening it is the declared next step** for the staple
-  channel, about 110 more records.
+  data/raw (git-ignored), manifest at data/manifest.jsonl. **Reopening it is
+  the declared next step, DISTRICT 02**, to buy the one thing no measurement
+  in hand can: a false-confirmation rate on ADJACENT not-one-sheet pairs.
+- Corpus SPLIT, tests/fixtures/paper_record_split.csv: 91 development, 111
+  held out, every record Alex has seen in development. Never tune on held-out.
 - Classifier and census DONE. 115 of 202 records (57%) hold a completion
-  report. G-1 face precision **94.0%**, W-2 **57.4%** whose interval contains
-  its own before-figure, so W-2 is NOT established. Never quote 83.6% arm
-  accuracy as accuracy on the target classes. Its `form_class` contradicts its
-  own section heading on 31 of the 65 section labels it gave (DEFECTS #60).
-- Extraction built and SCORED 2026-09-01: status **87.4%**, value **82.5%**,
-  reported BY ERA and never blended. Those numbers describe a prompt that no
-  longer ships — `found_in` was added 2026-09-05 — and re-scoring them is an
-  unspent ~$1.50.
-- Provenance CLOSED 2026-09-03: snap, then the widened model band, then page
-  plus raw text, every region source-tagged. 77.3% highlight coverage.
-- Extraction runs **batched**, scripts/run_extraction.py, $7.17 for 218
-  documents. NOT YET RUN. It is the gated spend everything downstream waits
-  behind.
-- Reassembly BUILT and measured across four judging sittings; all 39 corpus
-  attachments are judged. 25 of 32 multi-page documents clean. The six wrong
-  ones left are same-form, same-well, different filing, which no form rule
-  can reach.
+  report. G-1 face precision **94.0%**; W-2 NOT established; never quote 83.6%
+  as accuracy on the target classes. `form_class` on back pages contradicts its
+  own section heading 31 times in 65 and MAY NOT define a negative (#60, #62).
+- Extraction SCORED 2026-09-01: status **87.4%**, value **82.5%**, BY ERA,
+  never blended, on a prompt that no longer ships; re-scoring ~$1.50.
+  Provenance CLOSED 2026-09-03, 77.3% coverage. Batched run **$7.17 for 218
+  documents, NOT YET RUN**: the gated spend everything downstream waits behind.
+- Reassembly BUILT, four sittings, all 39 attachments judged, 25 of 32
+  multi-page documents clean; the six wrong are same-form same-well
+  different-filing, which no form rule can reach.
 - pipeline/paper.py confirms two pages are ONE SHEET from the marks on it:
   0 false confirmations in 850 negatives. It failed its pre-registered recall
   bar and shipped anyway on a measured gain, both facts recorded (DEFECTS
   #57, #58). `make eval` runs tests/tier3.
-- Next: the staple channel, then the TypeScript span viewer, still unbuilt.
+- A SECOND channel, `compare_small`, reads marks under MIN_MARK_AREA. Frozen
+  1a01829. Development: 4 of 16 same-sheet pairs, DISJOINT from compare's 4.
+  Held out it PASSED its pre-registered bar, 1 false confirmation of 400,
+  bound 1.180% against 2%. **Not a staple detector** (pitch fires on 1 of 8).
+  **Wired into nothing and may not be** until DEFECTS #63 is closed: the edge
+  filter puts candidates in a band and a flip along it constrains one axis.
+- The area floor never kept printing out, MAX_ASPECT did (#61); every page is
+  read at its own resolution, 53 corpus pages being 200 dpi.
+- Next: the district 02 fetch, then the TypeScript span viewer, still unbuilt.
 
 ## Standing rules
 
