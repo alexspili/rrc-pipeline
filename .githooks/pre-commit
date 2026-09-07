@@ -30,4 +30,16 @@ if [ "$fail" -eq 0 ] && [ -x .venv/bin/python ]; then
   fi
 fi
 
+# 6. Viewer tests, when the viewer's deps are installed. Same reasoning as
+#    5: CLAUDE.md rule 6 tiers the TypeScript tests too, and a rule nothing
+#    enforces is a wish. Skipped on a checkout that never ran npm install.
+if [ "$fail" -eq 0 ] && [ -d viewer/node_modules ]; then
+  if ! (cd viewer && npx vitest run --silent > /tmp/rrc-viewer-test.log 2>&1); then
+    echo "BLOCKED: viewer tests are failing."
+    tail -15 /tmp/rrc-viewer-test.log
+    echo "(SKIP_TESTS=1 git commit ... to override, and say why in the message.)"
+    [ -z "$SKIP_TESTS" ] && fail=1
+  fi
+fi
+
 exit $fail
