@@ -238,3 +238,40 @@ def test_the_cache_key_separates_two_resolutions_of_one_page(tmp_path):
     b = cache.path(doc, PAGE_200, dpi=300.0)
     assert a != b
     assert papermatch.DETECTOR in a.name and papermatch.DETECTOR in b.name
+
+
+# --------------------------- the small-mark channel's cache, 2026-09-07
+
+def test_the_small_mark_cache_returns_what_the_detector_returned(tmp_path):
+    cache = papermatch.SmallMarkCache(tmp_path)
+    fresh = papermatch.page_small_marks(pdf(), FACE, cache)
+    cached = papermatch.page_small_marks(pdf(), FACE, cache)
+    assert len(cached) == len(fresh)
+    for a, b in zip(fresh, cached):
+        assert (round(a.x, 9), round(a.y, 9), round(a.area_in2, 9)) == \
+               (round(b.x, 9), round(b.y, 9), round(b.area_in2, 9))
+
+
+def test_the_two_caches_do_not_share_a_key(tmp_path):
+    """A change to one channel's constants must not invalidate the other's
+    pages. There are 1,451 cached under the solid-mark detector and each costs
+    about 1.5 s to rebuild, so folding the keys together would make every
+    small-mark experiment expensive for no reason.
+    """
+    assert papermatch.DETECTOR != papermatch.SMALL_DETECTOR
+    doc = render.doc_hash(pdf())
+    marks_path = papermatch.MarkCache(tmp_path).path(doc, FACE, 300.0)
+    small_path = papermatch.SmallMarkCache(tmp_path).path(doc, FACE, 300.0)
+    assert marks_path != small_path
+    assert papermatch.SMALL_DETECTOR not in marks_path.name
+    assert papermatch.DETECTOR not in small_path.name
+
+
+def test_changing_a_small_mark_constant_invalidates_only_its_own_cache(
+        tmp_path, monkeypatch):
+    cache = papermatch.SmallMarkCache(tmp_path)
+    papermatch.page_small_marks(pdf(), FACE, cache)
+    doc, dpi = render.doc_hash(pdf()), papermatch.page_dpi(pdf(), FACE)
+    assert cache.get(doc, FACE, dpi) is not None
+    monkeypatch.setattr(papermatch, "SMALL_DETECTOR", "0000000000000000")
+    assert cache.get(doc, FACE, dpi) is None

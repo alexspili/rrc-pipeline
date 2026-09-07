@@ -36,6 +36,19 @@ DETECTOR = pc.prompt_hash(json.dumps({
     "hole_area": list(paper.HOLE_AREA),
 }, sort_keys=True))
 
+#: The other half of the other cache key. Separate from DETECTOR on purpose:
+#: the two channels have separate constants, and folding them together would
+#: make a change to one invalidate every page cached under the other. There
+#: are 1,451 of those and each costs about 1.5 s to rebuild.
+SMALL_DETECTOR = pc.prompt_hash(json.dumps({
+    "area": list(paper.SMALL_AREA_IN2),
+    "max_aspect": paper.SMALL_MAX_ASPECT,
+    "edge": paper.SMALL_EDGE_IN,
+    "run_pitch": paper.SMALL_RUN_PITCH_IN,
+    "max_neighbours": paper.SMALL_MAX_NEIGHBOURS,
+    "inset": paper.SMALL_INSET_IN,
+}, sort_keys=True))
+
 
 class MarkCache:
     """Marks for one page, on disk, keyed on (document, page, detector).
@@ -78,6 +91,57 @@ class MarkCache:
                             dtype=np.float32).reshape(len(marks), -1)
         np.savez_compressed(self.path(doc_hash, page, dpi), meta=meta,
                             kinds=kinds, outlines=outlines)
+
+
+class SmallMarkCache:
+    """Small marks for one page, on disk, keyed on (document, page, dpi, detector).
+
+    A plain JSONL row per page rather than the compressed arrays MarkCache
+    needs: a small mark carries three numbers and no 720-sample outline, so the
+    rows are thin enough for the line-oriented pattern used elsewhere here.
+    """
+
+    def __init__(self, root: Path):
+        self.root = Path(root)
+
+    def path(self, doc_hash: str, page: int, dpi: float) -> Path:
+        # Resolution is in the key for the same reason as in MarkCache: it
+        # decides what counts as a mark, and this channel's constants are all
+        # distances (DEFECTS #61).
+        return self.root / f"{doc_hash}-{page}-{dpi:g}-{SMALL_DETECTOR}.json"
+
+    def get(self, doc_hash: str, page: int,
+            dpi: float) -> list[paper.SmallMark] | None:
+        path = self.path(doc_hash, page, dpi)
+        if not path.exists():
+            return None
+        return [paper.SmallMark(x=m[0], y=m[1], area_in2=m[2])
+                for m in json.loads(path.read_text())]
+
+    def put(self, doc_hash: str, page: int, dpi: float,
+            marks: list[paper.SmallMark]) -> None:
+        self.root.mkdir(parents=True, exist_ok=True)
+        self.path(doc_hash, page, dpi).write_text(
+            json.dumps([[m.x, m.y, m.area_in2] for m in marks]))
+
+
+def page_small_marks(pdf: Path, page: int,
+                     cache: SmallMarkCache | None = None,
+                     doc_hash: str | None = None) -> list[paper.SmallMark]:
+    """Every small mark on one page: the second channel's half of page_marks."""
+    dpi = page_dpi(pdf, page)
+    if cache is not None:
+        doc_hash = doc_hash or render.doc_hash(pdf)
+        hit = cache.get(doc_hash, page, dpi)
+        if hit is not None:
+            return hit
+
+    image = render.extract_page_image(pdf, page).convert("L")
+    marks = paper.small_marks(np.asarray(image) < 128, dpi=dpi)
+
+    if cache is not None:
+        cache.put(doc_hash, page, dpi, marks)
+    return marks
 
 
 def page_dpi(pdf: Path, page: int) -> float:
