@@ -498,3 +498,219 @@ def test_a_half_turn_never_moves_a_page_between_the_two_sets():
             composed = [half(*move(x, y)) for x, y in points]
             expected = [group[other](x, y) for x, y in points]
             assert np.allclose(composed, expected), f"rot180 after {name}"
+
+
+# ================================================== the small-mark channel
+
+def speck(size, x, y, radius=4):
+    """One small round mark, drawn into a page-sized mask."""
+    yy, xx = np.mgrid[0:size[0], 0:size[1]]
+    return np.hypot(xx - x, yy - y) <= radius
+
+
+def blank_sheet(height=3300, width=2550, border=60):
+    """A sheet inset in a dark scanner field, which is what the scans are."""
+    page = np.ones((height, width), dtype=bool)
+    page[border:height - border, border:width - border] = False
+    return page
+
+
+def test_the_sheet_is_found_inside_the_scanner_field():
+    """The scans are bilevel with a dark backing, so everything outside the
+    paper is 'ink'. Without finding the sheet, the surround is one enormous
+    mark and every coordinate is measured against the wrong frame.
+    """
+    page = blank_sheet()
+    sheet = paper.sheet_region(page)
+    assert sheet[1600, 1200], "the middle of the paper is on the sheet"
+    assert not sheet[10, 10], "the scanner field is not"
+
+
+def test_a_mark_under_the_solid_floor_is_found_here_and_not_there():
+    """The two channels partition the marks by area, so neither can ever count
+    the other's. That is what stops a speck being used as one of compare()'s
+    two agreeing marks, where a shared punch stroke is already the hazard.
+    """
+    page = blank_sheet()
+    page |= speck(page.shape, 200, 200, radius=6)          # ~113 px
+    small = paper.small_marks(page)
+    assert len(small) == 1
+    assert small[0].area_in2 < paper.MIN_MARK_AREA
+    assert paper.solid_marks(page) == []
+
+
+def test_the_two_channels_never_see_the_same_mark():
+    """Asserted on one array carrying both sizes, so the partition is a
+    property of the code and not of two constants read side by side."""
+    page = blank_sheet()
+    page |= speck(page.shape, 200, 200, radius=6)           # under the floor
+    page |= speck(page.shape, 200, 900, radius=40)          # over it
+    small = {round(m.area_in2, 9) for m in paper.small_marks(page)}
+    solid = {round(m.area_in2, 9) for m in paper.solid_marks(page)}
+    assert small and solid
+    assert small.isdisjoint(solid)
+
+
+def test_the_inside_of_a_run_of_printing_is_removed():
+    """The discriminator that does most of the work. Glyphs have neighbours on
+    their baseline, leader dots have neighbours along their line, and damage to
+    paper has neither. Measured on one real page, this took 2,357 candidates
+    to 37.
+
+    **The two ends of a run survive, and that is stated rather than tuned
+    away.** A dot at the end of a row has one neighbour, and one neighbour is
+    allowed, because a staple's two legs are a pair and must not delete each
+    other. So a row of eight leader dots contributes two candidates, not zero.
+    What stops those two mattering is not this filter: it is that they must
+    then land on a mark of the other page under a flip and not under a
+    control, and that at least two must do so at once.
+
+    Tightening MAX_NEIGHBOURS to zero would remove them and would also remove
+    every pair. That trade was not made, and this test is where it is written
+    down.
+    """
+    page = blank_sheet()
+    for i in range(8):
+        page |= speck(page.shape, 200 + i * 60, 200, radius=5)
+    kept = paper.small_marks(page)
+    assert len(kept) == 2, [round(m.x, 3) for m in kept]
+    assert min(m.x for m in kept) < max(m.x for m in kept), "the two ends"
+
+    vertical = blank_sheet()
+    for i in range(8):
+        vertical |= speck(vertical.shape, 200, 200 + i * 60, radius=5)
+    assert len(paper.small_marks(vertical)) == 2, (
+        "a vertical run is a run too; keying on baselines alone let whole "
+        "columns of leader dots through")
+
+
+def test_a_dense_block_of_printing_is_removed_entirely():
+    """The case the ends-of-a-run allowance does not leak: real text is two
+    dimensional, so almost every glyph has two or more neighbours."""
+    page = blank_sheet()
+    for row in range(4):
+        for column in range(8):
+            page |= speck(page.shape, 200 + column * 60, 200 + row * 60,
+                          radius=5)
+    assert paper.small_marks(page) == []
+
+
+def test_a_mark_in_the_middle_of_the_sheet_is_not_a_candidate():
+    page = blank_sheet()
+    page |= speck(page.shape, 1275, 1650, radius=6)        # dead centre
+    assert paper.small_marks(page) == []
+
+
+def test_a_turned_sheet_is_confirmed_and_a_copied_one_is_not():
+    """The positive control for the channel, and the negative that matters:
+    two pages scanned the same way up agree under `same`, which is a control,
+    so they are refused however well they agree.
+    """
+    front = blank_sheet()
+    for x, y in [(200, 200), (2350, 250), (250, 3100)]:
+        front |= speck(front.shape, x, y, radius=6)
+
+    back = np.flipud(front)
+    verdict = paper.compare_small(paper.small_marks(front),
+                                  paper.small_marks(back))
+    assert verdict.confirmed, verdict.reason
+    assert verdict.transform == "flip_v"
+    assert verdict.margin > 0
+
+    copy = paper.compare_small(paper.small_marks(front),
+                               paper.small_marks(front.copy()))
+    assert not copy.confirmed, copy.reason
+
+
+def test_one_agreeing_small_mark_is_never_enough():
+    """R5's reason with no outline to fall back on. Down here a single
+    coincidence is cheap: every false agreement seen across 120
+    guaranteed-false pairs was one mark.
+    """
+    front = blank_sheet()
+    front |= speck(front.shape, 200, 200, radius=6)
+    front |= speck(front.shape, 2350, 250, radius=6)
+    back = blank_sheet()
+    back |= speck(back.shape, 200, 3099, radius=6)          # mirrors the first
+    back |= speck(back.shape, 2350, 2000, radius=6)         # mirrors nothing
+    verdict = paper.compare_small(paper.small_marks(front),
+                                  paper.small_marks(back))
+    assert not verdict.confirmed
+    assert verdict.agreeing < paper.MIN_SMALL_AGREEING
+
+
+def test_a_page_with_too_few_small_marks_abstains_rather_than_denying():
+    """R3. A mark under the floor that the detector missed is evidence of
+    nothing at all."""
+    front = blank_sheet()
+    front |= speck(front.shape, 200, 200, radius=6)
+    verdict = paper.compare_small(paper.small_marks(front), [])
+    assert not verdict.confirmed
+    assert "too few" in verdict.reason
+
+
+def test_no_offset_is_searched_for_the_small_marks():
+    """R1 in a new place. Searching a shared rigid offset was measured and it
+    lifted the controls: false confirmations went from 0 to 2 of 120
+    cross-record pairs and 3 to 11 of 160 same-file pairs, for one extra
+    positive. So marks shifted bodily against their own sheet are refused
+    rather than rescued.
+
+    A shift of the whole SCAN is a different thing and is absorbed by
+    construction, because coordinates are fractions of the sheet's own
+    bounding box. What this refuses is a shift of the marks against the sheet.
+    """
+    front = blank_sheet()
+    for x, y in [(200, 200), (2350, 250), (250, 3100)]:
+        front |= speck(front.shape, x, y, radius=6)
+    back = blank_sheet()
+    for x, y in [(290, 3099), (2440, 3049), (340, 199)]:   # mirrored, then +90px
+        back |= speck(back.shape, x, y, radius=6)
+    verdict = paper.compare_small(paper.small_marks(front),
+                                  paper.small_marks(back))
+    assert not verdict.confirmed, (
+        f"an offset was absorbed somewhere: {verdict.reason}")
+
+
+def test_the_small_mark_constants_are_stated_in_inches():
+    """DEFECTS #61: a constant in pixels means a different thing on the 53
+    corpus pages that are 200 dpi, and this channel's whole discriminator is a
+    distance. area_in2 is area/dpi**2, so the same pixels are a LARGER mark on
+    a lower-resolution scan.
+    """
+    page = blank_sheet()
+    page |= speck(page.shape, 200, 200, radius=6)
+    at300 = paper.small_marks(page, dpi=300.0)
+    at200 = paper.small_marks(page, dpi=200.0)
+    assert at300 and at200
+    assert at200[0].area_in2 > at300[0].area_in2
+
+
+def test_the_small_mark_constants_are_the_ones_measured_under():
+    """FROZEN 2026-09-07, before the held-out negatives were run. Every one of
+    these was chosen while looking at 91 development records, and the firing
+    rule was chosen after seeing both the positive and negative results, so
+    they have no held-out support whatever. Changing one invalidates the
+    held-out run rather than improving it.
+    """
+    assert paper.SMALL_AREA_IN2 == (25.0 / 300.0 ** 2, 0.02)
+    assert paper.SMALL_AREA_IN2[1] == paper.MIN_MARK_AREA
+    assert paper.SMALL_MAX_ASPECT == 2.5
+    assert paper.SMALL_EDGE_IN == 0.8
+    assert paper.SMALL_RUN_PITCH_IN == 0.35
+    assert paper.SMALL_MAX_NEIGHBOURS == 1
+    assert paper.SMALL_INSET_IN == 0.03
+    assert paper.SMALL_TOLERANCE == 0.008
+    assert paper.SMALL_AREA_RATIO == 3.0
+    assert paper.MIN_SMALL_AGREEING == 2
+    for name in ("sheet_region", "small_marks", "small_agreeing",
+                 "compare_small"):
+        assert callable(getattr(paper, name)), name
+
+
+def test_the_small_channel_uses_the_same_transforms_and_controls():
+    """It is a different statistic on the same physics. If these ever diverge
+    from compare()'s, one of the two is wrong about what paper does."""
+    import inspect
+    source = inspect.getsource(paper.small_agreeing)
+    assert "TRANSFORMS" in source and "CONTROLS" in source

@@ -52,12 +52,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from pipeline import papermatch, render                    # noqa: E402
+from pipeline import paper, papermatch, render             # noqa: E402
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
 RAW = ROOT / "data" / "raw"
@@ -65,21 +64,9 @@ SPLIT = ROOT / "tests" / "fixtures" / "paper_record_split.csv"
 SHEET = ROOT / "tests" / "fixtures" / "paper_sitting.csv"
 VERDICTS = ROOT / "data" / "probe" / "paper_sitting_verdicts.json"
 
-#: Chosen on development data, 2026-09-06. Not frozen and not pre-registered:
-#: freezing them is the next step and it happens in its own commit.
-AREA_PX = (25, 1800)        #: below MIN_MARK_AREA's 1,800 px at 300 dpi
-MAX_ASPECT = 2.5            #: damage is roughly equant
-EDGE_IN = 0.8               #: how near the paper's own edge a mark must sit
-RUN_PITCH_IN = 0.35         #: a comparable neighbour this close makes it text
-MAX_NEIGHBOURS = 1          #: a staple has a partner; a dotted rule has many
-TOL = 0.008                 #: how close two marks must land, as a sheet fraction
-AREA_RATIO = 3.0            #: one physical mark, read twice
-MIN_AGREEING = 2            #: R5's reason: one agreeing mark can be the stroke
-
-TRANSFORMS = {"flip_v": lambda x, y: (x, 1 - y),
-              "flip_h": lambda x, y: (1 - x, y)}
-CONTROLS = {"same": lambda x, y: (x, y),
-            "rot180": lambda x, y: (1 - x, 1 - y)}
+#: The detector and every constant live in pipeline/paper.py, frozen there.
+#: This probe carried its own copy while the shape of the thing was still
+#: being found; a probe that reimplements the mechanism measures the probe.
 
 _CACHE: dict = {}
 
@@ -94,92 +81,21 @@ def development_records() -> set:
     return {r["record_id"] for r in rows if r["half"] == "development"}
 
 
-def small_marks(pdf: Path, page: int) -> list[tuple[float, float, int]]:
-    """Candidate marks on one page, in coordinates of the SHEET.
-
-    Not of the image: the sheet is inset in a larger scanner field and inset
-    differently in the two scans of one pair, so image coordinates would
-    compare two different frames.
-    """
+def small_marks(pdf: Path, page: int) -> list:
+    """Cached per page for the run. Detection is ~1.5 s and the negative
+    strata score hundreds of pairs over the same pages."""
     key = (str(pdf), page)
-    if key in _CACHE:
-        return _CACHE[key]
-    dpi = papermatch.page_dpi(pdf, page)
-    array = np.asarray(render.extract_page_image(pdf, page).convert("L"))
-    dark = array < 128
-
-    # The sheet is the largest light region. Everything outside it is the
-    # scanner backing, which is dark and would otherwise be one huge "mark".
-    labels, count = ndimage.label(~dark)
-    if count == 0:
-        _CACHE[key] = []
-        return []
-    sizes = ndimage.sum(~dark, labels, range(1, count + 1))
-    sheet = ndimage.binary_fill_holes(labels == int(np.argmax(sizes)) + 1)
-    ys, xs = np.where(sheet)
-    top, left = int(ys.min()), int(xs.min())
-    height, width = int(ys.max()) - top, int(xs.max()) - left
-    if height <= 0 or width <= 0:
-        _CACHE[key] = []
-        return []
-
-    inside = dark & ndimage.binary_erosion(sheet, np.ones((9, 9)))
-    marked, _ = ndimage.label(inside)
-    found = []
-    for index, box in enumerate(ndimage.find_objects(marked), start=1):
-        area = int((marked[box] == index).sum())
-        if not (AREA_PX[0] <= area <= AREA_PX[1]):
-            continue
-        bh = box[0].stop - box[0].start
-        bw = box[1].stop - box[1].start
-        if max(bh, bw) / min(bh, bw) > MAX_ASPECT:
-            continue
-        found.append((box[1].start + bw / 2, box[0].start + bh / 2, area, bh))
-
-    to_edge = ndimage.distance_transform_edt(sheet) / dpi
-    points = (np.array([[f[0], f[1]] for f in found]) if found
-              else np.zeros((0, 2)))
-    keep = []
-    for cx, cy, area, bh in found:
-        if to_edge[int(cy), int(cx)] > EDGE_IN:
-            continue
-        near = np.hypot(points[:, 0] - cx, points[:, 1] - cy) <= \
-            RUN_PITCH_IN * dpi
-        neighbours = sum(1 for j in np.where(near)[0]
-                         if not (found[j][0] == cx and found[j][1] == cy)
-                         and max(bh, found[j][3]) / min(bh, found[j][3]) <= 2.5)
-        if neighbours > MAX_NEIGHBOURS:
-            continue
-        keep.append(((cx - left) / width, (cy - top) / height, area))
-    _CACHE[key] = keep
-    return keep
-
-
-def agreeing(a, b, move) -> int:
-    """Marks of b that land on a mark of a, one to one, under `move`."""
-    hits, taken = 0, set()
-    for ax, ay, aarea in a:
-        pick, closest = None, TOL
-        for j, (bx, by, barea) in enumerate(b):
-            if j in taken:
-                continue
-            if max(aarea, barea) / min(aarea, barea) > AREA_RATIO:
-                continue
-            tx, ty = move(bx, by)
-            distance = float(np.hypot(ax - tx, ay - ty))
-            if distance < closest:
-                pick, closest = j, distance
-        if pick is not None:
-            taken.add(pick)
-            hits += 1
-    return hits
+    if key not in _CACHE:
+        dpi = papermatch.page_dpi(pdf, page)
+        image = render.extract_page_image(pdf, page).convert("L")
+        _CACHE[key] = paper.small_marks(np.asarray(image) < 128, dpi=dpi)
+    return _CACHE[key]
 
 
 def verdict(pdf_a: Path, page_a: int, pdf_b: Path, page_b: int):
     a, b = small_marks(pdf_a, page_a), small_marks(pdf_b, page_b)
-    flip = max(agreeing(a, b, m) for m in TRANSFORMS.values())
-    control = max(agreeing(a, b, m) for m in CONTROLS.values())
-    return len(a), len(b), flip, control, flip >= MIN_AGREEING and flip > control
+    result = paper.compare_small(a, b)
+    return (len(a), len(b), result.agreeing, result.control, result.confirmed)
 
 
 def pdf_of(recs, record_id, file_index) -> Path:
@@ -287,9 +203,12 @@ def main() -> None:
         development = set(sorted(development)[:args.records])
     print(f"development records in use: {len(development)} of "
           f"{len(development_records())}  (tests/fixtures/paper_record_split.csv)")
-    print(f"constants: area {AREA_PX} px, aspect {MAX_ASPECT}, edge "
-          f"{EDGE_IN} in, run pitch {RUN_PITCH_IN} in, tolerance {TOL}, "
-          f"minimum agreeing {MIN_AGREEING}")
+    print(f"constants, frozen in pipeline/paper.py: area "
+          f"{[round(v, 6) for v in paper.SMALL_AREA_IN2]} in2, aspect "
+          f"{paper.SMALL_MAX_ASPECT}, edge {paper.SMALL_EDGE_IN} in, run "
+          f"pitch {paper.SMALL_RUN_PITCH_IN} in, tolerance "
+          f"{paper.SMALL_TOLERANCE}, minimum agreeing "
+          f"{paper.MIN_SMALL_AGREEING}")
 
     if everything or args.positives:
         run_positives(recs)

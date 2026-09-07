@@ -451,3 +451,264 @@ def compare(a: list[Mark], b: list[Mark],
         confirmed=False, margins=margins, transform=transform,
         marks_agreeing=len(margins), marks_compared=compared,
         marks_ambiguous=dropped, reason=note)
+
+
+# ==================================================================== small marks
+#
+# A second channel, added 2026-09-07, for the marks `solid_marks` deliberately
+# throws away.
+#
+# **Why there has to be one.** `compare` confirmed 4 of the 16 pairs Alex
+# judged same-sheet on 2026-09-06, and 15 of those 16 calls rest on evidence
+# under `MIN_MARK_AREA`. DEFECTS #53 put that floor where it is because bold
+# printed glyphs are the same size, and DEFECTS #61 then established that the
+# floor was never what kept printing out anyway: `MAX_ASPECT` was. So going
+# under the floor means giving up the size envelope entirely, and the marks
+# down there have to be told from printing some other way.
+#
+# **What tells them apart.** Printing comes in runs. Glyphs have neighbours on
+# their baseline, dotted rules have neighbours along their line, and damage to
+# paper has neither. A mark with at most one comparable neighbour within a
+# character pitch is not part of a run. That single test does most of the work:
+# on one measured page it took 2,357 candidates to 37.
+#
+# **What was expected to work and does not.** The design this was built from
+# said a staple leaves two marks about 10 mm apart near a corner, and that
+# pitch and angle would be the signature. Measured over the 8 pairs where a
+# flip beat the control, exactly one has any agreeing pair at staple pitch; the
+# rest sit 1.6 to 9.2 inches apart. The marks are specks, nicks and
+# show-through. Pitch is recorded nowhere in this code because it earned no
+# place in it.
+#
+# **There is no outline here and there cannot be.** These marks are a few dozen
+# pixels; at 300 dpi there is no rim to sample. So position carries the whole
+# claim, which R2 says it must not be allowed to do alone. What replaces the
+# outline is *count*: several marks agreeing at once under one transform, with
+# the controls given exactly the same freedom, and the statistic is still the
+# margin (R4).
+#
+# **No offset is searched.** Measured: searching a shared rigid offset lifted
+# false confirmations from 0 to 2 of 120 cross-record pairs and from 3 to 11 of
+# 160 same-file pairs, while gaining one positive. That is R1's finding in a
+# new place, and it is why marks are matched one at a time here.
+
+#: The band under the solid-mark floor. Stated in square inches, not pixels,
+#: so it means the same thing on the 53 corpus pages that are 200 dpi
+#: (DEFECTS #61). The lower bound is 25 px at 300 dpi and is scanner noise's
+#: doorstep; the upper bound is MIN_MARK_AREA, so the two channels partition
+#: the marks and neither can count the other's (R5's reason).
+SMALL_AREA_IN2 = (25.0 / 300.0 ** 2, MIN_MARK_AREA)
+
+#: Damage is roughly equant, and this is tighter than MAX_ASPECT because down
+#: here there is no area floor left to lean on.
+SMALL_MAX_ASPECT = 2.5
+
+#: How near the sheet's own edge a mark must sit. The sheet's edge, not the
+#: image's: the paper is inset in a larger scanner field and inset differently
+#: in the two scans of one pair.
+SMALL_EDGE_IN = 0.8
+
+#: A comparable neighbour this close, in any direction, makes a mark part of a
+#: run. Not "on the same baseline": a vertical dotted rule is a run too, and
+#: keying on horizontal runs alone let whole columns of leader dots through.
+SMALL_RUN_PITCH_IN = 0.35
+SMALL_MAX_NEIGHBOURS = 1
+
+#: How far inside the sheet edge to start looking, so the paper's own boundary
+#: is not read as a mark.
+SMALL_INSET_IN = 0.03
+
+#: How close two marks must land, as a fraction of the sheet, and how well
+#: their areas must agree for them to be one physical mark read twice.
+SMALL_TOLERANCE = 0.008
+SMALL_AREA_RATIO = 3.0
+
+#: R5's reason, applied to a channel with no outline: one agreeing mark is a
+#: coincidence, and down here coincidences are cheap. Measured on 120
+#: guaranteed-false pairs, every false agreement seen was a single mark.
+MIN_SMALL_AGREEING = 2
+
+
+@dataclass(frozen=True)
+class SmallMark:
+    """A mark under the solid-mark floor: too small to have a shape."""
+
+    x: float
+    y: float
+    area_in2: float
+
+
+@dataclass(frozen=True)
+class SmallVerdict:
+    """What the small marks say. Separate from `Verdict` on purpose.
+
+    `Verdict.margins` holds outline correlations and this channel has none, so
+    putting a count in that field would make two different quantities share a
+    name. The tier-3 assertions about the 2026-09-06 sitting read `Verdict`,
+    and they must keep meaning what they meant.
+    """
+
+    confirmed: bool
+    reason: str
+    transform: str | None = None
+    agreeing: int = 0
+    control: int = 0
+    marks_a: int = 0
+    marks_b: int = 0
+
+    @property
+    def margin(self) -> int:
+        """The statistic. Agreements under the best flip, less the best
+        control. Never the raw count (R4)."""
+        return self.agreeing - self.control
+
+
+def sheet_region(mask):
+    """The sheet itself, as opposed to the scanner field around it.
+
+    The scans are bilevel with a dark backing, so everything outside the paper
+    is "ink" and would otherwise be one enormous mark. The sheet is the largest
+    light region; holes in it are filled so that punch holes and staple holes,
+    which are dark, still count as being on the paper.
+    """
+    from scipy import ndimage
+
+    mask = np.asarray(mask, dtype=bool)
+    labels, count = ndimage.label(~mask)
+    if count == 0:
+        return np.ones_like(mask)
+    sizes = ndimage.sum(~mask, labels, range(1, count + 1))
+    return ndimage.binary_fill_holes(labels == int(np.argmax(sizes)) + 1)
+
+
+def small_marks(mask, dpi: float = 300.0) -> list[SmallMark]:
+    """Marks under the solid-mark floor that are not part of a run of printing.
+
+    Coordinates are fractions of the SHEET's bounding box, not the image's.
+    Two scans of one sheet crop it differently, and comparing image fractions
+    would be comparing two different frames.
+    """
+    from scipy import ndimage
+
+    mask = np.asarray(mask, dtype=bool)
+    sheet = sheet_region(mask)
+    rows, columns = np.where(sheet)
+    if rows.size == 0:
+        return []
+    top, left = int(rows.min()), int(columns.min())
+    height = int(rows.max()) - top
+    width = int(columns.max()) - left
+    if height <= 0 or width <= 0:
+        return []
+
+    inset = max(1, int(round(SMALL_INSET_IN * dpi)))
+    inside = mask & ndimage.binary_erosion(sheet, np.ones((inset, inset)))
+    labels, _ = ndimage.label(inside)
+
+    found = []
+    for index, box in enumerate(ndimage.find_objects(labels), start=1):
+        area = int((labels[box] == index).sum())
+        area_in2 = area / dpi ** 2
+        if not (SMALL_AREA_IN2[0] <= area_in2 < SMALL_AREA_IN2[1]):
+            continue
+        box_h = box[0].stop - box[0].start
+        box_w = box[1].stop - box[1].start
+        if box_h == 0 or box_w == 0:
+            continue
+        if max(box_h, box_w) / min(box_h, box_w) > SMALL_MAX_ASPECT:
+            continue
+        found.append((box[1].start + box_w / 2, box[0].start + box_h / 2,
+                      area_in2, box_h))
+
+    if not found:
+        return []
+    points = np.array([[f[0], f[1]] for f in found])
+    keep = []
+    to_edge = ndimage.distance_transform_edt(sheet) / dpi
+    for cx, cy, area_in2, box_h in found:
+        if to_edge[int(cy), int(cx)] > SMALL_EDGE_IN:
+            continue
+        within = np.where(np.hypot(points[:, 0] - cx, points[:, 1] - cy)
+                          <= SMALL_RUN_PITCH_IN * dpi)[0]
+        neighbours = 0
+        for j in within:
+            other = found[j]
+            if other[0] == cx and other[1] == cy:
+                continue
+            if max(box_h, other[3]) / min(box_h, other[3]) <= SMALL_MAX_ASPECT:
+                neighbours += 1
+        if neighbours > SMALL_MAX_NEIGHBOURS:
+            continue
+        keep.append(SmallMark(x=(cx - left) / width, y=(cy - top) / height,
+                              area_in2=area_in2))
+    return keep
+
+
+def small_agreeing(a: list[SmallMark], b: list[SmallMark],
+                   transform: str) -> int:
+    """Marks of b landing on a mark of a under `transform`, one to one.
+
+    No offset is estimated. An offset search was measured and it lifted the
+    controls, which is R1's finding: the transform is predicted, never
+    searched, and a search hands the control the same freedom it hands the
+    real side.
+    """
+    move = TRANSFORMS.get(transform) or CONTROLS[transform]
+    taken: set[int] = set()
+    hits = 0
+    for mark in a:
+        pick, closest = None, SMALL_TOLERANCE
+        for j, other in enumerate(b):
+            if j in taken:
+                continue
+            bigger = max(mark.area_in2, other.area_in2)
+            smaller = min(mark.area_in2, other.area_in2)
+            if smaller <= 0 or bigger / smaller > SMALL_AREA_RATIO:
+                continue
+            tx, ty = move(other.x, other.y)
+            distance = ((mark.x - tx) ** 2 + (mark.y - ty) ** 2) ** 0.5
+            if distance < closest:
+                pick, closest = j, distance
+        if pick is not None:
+            taken.add(pick)
+            hits += 1
+    return hits
+
+
+def compare_small(a: list[SmallMark], b: list[SmallMark],
+                  minimum: int = MIN_SMALL_AGREEING) -> SmallVerdict:
+    """Do these two pages carry the same small marks, seen from opposite sides?
+
+    Confirms when at least `minimum` marks agree under one legitimate flip and
+    strictly more agree under it than under the best control. Everything else
+    abstains with a named reason: this channel never asserts that two pages are
+    different (R3), and a mark under the floor that the detector missed is
+    evidence of nothing at all.
+    """
+    a, b = list(a), list(b)
+    if min(len(a), len(b)) < minimum:
+        return SmallVerdict(
+            confirmed=False, marks_a=len(a), marks_b=len(b),
+            reason=f"too few small marks: {len(a)} and {len(b)}, "
+                   f"{minimum} needed on each side")
+
+    flips = {name: small_agreeing(a, b, name) for name in TRANSFORMS}
+    controls = {name: small_agreeing(a, b, name) for name in CONTROLS}
+    transform = max(flips, key=lambda name: flips[name])
+    best, control = flips[transform], max(controls.values())
+
+    if best >= minimum and best > control:
+        return SmallVerdict(
+            confirmed=True, transform=transform, agreeing=best,
+            control=control, marks_a=len(a), marks_b=len(b),
+            reason=f"{best} small marks agree under {transform}, "
+                   f"against {control} under the best control")
+    if best < minimum:
+        note = (f"only {best} small marks agree under any flip, "
+                f"{minimum} needed")
+    else:
+        note = (f"{best} agree under {transform} but {control} agree under a "
+                f"control, so the margin is {best - control}")
+    return SmallVerdict(confirmed=False, transform=transform, agreeing=best,
+                        control=control, marks_a=len(a), marks_b=len(b),
+                        reason=note)
