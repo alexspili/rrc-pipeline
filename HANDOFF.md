@@ -753,3 +753,57 @@ answer all of it.
 **State of the channel:** it has now passed two pre-registered bars and is
 still wired into nothing, because #63, #64 and #66 are open and a band of
 candidates kills one axis whichever way the flip acts on it.
+
+## Wired in, and what is left, 2026-09-07
+
+**The paper confirmer ships.** `papermatch.sheet_confirmer`, restricted to
+adjacent pairs (R8 in `docs/modules/paper.md`), passed to
+`reassemble.group(confirms=...)` from `scripts/measure_reassemble.py`. It adds
+7 attachments of which 6 are judged correct, 86% against reassembly's own 78%
+of documents clean. `pipeline/reassemble.py` imports neither channel.
+
+What had blocked it was never the three band defects (DEFECTS #67): those were
+priced into every measured rate. It was the absence of a document-level
+measurement, which `scripts/wiring_effect.py` supplies for nothing.
+
+### Open, in the order I would take them
+
+**1. The extraction run, $7.17, and it is the only thing that costs money.**
+`scripts/run_extraction.py`, batched, 218 documents. The pipeline has never
+been run over the corpus; extraction is scored on 15 hand-labelled documents
+only. Two things ride along with that run at no extra cost: the corpus-wide
+output the viewer needs, and a re-score of the 15, which matters because the
+published 87.4% and 82.5% describe a prompt that stopped shipping on
+2026-09-05 (`found_in`). Quoting them as they stand is the one claim in this
+repo that is not defensible line by line.
+
+**2. The TypeScript span viewer, cut-order item 7, entirely unbuilt.** Page
+image, span overlays, cross-form disagreements, client-side search. It is the
+only TypeScript in the project and the only way to *see* any of the output; a
+reader currently has JSON and markdown. No backend and no hosted inference,
+rejected deliberately on cost, injection and uptime.
+
+**3. README with the real numbers**, cut-order item 6. It carries the
+classifier and extraction figures and nothing about reassembly or the paper
+channels.
+
+### Open and NOT blocking anything
+
+**DEFECTS #63, #64 and #66**, the band hole in three faces: a band of
+candidates kills one axis whether the transform preserves it or mirrors it.
+Closing it would lower the false-confirmation rate. It is not a gate, and
+treating it as one was #67. Any fix is post-hoc by construction and needs a
+fresh frame; district 02 has about 28,000 records untouched.
+
+**The bundle confusion has never been measured.** `same-bundle` was offered on
+a 40-pair sheet and used zero times, so DEFECTS #63's central prediction is
+still untested. A sitting that tests it needs a frame built to contain
+bundle-mates, which the adjacent frame was not.
+
+**Page parity does not replicate.** 74% even-start against 17% odd on district
+02, Fisher p=0.0008; 3 of 7 on district 03. A district 02 phenomenon until
+something says otherwise. Unadopted.
+
+**The 2026-08-28 fixture list is unverified.** DEFECTS #69 found one of its
+page numbers wrong; the rest have had the same amount of checking, which is
+none.
