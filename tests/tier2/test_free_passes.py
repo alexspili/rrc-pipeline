@@ -4,6 +4,9 @@ DEFECTS #73. An API-level batch failure produces a results row with no cache
 entry, and both free passes called extract_document(None, ...) on every row,
 falling through to the live path holding no client. Each script must skip
 rows carrying an error, and say how many it skipped.
+
+export_viewer.py is here too, added the same day: written hours after the
+entry, it repeated the assumption and was caught by running it.
 """
 
 from __future__ import annotations
@@ -49,7 +52,8 @@ def run_pass(script: str, tmp_path: Path, extra: list[str]) -> str:
 
 def test_the_free_passes_survive_a_run_with_uncached_failures(tmp_path):
     for script, extra in (("snap_coverage.py", []),
-                          ("validate_extract.py", ["--quiet"])):
+                          ("validate_extract.py", ["--quiet"]),
+                          ("export_viewer.py", [])):
         stdout = run_pass(script, tmp_path / script.replace(".", "_"), extra)
         assert "skip" in stdout.lower(), (
             f"{script} skipped the row silently; the count is part of the "

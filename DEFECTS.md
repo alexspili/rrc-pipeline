@@ -3672,4 +3672,9 @@ and every number they produce says so. The ten missing are cap-shaped, not
 paper-shaped (#72), and the sixteen `form_class` rejections are the open
 taxonomy question, cached and waiting on a decision.
 
+**Addendum, 2026-09-07, later the same day:** `scripts/export_viewer.py`,
+written hours after this entry, repeated the assumption and crashed the same
+way on its first full run. Knowing the failure family did not stop me
+rebuilding it; only the pin does, so the pin now covers all three walkers.
+
 **Pin:** tests/tier2/test_free_passes.py::test_the_free_passes_survive_a_run_with_uncached_failures

@@ -173,11 +173,16 @@ def main() -> None:
     pages_dir = args.out / "pages"
     pages_dir.mkdir(parents=True, exist_ok=True)
 
-    documents, search, unparsed = [], [], 0
+    documents, search, unparsed, skipped = [], [], 0, 0
     pages_meta: dict[str, dict] = {}
     source_counts: dict[str, int] = {}
 
     for row in rows:
+        # An errored row has no output to export and, when the error was
+        # API-level, no cache entry either (DEFECTS #73).
+        if row.get("error"):
+            skipped += 1
+            continue
         record_id, file_index, face = pc.parse_page_id(row["page_id"])
         entry = records[record_id]
         pdf = RAW / record_id / entry["files"][file_index]["name"]
@@ -253,7 +258,8 @@ def main() -> None:
         "caveats": CAVEATS}))
 
     # Standing rule 9: say what the bundle does not carry, not just its size.
-    print(f"documents exported: {len(documents)}   unparsed skipped: {unparsed}")
+    print(f"documents exported: {len(documents)}   "
+          f"errored rows skipped: {skipped}   unparsed: {unparsed}")
     print(f"pages rendered: {len(pages_meta)}")
     print("regions by tier:", dict(sorted(source_counts.items())))
     if not args.snap.exists():
