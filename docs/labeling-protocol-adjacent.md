@@ -87,6 +87,39 @@ missing corners, speckle.
 Rows are shuffled, page numbers stripped, and the mechanism's verdicts computed
 and hashed before the sheet goes out.
 
+### What counts as evidence, and how it is ranked
+
+Alex asked on 2026-09-07 whether he may use signs other than staple holes. He
+may use anything visible. The ranking below was given to him with the sheet and
+is recorded here because the instructions to a judge are part of the
+measurement, and the copy that ships beside the images lives under `data/`,
+which is never committed (CLAUDE.md rule 3).
+
+**Independent of the mechanism, so a call resting on these is confirmation
+rather than agreement.** Ink show-through, the mirrored ghost of the other
+side's printing through thin paper. Fold lines and creases, which cross a sheet
+and appear mirrored on its back; anything long and thin is filtered out by
+`SMALL_MAX_ASPECT`. The sheet's own silhouette: torn corners, a ragged edge, an
+off-square trim, the skew of the paper on the bed. `small_marks` uses the sheet
+boundary only to set coordinates and never compares its shape.
+
+**Shared with the mechanism.** Staple holes, punch holes, specks, blots, rust,
+dirt. Roughly what `compare_small` reads, so those pairs measure agreement.
+
+**Liable to mislead, and to be flagged when used.** Content and form layout,
+as in "a Section III back page belongs with that face". That is about the
+document rather than the sheet, and it is the trap identity fields fell into
+(DEFECTS #43): two pages of one filing agree on everything and can still be two
+different sheets. It pushes toward over-calling `same-sheet`.
+
+**Not evidence here.** Adjacency, which is constant across all 40 rows and
+therefore carries no information between them; and any guess at what the
+mechanism would say.
+
+Because the evidence is named per row, the result can be scored by channel. On
+the 2026-09-06 sitting that column carried the finding that redirected the next
+two days of work.
+
 ## DECISION RULE
 
 **The channel is wired into `pipeline/reassemble.py` if and only if both hold:**
