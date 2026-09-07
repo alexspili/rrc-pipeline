@@ -41,24 +41,24 @@ line in an interview.
   quote 83.6% as accuracy on the target classes. `form_class` on back pages
   self-contradicts 31 times in 65 and MAY NOT define a negative (#60, #62).
 - Extraction SCORED 2026-09-01: **87.4%** status, **82.5%** value, by era, on a
-  prompt that no longer ships. Provenance CLOSED. Batched run **$7.17, NOT YET
-  RUN**: the gated spend everything waits on.
+  prompt that no longer ships. Provenance CLOSED. Batched run **$8.07, NOT YET
+  RUN**: the gated spend everything waits on. Re-score is $1.54, not free.
 - Reassembly BUILT, 25 of 32 multi-page documents clean; the six wrong are
   same-form same-well different-filing, beyond any form rule.
 - pipeline/paper.py confirms two pages are ONE SHEET from the marks on it: 0
   false confirmations in 850. It failed its pre-registered recall bar and
   shipped anyway on a measured gain (#57, #58). `make eval` runs tier3.
 - A SECOND channel, `compare_small`, reads marks under MIN_MARK_AREA, frozen
-  1a01829, passed both bars, and is **WIRED IN 2026-09-07** via
-  papermatch.sheet_confirmer, restricted to ADJACENT pairs (R8): unrestricted
-  it attached pages 31 and 56 apart. Adds 7 attachments, 6 correct, 86% against
-  reassembly's 78%. What blocked it was never #63/#64/#66 (#67).
+  1a01829, passed both bars, **WIRED IN 2026-09-07** via
+  papermatch.sheet_confirmer, ADJACENT pairs only (R8). Ships 14 paper
+  attachments, 10 of 11 decisive verdicts same-sheet; "7 of 6" was the
+  one-channel probe's count (#71). Never blocked by #63/#64/#66 (#67).
 - Not the pass but its findings: `same-bundle` used 0 times so the bundle
   confusion is STILL unmeasured; adjacent false rate 5.0% vs 0.25% and 20 pairs
   cannot resolve it; page parity (74% vs 17% on d02) does NOT replicate on d03.
 - The area floor never kept printing out, MAX_ASPECT did; pages read at their
   own dpi (#61).
-- Next, in order: the **$7.17 extraction run**, 218 documents, batched, the only
+- Next, in order: the **$8.07 extraction run**, 223 documents, batched, the only
   thing costing money. The pipeline has never been run over its own corpus, and
   that run re-scores the 15 ground-truth documents, whose published figures
   describe a prompt retired 2026-09-05. Then the **TypeScript span viewer**,

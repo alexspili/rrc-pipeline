@@ -470,10 +470,15 @@ correct lost.
 
 ## Extraction is ready to run and has not been run
 
-`scripts/run_extraction.py`, batched, **$7.17 for 218 documents**, two modes.
-Gated on nothing now except the decision to spend. `found_in` was added to the
-prompt on 2026-09-05, so the scored 87.4% / 82.5% describes a prompt that no
-longer ships; re-scoring is a separate ~$1.50.
+`scripts/run_extraction.py`, batched, **$8.07 for 223 documents** by the dry
+run of 2026-09-07; the $7.17/218 quoted earlier described a pre-wiring
+grouping that no longer exists. Gated on nothing now except the decision to
+spend. `found_in` was added to the prompt on 2026-09-05, so the scored
+87.4% / 82.5% describes a prompt that no longer ships; re-scoring is a
+separate $1.54, and it does NOT ride along free: only 8 of the 15
+ground-truth documents match a corpus document on (record, file, pages), so
+the corpus cache cannot serve the other 7. The re-score is `make smoke`
+re-run, same 20 documents, same seed, only the prompt changed.
 
 ## What the corpus decision now is
 
@@ -758,9 +763,11 @@ candidates kills one axis whichever way the flip acts on it.
 
 **The paper confirmer ships.** `papermatch.sheet_confirmer`, restricted to
 adjacent pairs (R8 in `docs/modules/paper.md`), passed to
-`reassemble.group(confirms=...)` from `scripts/measure_reassemble.py`. It adds
-7 attachments of which 6 are judged correct, 86% against reassembly's own 78%
-of documents clean. `pipeline/reassemble.py` imports neither channel.
+`reassemble.group(confirms=...)` from `scripts/measure_reassemble.py`. On the
+corpus it adds 14 paper attachments, 10 of 11 decisive verdicts same-sheet, 1
+judged different (the known attach-04), 2 unjudged; the "7 of which 6" was
+the small-channel probe's count, one channel of the two that ship (DEFECTS
+#71). `pipeline/reassemble.py` imports neither channel.
 
 What had blocked it was never the three band defects (DEFECTS #67): those were
 priced into every measured rate. It was the absence of a document-level
@@ -768,14 +775,15 @@ measurement, which `scripts/wiring_effect.py` supplies for nothing.
 
 ### Open, in the order I would take them
 
-**1. The extraction run, $7.17, and it is the only thing that costs money.**
-`scripts/run_extraction.py`, batched, 218 documents. The pipeline has never
+**1. The extraction run, $8.07, and it is the only thing that costs money.**
+`scripts/run_extraction.py`, batched, 223 documents. The pipeline has never
 been run over the corpus; extraction is scored on 15 hand-labelled documents
-only. Two things ride along with that run at no extra cost: the corpus-wide
-output the viewer needs, and a re-score of the 15, which matters because the
-published 87.4% and 82.5% describe a prompt that stopped shipping on
-2026-09-05 (`found_in`). Quoting them as they stand is the one claim in this
-repo that is not defensible line by line.
+only. The corpus-wide output the viewer needs rides along at no extra cost.
+The re-score of the 15 does not: it is `make smoke` re-run at $1.54, because
+only 8 of the 15 truth documents share a page set with a corpus document.
+It matters because the published 87.4% and 82.5% describe a prompt that
+stopped shipping on 2026-09-05 (`found_in`). Quoting them as they stand is
+the one claim in this repo that is not defensible line by line.
 
 **2. The TypeScript span viewer, cut-order item 7, entirely unbuilt.** Page
 image, span overlays, cross-form disagreements, client-side search. It is the
