@@ -3609,3 +3609,40 @@ page is in no identity map and its file groups without it; R6 refuses to
 cache a truncation, so retrying without raising the reader's cap only spends.
 
 **Pin:** tests/tier3/test_adjacent_eval.py::test_the_shipped_confirmer_is_not_the_probe_and_its_count_is_measured
+
+## #72 — 2026-09-07 — Ten failures said "batch result errored" while the API said exactly why
+
+**What happened:** the corpus extraction run came back 197 of 223, and ten of
+the failures were reported as `batch result errored`, nothing more. The
+actual result entries carried
+`InvalidRequestError: You have reached your specified API usage limits. You
+will regain access on 2026-10-01 at 00:00 UTC.` The account's monthly cap was
+hit mid-batch. The run's own report could not distinguish that from a
+malformed request, a refusal or an overload, and diagnosing it meant
+refetching the batch results by hand.
+
+**The cause is one line.** `run_batched` maps any non-succeeded result to
+`f"batch result {entry.result.type}"` and never looks at
+`entry.result.error`, which is where the API puts the reason.
+
+**Why it matters here more than usually.** A usage-limit failure is not
+retryable until a stated date, and a retry loop that cannot see the date
+would burn attempts against a wall the response names. The ten documents are
+also not random: they are wherever the cap landed, so any per-form or per-era
+number computed from this run's failures would inherit that arbitrariness;
+the residue is characterized as cap-shaped, not paper-shaped.
+
+**Found by:** reading the failure table the run printed (standing rule 9) and
+refusing to summarize ten identical unknowns as characterized residue.
+
+**Fix:** the failing test first, then carry the error's own message into the
+Extraction error string.
+
+**What remains:** the run report still counts a parse failure and an API
+failure in one table, which is right (both are documents without output),
+and the 16 `form_class` rejections in the same run are a separate finding
+about the taxonomy, not a defect of this mechanism: the model's answers are
+cached before parsing, so that decision, whenever it is taken, re-parses
+for free.
+
+**Pin:** tests/tier2/test_extract_batch.py::test_a_failed_batch_result_reports_the_apis_own_reason

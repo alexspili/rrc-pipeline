@@ -61,9 +61,22 @@ class _Message:
 
 
 @dataclass
+class _ErrorDetail:
+    message: str
+    type: str = "invalid_request_error"
+
+
+@dataclass
+class _ErrorResponse:
+    error: _ErrorDetail
+    type: str = "error"
+
+
+@dataclass
 class _Result:
     type: str
     message: _Message | None = None
+    error: _ErrorResponse | None = None
 
 
 @dataclass
@@ -98,7 +111,10 @@ class _Batches:
             if cid in self.drop:
                 continue
             if cid in self.errored:
-                rows.append(_Entry(cid, _Result("errored")))
+                rows.append(_Entry(cid, _Result("errored", error=_ErrorResponse(
+                    _ErrorDetail("You have reached your specified API usage "
+                                 "limits. You will regain access on "
+                                 "2026-10-01 at 00:00 UTC.")))))
                 continue
             rows.append(_Entry(cid, _Result("succeeded", _Message(
                 content=[_Block(self.body)],
@@ -373,3 +389,18 @@ def test_a_streamed_truncation_is_caught_by_the_same_guard(tmp_path):
     assert result.report is None
     assert "truncated" in result.error
     assert cache.get(extractor.cache_key(cache, FIXTURE, (1,))) is None
+
+
+def test_a_failed_batch_result_reports_the_apis_own_reason(tmp_path):
+    """The pin for DEFECTS #72. Ten corpus documents failed as "batch result
+    errored" while every result entry carried the API's own explanation, a
+    monthly usage cap with its reset date. An error string that hides a
+    stated, dated cause turns a wall into a mystery, and diagnosing it took
+    refetching the batch by hand.
+    """
+    batches = _Batches(errored=["1493495-0-9"])
+    out = extractor.run_batched(_Api(batches), _docs(), cache=None)
+    error = out["1493495-0-9"].error
+    assert "errored" in error
+    assert "usage limits" in error, (
+        "the API named the cause and the report dropped it: " + repr(error))
