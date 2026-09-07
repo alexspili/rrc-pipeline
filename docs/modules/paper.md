@@ -199,6 +199,60 @@ without a classifier, which is what the staple channel's frame will be.
 
 Pinned by: tests/tier1/test_paper.py::test_a_half_turn_never_moves_a_page_between_the_two_sets
 
+## A second channel, for the marks the floor throws away
+
+Added 2026-09-07. `compare` confirmed 4 of the 16 pairs Alex judged same-sheet,
+and 15 of those 16 calls rest on evidence under `MIN_MARK_AREA`. Going under
+the floor means giving up the size envelope, so the marks down there have to be
+told from printing another way.
+
+**Printing comes in runs and damage does not.** Glyphs have neighbours on their
+baseline, leader dots have neighbours along their line, a staple's two legs are
+a pair and a nick has nobody. A mark with at most one comparable neighbour
+within a character pitch is not part of a run, and on one measured page that
+single test took 2,357 candidates to 37.
+
+**The staple model this was built from is wrong, and the measurement is how
+that was found.** The design said a staple leaves two marks about 10 mm apart
+near a corner and that pitch and angle would be the signature. Of the 8
+development pairs where a flip beat the control, **one** has any agreeing pair
+at staple pitch; the rest sit 1.6, 3.4, 5.0, 8.7 and 9.2 inches apart.
+Rendered and looked at, the marks are specks, nicks and show-through. Pitch
+appears nowhere in the code because it earned no place in it. Same shape as
+DEFECTS #59: a fact assembled from real observations, generalised in the wrong
+direction, and repeated until repetition made it look established.
+
+**Count replaces shape.** These marks are a few dozen pixels and have no rim to
+sample, so position carries the whole claim, which R2 forbids it to do alone.
+What stands in for the outline is several marks agreeing at once under one
+transform, with the controls given exactly the same freedom, and the statistic
+is still the margin (R4).
+
+**No offset is searched, and that is measured rather than assumed:**
+
+| | cross-record | same file | positives |
+|---|---|---|---|
+| Marks matched one at a time | **0 of 120** | 3 of 160 | 4 of 16 |
+| A shared rigid offset searched | 2 of 120 | 11 of 160 | 5 of 16 |
+
+An offset search hands the control the freedom it hands the real side. That is
+R1's finding in a new place.
+
+**The two channels partition at `MIN_MARK_AREA`** so neither can ever count the
+other's marks. A speck must not be allowed to stand in for a rim: a shared
+punch stroke is already the hazard R5 exists for.
+
+**Known residue, asserted in a test rather than tuned away.** The two ends of a
+run of printing survive the neighbour filter, because one neighbour is allowed
+so that a pair does not delete itself. A row of eight leader dots contributes
+two candidates. What stops them mattering is the two-agreement rule and the
+control, not the filter.
+
+**Standing.** Every constant was chosen on the 91 development records of
+`tests/fixtures/paper_record_split.csv`, and the firing rule was chosen after
+seeing both the positive and the negative results. Frozen at commit `1a01829`;
+pre-registration in `docs/labeling-protocol-staple.md`.
+
 ## Rules
 
 R1. The transform is predicted, never searched. No rotation offset.

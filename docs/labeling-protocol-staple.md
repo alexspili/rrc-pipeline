@@ -30,7 +30,8 @@ gap is the fetch's job and it is not closed by this run.
 
 ## What is frozen
 
-**Pinned: the commit that adds `compare_small` and its constants**, asserted by
+**Pinned: commit `1a0182976062931bdcf416f3a104975f91d3cac6`**, which adds
+`compare_small` and every constant it uses, asserted by
 `tests/tier1/test_paper.py::test_the_small_mark_constants_are_the_ones_measured_under`,
 which fails if any of them moves.
 

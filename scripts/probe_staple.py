@@ -191,18 +191,33 @@ def main() -> None:
     ap.add_argument("--cross", action="store_true")
     ap.add_argument("--samefile", action="store_true")
     ap.add_argument("--records", type=int, default=0,
-                    help="cap development records used for the negative "
-                         "strata, for a quick run")
+                    help="cap records used for the negative strata, for a "
+                         "quick run")
+    ap.add_argument("--held-out", action="store_true",
+                    help="draw the negative strata from the 111 held-out "
+                         "records instead of the 91 development ones. This is "
+                         "the run docs/labeling-protocol-staple.md "
+                         "pre-registers, and it is run ONCE.")
+    ap.add_argument("--pairs", type=int, default=120,
+                    help="cross-record pairs to score")
     args = ap.parse_args()
     everything = not (args.positives or args.cross or args.samefile)
 
     render.preflight()
     recs = records()
-    development = development_records()
+    rows = list(csv.DictReader(io.StringIO(SPLIT.read_text())))
+    half = "held_out" if args.held_out else "development"
+    pool = {r["record_id"] for r in rows if r["half"] == half}
+    everything_in_half = len(pool)
     if args.records:
-        development = set(sorted(development)[:args.records])
-    print(f"development records in use: {len(development)} of "
-          f"{len(development_records())}  (tests/fixtures/paper_record_split.csv)")
+        pool = set(sorted(pool)[:args.records])
+    print(f"{half} records in use: {len(pool)} of {everything_in_half}"
+          f"  (tests/fixtures/paper_record_split.csv)")
+    if args.held_out:
+        print("PRE-REGISTERED RUN: docs/labeling-protocol-staple.md, frozen at "
+              "1a01829.\n  The rule is a 95% upper bound below 2% on the "
+              "cross-record rate.")
+    development = pool
     print(f"constants, frozen in pipeline/paper.py: area "
           f"{[round(v, 6) for v in paper.SMALL_AREA_IN2]} in2, aspect "
           f"{paper.SMALL_MAX_ASPECT}, edge {paper.SMALL_EDGE_IN} in, run "
@@ -213,7 +228,7 @@ def main() -> None:
     if everything or args.positives:
         run_positives(recs)
     if everything or args.cross:
-        run_cross(recs, development)
+        run_cross(recs, development, count=args.pairs)
     if everything or args.samefile:
         run_samefile(recs, development)
 
