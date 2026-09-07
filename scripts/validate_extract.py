@@ -33,9 +33,9 @@ CACHE = ROOT / "data" / "extract" / "cache_smoke.jsonl"
 OUT = ROOT / "data" / "extract" / "findings.jsonl"
 
 
-def run_prompt_hash() -> str:
+def run_prompt_hash(results: Path) -> str:
     """The prompt the run being validated used."""
-    return extractor.recorded_prompt_hash(SMOKE)
+    return extractor.recorded_prompt_hash(results)
 
 
 def manifest():
@@ -47,6 +47,14 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--quiet", action="store_true",
                     help="counts only, no per-finding lines")
+    # Which run to validate. Defaults are the smoke run, unchanged; the
+    # corpus run passes its own pair, same shape as snap_coverage's.
+    ap.add_argument("--results", type=Path, default=SMOKE,
+                    help="run results jsonl (default: the smoke run)")
+    ap.add_argument("--cache", type=Path, default=CACHE,
+                    help="that run's result cache (default: the smoke cache)")
+    ap.add_argument("--out", type=Path, default=OUT,
+                    help="where the findings land")
     args = ap.parse_args()
 
     records = manifest()
@@ -54,12 +62,13 @@ def main() -> None:
                                for r in records.values()])
     print(f"county map: {len(counties)} counties learned from the archive index")
 
-    cache = classify.ResultCache(CACHE, prompt_hash=run_prompt_hash())
-    documents = [json.loads(l) for l in SMOKE.open() if l.strip()]
+    cache = classify.ResultCache(
+        args.cache, prompt_hash=run_prompt_hash(args.results))
+    documents = [json.loads(l) for l in args.results.open() if l.strip()]
 
     rules: Counter = Counter()
     checked = unparsed = 0
-    with OUT.open("w") as out:
+    with args.out.open("w") as out:
         for row in documents:
             # The page id carries the file index and a record can hold five
             # files. Assuming file 0 hashes the wrong PDF, which misses the
@@ -89,7 +98,8 @@ def main() -> None:
                     print(f"     {finding}")
 
     print(f"\n{checked} documents checked, {unparsed} unparsed")
-    clean = checked - len({json.loads(l)["record_id"] for l in OUT.open()
+    clean = checked - len({json.loads(l)["record_id"]
+                           for l in args.out.open()
                            if json.loads(l)["findings"]})
     print(f"{clean} clean, {checked - clean} carrying at least one finding")
     if rules:
@@ -98,7 +108,7 @@ def main() -> None:
                                           key=lambda kv: (kv[0][0] != "error",
                                                           -kv[1])):
             print(f"   {n:3d}  {severity:8s} {rule}")
-    print(f"\n{OUT}")
+    print(f"\n{args.out}")
 
 
 if __name__ == "__main__":
