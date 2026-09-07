@@ -3646,3 +3646,30 @@ cached before parsing, so that decision, whenever it is taken, re-parses
 for free.
 
 **Pin:** tests/tier2/test_extract_batch.py::test_a_failed_batch_result_reports_the_apis_own_reason
+
+## #73 — 2026-09-07 — The free passes assume every results row is cached, and a cap-shaped run broke that
+
+**What happened:** the snap pass over the corpus run crashed with
+`AttributeError: 'NoneType' object has no attribute 'messages'`. Both free
+passes, `snap_coverage.py` and `validate_extract.py`, walk the results file
+and call `extract_document(None, ...)`, relying on every row having a cache
+entry so the live path is never reached. The ten documents DEFECTS #72's cap
+refused have no cache entry at all, so the walk fell through to the live
+path holding no client.
+
+**The assumption was true of every run before this one.** The smoke run
+cached all twenty documents, including its parse failures, because payloads
+are cached before parsing. What had never existed was a results row with no
+payload behind it, which is exactly what an API-level failure produces.
+
+**Fix:** the failing test first, then both scripts skip rows that carry an
+error, and say how many they skipped rather than skipping silently
+(standing rule 9). A row with an error has no output to snap and nothing to
+validate, whichever of the two failure families produced it.
+
+**What remains:** the free passes now measure the 197 documents with output,
+and every number they produce says so. The ten missing are cap-shaped, not
+paper-shaped (#72), and the sixteen `form_class` rejections are the open
+taxonomy question, cached and waiting on a decision.
+
+**Pin:** tests/tier2/test_free_passes.py::test_the_free_passes_survive_a_run_with_uncached_failures
