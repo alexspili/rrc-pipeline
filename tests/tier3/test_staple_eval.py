@@ -121,3 +121,53 @@ def test_the_frozen_constants_are_still_the_frozen_ones():
                  "compare_small"):
         assert callable(getattr(paper, name)), name
     assert len(FROZEN_AT) == 40
+
+
+# ------------------------------------------------- DEFECTS #64, 2026-09-07
+
+#: Measured on the 91 development records after Alex asked whether the channel
+#: should read the whole page rather than only its periphery.
+PERIPHERY = {"same_sheet": 4, "not_same_sheet": 0, "cross_record": 1}
+WHOLE_PAGE = {"same_sheet": 5, "not_same_sheet": 0, "cross_record": 7}
+DEVELOPMENT_CROSS_RECORD_PAIRS = 120
+
+
+def test_the_edge_filter_earns_its_place_on_selectivity():
+    """It went into the code as a physical claim, that staples and punches sit
+    near edges. That claim died with the staple model. What it actually does is
+    keep the candidate list short: about 6 candidates a page against about 45
+    for the whole page, so roughly fifty times fewer chances for two accidental
+    agreements.
+
+    Reading the whole page buys one true confirmation and costs six false ones.
+    The filter survives on a different argument from the one that put it there,
+    and this test is where that argument is written down.
+    """
+    assert WHOLE_PAGE["same_sheet"] - PERIPHERY["same_sheet"] == 1
+    assert WHOLE_PAGE["cross_record"] - PERIPHERY["cross_record"] == 6
+    assert (upper_bound(WHOLE_PAGE["cross_record"],
+                        DEVELOPMENT_CROSS_RECORD_PAIRS)
+            > BOUND_REQUIRED), "the whole page would not have passed the bar"
+    assert (upper_bound(PERIPHERY["cross_record"],
+                        DEVELOPMENT_CROSS_RECORD_PAIRS)
+            > BOUND_REQUIRED), (
+        "and 120 pairs licenses nothing either way; only the 400 held-out "
+        "pairs carry the safety claim")
+
+
+def test_the_band_effect_is_not_what_governs_the_false_rate():
+    """DEFECTS #63 presented it as the explanation and proposed an
+    axis-degeneracy rule as the fix. Across every false confirmation on record,
+    one of nine has its candidates in a band; the other eight are spread 0.908
+    to 0.981 across the sheet. The fix would address one case in nine.
+
+    What governs the rate is candidate count, of which the band case is a
+    special instance where one coordinate stops counting.
+    """
+    banded = 1
+    total = (HELD_OUT_FALSE_CONFIRMATIONS + PERIPHERY["cross_record"]
+             + WHOLE_PAGE["cross_record"])
+    assert total == 9
+    assert banded / total < 0.2, (
+        "if the band case ever becomes the majority, DEFECTS #63's fix "
+        "becomes the right one and #64 needs revisiting")

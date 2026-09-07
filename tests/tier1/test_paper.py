@@ -752,3 +752,37 @@ def test_marks_in_one_edge_band_agree_too_easily_under_the_flip_along_it():
     # The x coordinate carried none of it: every mark shares the band.
     marks = paper.small_marks(front)
     assert max(m.x for m in marks) - min(m.x for m in marks) < 0.01
+
+
+def test_the_edge_band_hole_is_symmetric_between_the_two_turns():
+    """DEFECTS #64. #63 was written as a flip_v fault and it is not one.
+
+    A sheet can be turned either way, and each turn leaves one coordinate
+    alone. flip_v preserves x, so a left or right edge is cheap. **flip_h
+    preserves y, so a top or bottom edge is cheap in exactly the same way.**
+    The failing held-out pair happened to be the first kind and I wrote up only
+    that kind.
+
+    This is the mirror of
+    test_marks_in_one_edge_band_agree_too_easily_under_the_flip_along_it, and
+    like it, it asserts the defect rather than a fix.
+    """
+    front = blank_sheet()
+    back = blank_sheet()
+    # All four marks along the TOP edge, from two sheets that share nothing.
+    # flip_h mirrors x, so only their x values are asked to agree; y is free.
+    for x in (500, 2100):
+        front |= speck(front.shape, x, 200, radius=6)
+    for x in (2049, 449):                       # the mirrored x positions
+        back |= speck(back.shape, x, 200, radius=6)
+
+    verdict = paper.compare_small(paper.small_marks(front),
+                                  paper.small_marks(back))
+    assert verdict.confirmed, (
+        "if this now abstains the axis rule has landed: invert this test and "
+        "the flip_v one together (DEFECTS #63, #64)")
+    assert verdict.transform == "flip_h"
+
+    marks = paper.small_marks(front)
+    assert max(m.y for m in marks) - min(m.y for m in marks) < 0.01, (
+        "the y coordinate carried none of it: every mark shares the band")

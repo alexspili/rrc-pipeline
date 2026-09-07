@@ -3144,3 +3144,82 @@ into nothing, and nothing downstream may use it until the hole is closed and
 measured. That is recorded here rather than in a comment nobody reads.
 
 **Pin:** tests/tier1/test_paper.py::test_marks_in_one_edge_band_agree_too_easily_under_the_flip_along_it
+
+---
+
+## #64 — 2026-09-07 — I described #63 as one-sided, and then over-credited it
+
+Two corrections to yesterday's entry, both found by Alex asking two questions:
+whether the channel looks at the whole page or only its edges, and whether the
+book turn is considered as well as the notepad turn.
+
+**Correction 1: the band hole is symmetric and #63 says it is not.** #63 is
+written as a `flip_v` fault: marks along a left or right edge share an x, and
+`flip_v` preserves x, so their x agreement is free. The same is true the other
+way round. **`flip_h` preserves y, so marks along a top or bottom edge get
+their y agreement free.** It is one defect with two faces and I wrote up the
+face the failing pair happened to show. In this corpus the second face may be
+the commoner one, because punch holes run along the top edge and small marks
+cluster there with them.
+
+**Correction 2, and it is the larger one: the band mechanism explains almost
+none of the false confirmations.** #63 presents it as the explanation and
+proposes an axis-degeneracy rule as the fix. Measured across every false
+confirmation now on record, with the spread of the candidates along the axis
+the winning transform preserves:
+
+| Run | False confirmations | With candidates in one band |
+|---|---|---|
+| Held out, periphery | 1 of 400 | **1** |
+| Development, periphery | 1 of 120 | 0 |
+| Development, whole page | 7 of 120 | 0 |
+
+**One of nine.** The other eight have spreads of 0.908 to 0.981, meaning their
+marks are scattered right across the sheet. So the band effect is real, it did
+cause the held-out failure, and it is not what governs the false rate. The fix
+#63 proposes would address one case in nine and I presented it as the fix.
+
+**What does govern it, measured.** Alex asked whether the channel should look
+at the whole page rather than only within `SMALL_EDGE_IN` of the paper's edge.
+On the 91 development records:
+
+| | Periphery only, as frozen | Whole page |
+|---|---|---|
+| Pairs judged same-sheet | **4 of 16** | 5 of 16 |
+| Pairs judged not-same-sheet | 0 of 8 | 0 of 8 |
+| Unrelated records | **1 of 120** | **7 of 120** |
+
+One more true confirmation for six more false ones. The cause is candidate
+count: the periphery holds about 6 candidates on a typical page and the whole
+page about 45, so the opportunities for two accidental agreements rise by
+roughly fifty times. **Chance agreement among too many candidates is the
+mechanism, and the band case is a special case of it where one coordinate stops
+counting.**
+
+**This changes why the edge filter is in the code, which was worth finding
+out.** It went in as a physical claim, that staples and punches sit near edges.
+That claim died with the staple model (see docs/modules/paper.md). What the
+filter actually does is keep the candidate list short, which is the same reason
+`MIN_SMALL_AGREEING` is 2 rather than 1. It survives on a different argument
+from the one that put it there, and it is now measured rather than assumed.
+
+**A third thing I got wrong, smaller.** I told Alex the interior had gone
+unmeasured because the run was too slow. Timed through the shipped code the
+whole page takes 1.5 s a page against 2.1 s for the periphery. My probe was
+slow, not the idea, and I reported the symptom as the cause.
+
+**What is not damaged.** The held-out run's arithmetic stands: 1 of 400, bound
+1.180%, against a bar of 2%. None of this moves a constant or rescores a pair.
+The two development cross-record figures differ, 0 of 120 earlier and 1 of 120
+here, because the earlier draw came from the 20 records Alex had seen and this
+one from all 91 development records. Different samples of the same stratum,
+both development, neither held out.
+
+**What remains.** `compare_small` is still wired into nothing and still may not
+be. The adjacent not-one-sheet rate is still unmeasured (DEFECTS #62), and it
+is still what the district 02 fetch has to buy. Any fix aimed at the false rate
+now has to argue about candidate count, not about axes, and it needs records
+outside the spent split.
+
+**Pin:** tests/tier1/test_paper.py::test_the_edge_band_hole_is_symmetric_between_the_two_turns
+and tests/tier3/test_staple_eval.py::test_the_edge_filter_earns_its_place_on_selectivity

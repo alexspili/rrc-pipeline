@@ -280,6 +280,40 @@ channel possible is the filter that makes the hole. It is DEFECTS #55
 generalised from a twin mark to a twin coordinate, and #55 was cited in this
 design without being generalised. DEFECTS #63.
 
+**The hole has two faces and #63 describes one.** Each turn leaves one
+coordinate alone: `flip_v` preserves x, so left and right edges are cheap, and
+`flip_h` preserves y, so top and bottom edges are cheap in the same way. In
+this corpus the second may be the commoner, because punch holes run along the
+top edge and small marks cluster there with them. DEFECTS #64.
+
+**And it is not what governs the false rate.** Across every false confirmation
+on record, **one of nine** has its candidates in a band; the other eight are
+spread 0.908 to 0.981 across the sheet. The band case is real and caused the
+held-out failure. What governs the rate is how many candidates survive
+filtering, of which the band case is the special instance where one coordinate
+stops counting.
+
+### Why the edge filter is really there
+
+It went in as a physical claim, that staples and punches sit near edges. That
+claim died with the staple model above. Measured on the 91 development records
+after Alex asked whether the whole page should be read instead:
+
+| | Periphery only, as frozen | Whole page |
+|---|---|---|
+| Pairs judged same-sheet | **4 of 16** | 5 of 16 |
+| Pairs judged not-same-sheet | 0 of 8 | 0 of 8 |
+| Unrelated records | **1 of 120** | **7 of 120** |
+
+One more true confirmation for six more false ones. The periphery holds about 6
+candidates on a typical page and the whole page about 45, so the chances of two
+accidental agreements rise roughly fiftyfold. **The filter survives on
+selectivity, which is a different argument from the one that put it there**,
+and it is the same argument that makes `MIN_SMALL_AGREEING` 2 rather than 1.
+
+Speed is not a reason either way: 1.5 s a page for the whole page against 2.1 s
+for the periphery.
+
 **Where it will hurt is the place with no measurement.** Two pages of a true
 adjacent pair share a file, a scanner and a filing, so their candidates sit in
 the same bands far more often than two pages from different records do. The

@@ -200,10 +200,23 @@ def main() -> None:
                          "pre-registers, and it is run ONCE.")
     ap.add_argument("--pairs", type=int, default=120,
                     help="cross-record pairs to score")
+    ap.add_argument("--whole-page", action="store_true",
+                    help="ignore SMALL_EDGE_IN and read the whole sheet. "
+                         "Measured 2026-09-07 and it is worse: one more true "
+                         "confirmation for six more false ones, because the "
+                         "periphery holds about 6 candidates a page and the "
+                         "whole page about 45 (DEFECTS #64).")
     args = ap.parse_args()
     everything = not (args.positives or args.cross or args.samefile)
 
     render.preflight()
+    if args.whole_page:
+        # Not a constant change: the frozen value stands and this switch exists
+        # to re-measure the comparison in DEFECTS #64, not to ship a different
+        # one. A run under it may not be quoted beside a frozen-config result.
+        paper.SMALL_EDGE_IN = 99.0
+        print("WHOLE PAGE: SMALL_EDGE_IN overridden for this run only. "
+              "Measured worse (DEFECTS #64); not a shippable configuration.")
     recs = records()
     rows = list(csv.DictReader(io.StringIO(SPLIT.read_text())))
     half = "held_out" if args.held_out else "development"
