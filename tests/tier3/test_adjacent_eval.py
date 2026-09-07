@@ -170,8 +170,8 @@ def test_page_parity_predicts_same_sheet_better_than_the_mechanism():
 
 
 def test_the_channel_is_still_wired_into_nothing():
-    """DEFECTS #66 leaves the hole open, so passing the bar does not license
-    wiring it in. Asserted rather than intended.
+    """Asserted rather than intended. The fact is true; for WHY, see the test
+    below, because the reason first attached to it was wrong (DEFECTS #67).
     """
     import inspect
 
@@ -179,3 +179,32 @@ def test_the_channel_is_still_wired_into_nothing():
     source = inspect.getsource(reassemble)
     assert "compare_small" not in source
     assert "small_marks" not in source
+
+
+def test_what_blocks_wiring_is_the_missing_document_measurement():
+    """DEFECTS #67. The three band defects were made into a shipping gate they
+    do not justify.
+
+    #63, #64 and #66 explain why false confirmations happen. They add no
+    unmeasured risk: every rate on record was measured with all three present
+    and unfixed, so fixing them would lower those rates rather than reveal a
+    hidden one. Nor is the false rate itself a blocker against the right
+    comparator: the channel is 75% precise on its confirmations here, against
+    reassembly's own 78% of documents clean, and DEFECTS #58 says to compare
+    against the system's output rather than against perfection.
+
+    What blocks it is that every paper number is per pair while reassembly's
+    is per document, and the two come apart asymmetrically. A wrong attachment
+    ruins a whole document; a right one only helps an incomplete one.
+    """
+    sheet, verdicts = rows(), sealed()
+    confirmations = [k for k in verdicts if verdicts[k]["confirmed"]]
+    correct = [k for k in confirmations if call(sheet[k]) == "same-sheet"]
+    assert len(confirmations) == 4 and len(correct) == 3
+    precision = len(correct) / len(confirmations)
+    reassembly_clean = 25 / 32
+    assert precision >= 0.7
+    assert abs(precision - reassembly_clean) < 0.10, (
+        "the channel's precision and reassembly's own document accuracy are "
+        "within ten points of each other, which is why the false rate cannot "
+        "be the reason to withhold it")

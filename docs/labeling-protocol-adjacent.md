@@ -262,3 +262,78 @@ against 17% is a larger effect than anything the paper channels have produced,
 and it needs its own measurement rather than being adopted from this sheet.
 The district 03 sitting shows the same direction more weakly, 77% against 55%,
 on a frame that was classifier-selected and so not comparable.
+
+---
+
+## Follow-on: the document-level measurement, and the adjacent restriction
+
+Written 2026-09-07, **after the 40-pair sitting was scored and before the five
+pairs below were judged.**
+
+### Why a further measurement at all
+
+DEFECTS #67: the three band defects were made into a shipping gate they do not
+justify. What actually blocks wiring is that every paper number is **per pair**
+while reassembly's is **per document**, and the two come apart asymmetrically.
+A wrong attachment ruins a whole document by putting one well's pages under
+another well's identity; a right one only helps a document that was already
+incomplete.
+
+`scripts/wiring_effect.py` runs reassembly over district 03 twice, with and
+without the confirmer, from caches already on disk. No API calls.
+
+### What it found
+
+Wiring the confirmer in unrestricted changes 17 documents and adds **14
+attachments**:
+
+| Gap between the two pages | Attachments | Already judged |
+|---|---|---|
+| adjacent | 7 | 2, both correct |
+| 3 to 11 pages apart | 4 | none |
+| 31 and 56 pages apart | 2 | none |
+
+`1865760 p6+p37` and `1493498 p7+p63` are the bundle-mate failure DEFECTS #63
+predicted, appearing at document level exactly where the development
+measurement put it: 3 false in 160 non-adjacent same-file pairs.
+
+### The restriction, and it is chosen after seeing that
+
+**The confirmer is offered adjacent pairs only.** A sheet's two sides are
+scanned consecutively, so a page fifty-six later is not the back of this one.
+The rule is justified by what a duplex scanner does rather than by which rows
+it deletes, which is the standard DEFECTS #55 set for a fix found in a failure.
+It is also the only regime any safety number was ever measured in: 1 of 20 on
+the sitting above, and 0 of 8 on the 2026-09-06 negatives.
+
+**It was still chosen post hoc, so it is tested rather than adopted.** Five of
+the seven adjacent attachments have never been judged:
+
+    attach-01  1493451-0 p12+p13
+    attach-02  1495195-0 p3+p4        record Alex has seen before
+    attach-03  1495195-0 p37+p38      record Alex has seen before
+    attach-04  1502097-0 p15+p16
+    attach-05  1506419-0 p22+p23
+
+Same three-way label. Sheet at `tests/fixtures/wiring_check.csv`.
+
+### DECISION RULE
+
+**The confirmer is wired into `pipeline/reassemble.py`, restricted to adjacent
+pairs, if and only if at least 5 of the 7 adjacent attachments are judged
+`same-sheet`.** Two are already judged and both are `same-sheet`, so the rule
+asks for at least 3 of the 5 below.
+
+**Reachability.** The bar is below the point estimate rather than at or above
+it: the channel's precision on its confirmations is 3 of 4 on the district 02
+sitting and 4 of 4 on district 03, so 3 of 5 sits under both. It is not
+vacuous either, since 2 of 5 would fail it. That is the check whose absence
+voided the reassembly pre-registration of 2026-09-05 (DEFECTS #51).
+
+**What it cannot establish.** Whether the *document* number improves. Seven
+attachments across 224 documents is too few to move 25 of 32 measurably, and
+this rule asks only whether the attachments it makes are right. A document-level
+accuracy claim needs a larger evaluation and is not made here.
+
+**Two rows are weaker than the other three.** 1495195 is a record Alex has seen
+before. They stay in and are reported separately rather than dropped.

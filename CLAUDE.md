@@ -25,11 +25,10 @@ must be defensible line by line in an interview.
 
 ## Current state
 
-- fetch.py works end to end. Corpus 357 records, 405 files, 6,443 pages in
-  data/raw (git-ignored). TWO populations, never blended: district 03, closed,
-  on which everything is measured, and district 02, 155 records fetched
-  2026-09-07 as the sitting frame. paper_record_split.csv holds the halves,
-  91 development / 111 held out / 155 frame; never tune on the last two.
+- fetch.py works. Corpus 357 records, 405 files, 6,443 pages in data/raw
+  (git-ignored). TWO populations, never blended: district 03 closed, which
+  every measurement rests on, and district 02, 155 records from 2026-09-07.
+  paper_record_split.csv: 91 dev / 111 held out / 155 frame, last two barred.
 - Classifier and census DONE. 115 of the 202 records in district 03 (57%) hold
   a completion report. G-1 face precision **94.0%**; W-2 NOT established;
   never quote 83.6% as accuracy on the target classes. `form_class` on back
@@ -38,21 +37,22 @@ must be defensible line by line in an interview.
 - Extraction SCORED 2026-09-01: **87.4%** status, **82.5%** value, by era, on
   a prompt that no longer ships; re-scoring ~$1.50. Provenance CLOSED. Batched
   run **$7.17, NOT YET RUN**: the gated spend everything waits on.
-- Reassembly BUILT, four sittings, 25 of 32 multi-page documents clean; the six
-  wrong are same-form same-well different-filing, beyond any form rule.
+- Reassembly BUILT, 25 of 32 multi-page documents clean; the six wrong are
+  same-form same-well different-filing, beyond any form rule.
 - pipeline/paper.py confirms two pages are ONE SHEET from the marks on it: 0
   false confirmations in 850. It failed its pre-registered recall bar and
   shipped anyway on a measured gain (#57, #58). `make eval` runs tier3.
 - A SECOND channel, `compare_small`, reads marks under MIN_MARK_AREA, frozen
   1a01829, and PASSED both pre-registered bars: cross-record 1 of 400 (bound
   1.180%) and the district 02 sitting 1 of 20 false, 3 of 17 same-sheet. Not a
-  staple detector. **Wired into nothing and may not be** until #63/#64/#66
-  close: a band kills one axis, preserved or mirrored.
+  staple detector. **Wired into nothing**, and what blocks it is NOT #63/#64/
+  #66 — those are priced into the measured rates (#67) — but the absence of a
+  DOCUMENT-level measurement: every paper number is per pair.
 - Its real findings are not the pass. `same-bundle` was used 0 times so the
   bundle confusion is STILL unmeasured; the adjacent false rate is 5.0% against
-  0.25% and 20 pairs cannot resolve it; and **page parity beats the mechanism**,
-  a pair starting on an even page being same-sheet 14 of 19 against 3 of 18,
-  Fisher p=0.0008. Free, unbuilt, not to be adopted from its own sheet.
+  0.25% and 20 pairs cannot resolve it; and page parity predicts same-sheet at
+  14 of 19 even-start against 3 of 18 odd (Fisher p=0.0008), a 78% prior, so a
+  screen and not a confirmer. Unbuilt, not to be adopted from its own sheet.
 - The area floor never kept printing out, MAX_ASPECT did; every page is read at
   its own resolution (#61).
 - Next: decide on the parity prior, then the TypeScript span viewer, unbuilt.

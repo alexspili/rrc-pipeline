@@ -3344,3 +3344,70 @@ and not show the regimes are similar. It did not detect one, and it did not
 show they are similar either.
 
 **Pin:** tests/tier1/test_paper.py::test_a_band_at_opposite_edges_is_cheap_under_the_flip_that_maps_them
+
+---
+
+## #67 — 2026-09-07 — I made three open defects into a shipping gate they do not justify
+
+**What happened:** Alex asked what actually prevents wiring `compare_small`
+into reassembly, and said the work was not done for nothing. Checking the claim
+I had been making, it does not hold.
+
+**The claim.** CLAUDE.md and `docs/modules/paper.md` say the channel is "wired
+into nothing and may not be until DEFECTS #63, #64 and #66 close". A tier-3
+test asserts it is wired into nothing, which is a true statement of fact; the
+*reason* attached to it is the part that is wrong.
+
+**Why it is wrong.** Those three entries all describe the same thing: a band of
+candidates kills one axis, whether the transform preserves it or mirrors it.
+They explain **why** false confirmations happen. They do not add unmeasured
+risk, because every false-confirmation rate on record was measured with all
+three present and unfixed:
+
+| | |
+|---|---|
+| held-out cross-record | 1 of 400, bound 1.18% |
+| adjacent, human-labelled | 1 of 20 |
+| non-adjacent, human-labelled | 0 of 8 |
+
+Fixing them would **lower** those rates, not reveal a hidden one. Gating on
+them is gating on an explanation rather than on a risk.
+
+**And the false rate is not a blocker either, against the right comparator.**
+On the district 02 sitting the channel made 4 confirmations: 3 on pairs judged
+same-sheet, 1 on a pair judged different, so **75% precision**. Reassembly
+today produces 25 of 32 multi-page documents clean, **78%**. DEFECTS #58's
+whole lesson is that a bar on a mechanism supplementing an existing system is
+stated against that system's output rather than against perfection, and I
+applied it to the reach bar and then failed to apply it here.
+
+**What does prevent wiring, and it is one thing.** Every number the paper
+channels have produced is **per pair**. Reassembly's number is **per document**,
+and the two come apart asymmetrically: a wrong attachment ruins a whole
+document by putting one well's pages under another well's identity, while a
+right one only helps a document that was already incomplete. So 75% precision
+per pair does not imply the document number improves.
+
+`docs/labeling-protocol-paper.md` said exactly this on 2026-09-06 and it has
+never been measured:
+
+> Not measured here: whether reassembly gets better. Passing both bars and
+> making that number worse is possible, and crediting this mechanism with an
+> accuracy improvement needs a document-level evaluation.
+
+**How the wrong gate came about.** Each of #63, #64 and #66 ends with "the fix
+is not made", which is correct and is about the fix. I then carried that
+sentence forward into a statement about the *channel*, and it hardened into a
+gate through repetition across a commit message, CLAUDE.md and a module doc.
+Same shape as DEFECTS #59 and #21: a true local statement generalised one step
+too far and then repeated until repetition made it look established.
+
+**Fix:** the gate is restated everywhere it appears. The channel is not blocked
+by #63, #64 or #66; it is blocked by the absence of a document-level
+measurement, which costs nothing to run and is `scripts/wiring_effect.py`.
+
+**What remains:** the three band defects are still open and still unfixed, and
+closing them would improve the false rate. That is a reason to do them, not a
+reason to withhold the channel.
+
+**Pin:** tests/tier3/test_adjacent_eval.py::test_what_blocks_wiring_is_the_missing_document_measurement
