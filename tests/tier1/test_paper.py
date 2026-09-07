@@ -786,3 +786,45 @@ def test_the_edge_band_hole_is_symmetric_between_the_two_turns():
     marks = paper.small_marks(front)
     assert max(m.y for m in marks) - min(m.y for m in marks) < 0.01, (
         "the y coordinate carried none of it: every mark shares the band")
+
+
+def test_a_band_at_opposite_edges_is_cheap_under_the_flip_that_maps_them():
+    """DEFECTS #66, the third face of the same hole.
+
+    #63 covers a band in the coordinate the transform PRESERVES: flip_v leaves
+    x alone, so an x-band is free. This is the other way round. Page A's marks
+    lie along its bottom edge and page B's along its top; flip_v maps y to
+    1 - y, so A's band lands on B's band and y carries nothing. The claim then
+    rests on x alone.
+
+    Neither entry made the general statement until this pair forced it: if both
+    pages' candidates sit in a band and the transform maps one band onto the
+    other, that coordinate is not evidence, whether it is preserved or
+    mirrored.
+
+    Asserts the defect, not a fix. When #55's argument is generalised to
+    coordinates in both directions, this inverts alongside the two band tests
+    above and cites that commit.
+    """
+    front = blank_sheet()
+    back = blank_sheet()
+    # Two unrelated sheets. A's marks hug its bottom edge, B's hug its top,
+    # and only their x values are asked to agree.
+    for x in (700, 1800):
+        front |= speck(front.shape, x, 3100, radius=6)
+    for x in (700, 1800):
+        back |= speck(back.shape, x, 200, radius=6)
+
+    verdict = paper.compare_small(paper.small_marks(front),
+                                  paper.small_marks(back))
+    assert verdict.confirmed, (
+        "if this now abstains the coordinate rule has landed: invert this "
+        "test with the two band tests above (DEFECTS #63, #64, #66)")
+    assert verdict.transform == "flip_v"
+
+    marks = paper.small_marks(front)
+    spread_x = max(m.x for m in marks) - min(m.x for m in marks)
+    spread_y = max(m.y for m in marks) - min(m.y for m in marks)
+    assert spread_y < 0.01 < spread_x, (
+        "the point of the case: wide in the coordinate that carries the "
+        "claim, narrow in the one that does not")

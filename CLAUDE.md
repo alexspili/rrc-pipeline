@@ -16,48 +16,46 @@ must be defensible line by line in an interview.
 
 ## Read next
 
-- HANDOFF.md — all project knowledge: verified API chain, corpus facts,
-  document findings, pipeline design decisions, cost figures, cut order.
-  Read it before proposing or writing anything.
+- HANDOFF.md — all project knowledge: API chain, corpus facts, document
+  findings, design decisions, costs, cut order. Read it before proposing.
 - DEFECTS.md — append-only defect log. Five entries predate the code.
 - SETUP.md — repo mechanics, guardrails, commit rules in full.
-- docs/modules/ — per-module rules with defect origins (created as earned).
-- docs/recon/ — raw captures behind fetch.py (tokens redacted).
+- docs/modules/ — per-module rules with defect origins; docs/recon/ — raw
+  captures behind fetch.py, tokens redacted.
 
 ## Current state
 
 - fetch.py works end to end. Corpus 357 records, 405 files, 6,443 pages in
-  data/raw (git-ignored), manifest at data/manifest.jsonl. TWO populations:
-  district 03, closed, on which everything so far is measured; and DISTRICT
-  02, 155 records fetched 2026-09-07, reserved as the sitting frame and never
-  to be tuned on. It buys the one thing no measurement in hand can: a
-  false-confirmation rate on ADJACENT not-one-sheet pairs.
-- Corpus SPLIT, tests/fixtures/paper_record_split.csv: 91 development, 111
-  held out, every record Alex has seen in development. Never tune on held-out.
-- Classifier and census DONE. 115 of 202 records (57%) hold a completion
-  report. G-1 face precision **94.0%**; W-2 NOT established; never quote 83.6%
-  as accuracy on the target classes. `form_class` on back pages contradicts its
-  own section heading 31 times in 65 and MAY NOT define a negative (#60, #62).
-- Extraction SCORED 2026-09-01: status **87.4%**, value **82.5%**, BY ERA,
-  never blended, on a prompt that no longer ships; re-scoring ~$1.50.
-  Provenance CLOSED 2026-09-03, 77.3% coverage. Batched run **$7.17 for 218
-  documents, NOT YET RUN**: the gated spend everything downstream waits behind.
-- Reassembly BUILT, four sittings, all 39 attachments judged, 25 of 32
-  multi-page documents clean; the six wrong are same-form same-well
-  different-filing, which no form rule can reach.
-- pipeline/paper.py confirms two pages are ONE SHEET from the marks on it:
-  0 false confirmations in 850 negatives. It failed its pre-registered recall
-  bar and shipped anyway on a measured gain, both facts recorded (DEFECTS
-  #57, #58). `make eval` runs tests/tier3.
-- A SECOND channel, `compare_small`, reads marks under MIN_MARK_AREA. Frozen
-  1a01829. Development: 4 of 16 same-sheet pairs, DISJOINT from compare's 4.
-  Held out it PASSED its pre-registered bar, 1 false confirmation of 400,
-  bound 1.180% against 2%. **Not a staple detector** (pitch fires on 1 of 8).
-  **Wired into nothing and may not be** until DEFECTS #63 is closed: the edge
-  filter puts candidates in a band and a flip along it constrains one axis.
-- The area floor never kept printing out, MAX_ASPECT did (#61); every page is
-  read at its own resolution, 53 corpus pages being 200 dpi.
-- Next: the district 02 fetch, then the TypeScript span viewer, still unbuilt.
+  data/raw (git-ignored). TWO populations, never blended: district 03, closed,
+  on which everything is measured, and district 02, 155 records fetched
+  2026-09-07 as the sitting frame. paper_record_split.csv holds the halves,
+  91 development / 111 held out / 155 frame; never tune on the last two.
+- Classifier and census DONE. 115 of the 202 records in district 03 (57%) hold
+  a completion report. G-1 face precision **94.0%**; W-2 NOT established;
+  never quote 83.6% as accuracy on the target classes. `form_class` on back
+  pages self-contradicts 31 times in 65 and MAY NOT define a negative (#60,
+  #62).
+- Extraction SCORED 2026-09-01: **87.4%** status, **82.5%** value, by era, on
+  a prompt that no longer ships; re-scoring ~$1.50. Provenance CLOSED. Batched
+  run **$7.17, NOT YET RUN**: the gated spend everything waits on.
+- Reassembly BUILT, four sittings, 25 of 32 multi-page documents clean; the six
+  wrong are same-form same-well different-filing, beyond any form rule.
+- pipeline/paper.py confirms two pages are ONE SHEET from the marks on it: 0
+  false confirmations in 850. It failed its pre-registered recall bar and
+  shipped anyway on a measured gain (#57, #58). `make eval` runs tier3.
+- A SECOND channel, `compare_small`, reads marks under MIN_MARK_AREA, frozen
+  1a01829, and PASSED both pre-registered bars: cross-record 1 of 400 (bound
+  1.180%) and the district 02 sitting 1 of 20 false, 3 of 17 same-sheet. Not a
+  staple detector. **Wired into nothing and may not be** until #63/#64/#66
+  close: a band kills one axis, preserved or mirrored.
+- Its real findings are not the pass. `same-bundle` was used 0 times so the
+  bundle confusion is STILL unmeasured; the adjacent false rate is 5.0% against
+  0.25% and 20 pairs cannot resolve it; and **page parity beats the mechanism**,
+  a pair starting on an even page being same-sheet 14 of 19 against 3 of 18,
+  Fisher p=0.0008. Free, unbuilt, not to be adopted from its own sheet.
+- The area floor never kept printing out, MAX_ASPECT did; every page is read at
+  its own resolution (#61).
+- Next: decide on the parity prior, then the TypeScript span viewer, unbuilt.
 
 ## Standing rules
 

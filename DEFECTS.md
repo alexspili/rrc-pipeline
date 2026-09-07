@@ -3274,3 +3274,73 @@ what page N means. If a future measurement needs a genuinely different sort,
 that needs a fresh capture from the browser, not another guess.
 
 **Pin:** tests/tier2/test_fetch_cli.py::test_order_desc_refuses_because_it_does_not_bind
+
+---
+
+## #66 — 2026-09-07 — A band is cheap in the mirrored coordinate too, and #64 only checked the preserved one
+
+**What happened:** the district 02 sitting returned **1 false confirmation in
+20 pairs Alex judged not one sheet**, which passes the pre-registered bar of at
+most one. Read as the protocol requires, the pair shows a mechanism:
+
+    pair-29   1988894-0 p3+p4, BLACKWELL RF ET AL, DeWitt.  flip_v.
+      A(0.4502, 0.9761)  27 px    B(0.4466, 0.0214)  26 px
+      A(0.2478, 0.9845)  36 px    B(0.2446, 0.0148)  30 px
+
+The two agreeing marks are spread **0.202 in x** and **0.008 in y**. Every one
+of them sits at an extreme of y: page A's marks along its **bottom** edge, page
+B's along its **top**. `flip_v` maps y to 1 − y, so A's bottom band lands
+exactly on B's top band, and any mark in the first is near any mark in the
+second. The y coordinate therefore carries no information and the whole claim
+rests on x, which is two one-dimensional coincidences among 28 and 47
+candidates.
+
+**This is DEFECTS #63 with the axes swapped, and #64 could not have seen it.**
+#63 says a band in the coordinate the transform **preserves** is cheap:
+`flip_v` leaves x alone, so an x-band is free. This is the other way round: a
+band in the coordinate the transform **mirrors** is equally cheap when both
+pages' bands sit at opposite edges, because mirroring maps one onto the other.
+
+The general statement, which neither entry made:
+
+> If both pages' candidates are confined to a band, and the transform maps one
+> page's band onto the other's, that coordinate is not evidence. It does not
+> matter whether the transform preserves the coordinate or mirrors it.
+
+**And #64 measured only one of the two.** Its table reports "spread along the
+axis the winning transform preserves" and concludes that eight of nine false
+confirmations had their marks spread across the sheet, so the band effect was
+not what governed the false rate. **That measurement checked the preserved axis
+and never checked the mirrored one.** On this pair the preserved axis (x) is
+spread 0.202 and looks innocent, while the mirrored axis (y) is 0.008. So #64's
+number is not wrong about what it measured; it is an answer to half the
+question, presented as an answer to the whole of it.
+
+I do not know how many of those eight were mirrored-axis cases. Re-scoring them
+needs a re-run and is not done here, because it changes no decision and this
+sitting's arithmetic stands either way.
+
+**`SMALL_EDGE_IN` causes both faces.** It confines candidates to the rim, and a
+rim is four bands: two that a given flip preserves and two that it maps onto
+each other. Measured in #64, opening up to the whole page is worse still, one
+extra true confirmation for six extra false ones. So the filter stays and the
+hole stays with it.
+
+**What this did not do.** It did not fail the sitting: the bar was at most one
+false confirmation and there was one. It does not change the arithmetic; the
+protocol says a mechanism found in a failure gets an entry and a test and does
+not rescore the sitting. One clause.
+
+**Fix: not made.** The rule that closes it is #55's ambiguity argument applied
+to a coordinate rather than to a twin mark, in both directions. It would be
+chosen by looking at a failure, it has no held-out support, and the district 02
+frame is now spent as a sitting. It waits for a new freeze and fresh records.
+
+**What remains:** the channel keeps this hole, `compare_small` is still wired
+into nothing, and the adjacent false-confirmation rate is now measured at **1
+of 20, a 95% upper bound of 21.6%**, against 1.18% on 400 cross-record pairs.
+The protocol said in advance that 40 pairs could only detect a gross difference
+and not show the regimes are similar. It did not detect one, and it did not
+show they are similar either.
+
+**Pin:** tests/tier1/test_paper.py::test_a_band_at_opposite_edges_is_cheap_under_the_flip_that_maps_them

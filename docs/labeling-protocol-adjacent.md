@@ -186,3 +186,79 @@ entry and a failing test, and it does not change this sitting's arithmetic.**
 Origin: DEFECTS #31 and #35, where a pre-registration carried two decision
 clauses and the second was available to rescue the first. One clause. It is
 above.
+
+---
+
+## Result, 2026-09-07
+
+Seal verified intact at `ceb7e34c8c448196`. 40 pairs judged, 3 `cannot-tell`
+(8%, under the 30% trip), **0 `same-bundle`**, 17 `same-sheet`, 20 `different`.
+
+| | | |
+|---|---|---|
+| (a) false confirmations among not-one-sheet | **1 of 20** | bar: at most 1 |
+| (b) confirmations among same-sheet | **3 of 17** | bar: at least 2, denominator 8 |
+
+**The rule passed, on both halves.** Half (a) cleared by nothing: one against a
+bar of one.
+
+## What the result does not say
+
+**It does not show the adjacent regime is as safe as the cross-record one.**
+1 of 20 is 5.0% against 0.25%, a twentyfold difference in the point estimate,
+but 20 pairs licenses only a 95% upper bound of **21.6%**, and 1.18% sits
+inside that. This document said in advance that 40 pairs could detect a gross
+difference and could not show similarity. It detected none and showed none.
+
+**It did not measure the bundle confusion at all.** `same-bundle` was used
+zero times. That label existed because a staple goes through every sheet of a
+bundle at the same place, making bundle-mates the machine's one predicted
+failure. Whether the distinction was invisible, absent from the draw, or folded
+into `different` is not known, and nothing here bears on DEFECTS #63's
+prediction.
+
+## The one false confirmation, read as required
+
+`pair-29`, 1988894-0 p3+p4, under `flip_v`. Both agreeing marks sit at an
+extreme of y: page A's along its bottom edge, page B's along its top. `flip_v`
+maps y to 1 − y, so one band lands on the other and y carries nothing; the
+claim rests on x alone. **A band is cheap in the mirrored coordinate as well as
+in the preserved one**, which DEFECTS #63 did not say and DEFECTS #64 could not
+have seen, because #64 measured only the preserved axis. Written up as DEFECTS
+#66, pinned in tier 1, and it changes none of the arithmetic above.
+
+## Reach, and which channel carried it
+
+Of the 17 pairs judged same-sheet, reassembly's identity fields attach **none**,
+so all 3 confirmations are additions. The evidence column says where they came
+from:
+
+| | |
+|---|---|
+| same-sheet calls citing a channel the mechanism is blind to | **13 of 17** |
+| calls resting only on channels the mechanism shares | 4 of 17 |
+| the 3 the mechanism confirmed | all cite punch or staple, both shared |
+
+So the mechanism confirms where the human read the shared channel and stays
+silent where the human read show-through, folds and tears. That is a sharper
+statement of its reach than a bare 3 of 17, and it is the opposite worry from
+2026-09-06, when 15 of 16 calls rested on a channel the mechanism could not
+read at all.
+
+## Secondary: parity, and it is the largest finding here
+
+| First page of the pair | Judged same-sheet |
+|---|---|
+| **even** | **14 of 19 (74%)** |
+| odd | 3 of 18 (17%) |
+
+Fisher exact two-sided **p = 0.0008**, on labels that are independent of the
+mechanism. That is what would be seen if these files open with a separator or
+ID card, shifting every sheet boundary by one page.
+
+It was pre-registered as secondary and decides nothing here. It is recorded
+because a free deterministic prior that separates same-sheet pairs at 74%
+against 17% is a larger effect than anything the paper channels have produced,
+and it needs its own measurement rather than being adopted from this sheet.
+The district 03 sitting shows the same direction more weakly, 77% against 55%,
+on a frame that was classifier-selected and so not comparable.

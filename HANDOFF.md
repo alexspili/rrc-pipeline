@@ -682,3 +682,69 @@ two small marks, size the sitting from the count, then a blind sitting with the
 three-way label Alex chose on 2026-09-06: same sheet, same bundle but not the
 same sheet, different. That yields the adjacent negative rate and fresh
 positives in one sitting.
+
+## The district 02 sitting, judged 2026-09-07
+
+40 adjacent pairs, no masking, three-way label, sealed at `ceb7e34c8c448196`
+before Alex saw an image. Protocol and full result:
+`docs/labeling-protocol-adjacent.md`.
+
+**The pre-registered rule passed on both halves.**
+
+| | | |
+|---|---|---|
+| false confirmations among not-one-sheet | **1 of 20** | bar: at most 1 |
+| confirmations among same-sheet | **3 of 17** | bar: at least 2, denominator 8 |
+| `cannot-tell` | 3 of 40, 8% | trip: 30% |
+
+Half (a) cleared by nothing. **Three things it turned up matter more than the
+pass**, and all three are stated here because a pass is the least informative
+thing a measurement can produce.
+
+**1. The adjacent rate is twenty times the cross-record one and 20 pairs
+cannot resolve it.** 1 of 20 is 5.0% against 1 of 400, 0.25%. But 20 pairs
+licenses only a 95% upper bound of 21.6%, inside which 1.18% sits comfortably.
+The protocol said before the draw that 40 pairs could detect a gross difference
+and could not show the regimes were similar. It did neither. The gap DEFECTS
+#62 opened is narrowed, not closed.
+
+**2. `same-bundle` was used zero times, so the bundle confusion is still
+unmeasured.** That label existed because a staple goes through every sheet of a
+bundle at the same place, making bundle-mates the machine's one predicted
+failure. Whether the distinction was invisible, absent from the draw, or folded
+into `different` is unknown. **DEFECTS #63's prediction has still never been
+tested**, and designing a sitting that tests it is open work.
+
+**3. Page parity beats the mechanism, and costs nothing.**
+
+| First page of an adjacent pair | Judged same-sheet |
+|---|---|
+| **even** | **14 of 19 (74%)** |
+| odd | 3 of 18 (17%) |
+
+Fisher exact two-sided **p = 0.0008**, on labels independent of the mechanism.
+Consistent with these files opening with a separator or ID card, which shifts
+every sheet boundary by one page. District 03's sitting points the same way
+more weakly, 77% against 55%, on a classifier-selected frame that is not
+comparable. **This is a larger effect than anything the paper channels have
+produced and it is free and deterministic.** It is not adopted here: adopting a
+rule from the sheet that discovered it is what this repo does not do. It needs
+its own frame and its own pre-registration.
+
+**Which channel carries the reach.** Of 17 same-sheet calls, 13 cite a channel
+the mechanism is blind to — show-through, folds, tears — and the 3 it confirmed
+all cite punch or staple, which it shares. So it confirms where the human read
+the same evidence and is silent where the human read something else. That is
+the mirror of 2026-09-06, when 15 of 16 calls rested on staples it could not
+read, and it is a sharper statement of reach than 3 of 17 alone.
+
+**DEFECTS #66, from the one false confirmation.** Both agreeing marks sat at
+opposite edges, page A's along its bottom and page B's along its top, and
+`flip_v` maps one band onto the other, so y carried nothing. A band is cheap in
+the mirrored coordinate as well as the preserved one, and #64's table measured
+only the preserved axis, so it answered half the question while appearing to
+answer all of it.
+
+**State of the channel:** it has now passed two pre-registered bars and is
+still wired into nothing, because #63, #64 and #66 are open and a band of
+candidates kills one axis whichever way the flip acts on it.

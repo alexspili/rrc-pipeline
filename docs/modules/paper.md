@@ -323,6 +323,58 @@ most easily.
 The fix is not made. It would be chosen by looking at a failure, it has no
 held-out support, and the split it needs is the split just spent.
 
+**A third face, found by the district 02 sitting.** A band is cheap in the
+coordinate the transform **mirrors** as well as the one it preserves. On the
+sitting's one false confirmation both pages' marks sat at opposite edges,
+page A's along its bottom and page B's along its top, and `flip_v` maps one
+band onto the other, so y carried nothing and x alone bore the claim. The
+general statement, which neither earlier entry made: **if both pages'
+candidates are confined to a band and the transform maps one band onto the
+other, that coordinate is not evidence.** DEFECTS #66, which also records that
+#64's table measured only the preserved axis and so answered half the question.
+
+### The district 02 sitting, 2026-09-07: passes, and the pass is narrow
+
+40 adjacent pairs, no masking, three-way label, sealed at `ceb7e34c8c448196`.
+
+| | | |
+|---|---|---|
+| false confirmations among not-one-sheet | **1 of 20** | bar: at most 1 |
+| confirmations among same-sheet | **3 of 17** | bar: at least 2 |
+
+Half the rule cleared by nothing. And the adjacent false rate is **5.0%**
+against **0.25%** cross-record, a twentyfold difference in the point estimate
+that 20 pairs cannot resolve: the upper bound is 21.6% and 1.18% sits inside
+it. The protocol said so before the sheet went out.
+
+**`same-bundle` was used zero times**, so the confusion that label existed to
+detect was not measured and DEFECTS #63's prediction is still untested.
+
+**Which channel carries the reach.** Of 17 same-sheet calls, 13 cite a channel
+the mechanism is blind to: show-through, folds, tears. The 3 it confirmed all
+cite punch or staple, which it shares. So it confirms where the human read the
+same evidence and is silent where the human read something else. That is the
+mirror of 2026-09-06, when 15 of 16 calls rested on staples the mechanism could
+not read.
+
+### Page parity beats the mechanism, and costs nothing
+
+| First page of an adjacent pair | Judged same-sheet |
+|---|---|
+| **even** | **14 of 19 (74%)** |
+| odd | 3 of 18 (17%) |
+
+Fisher exact two-sided **p = 0.0008**, on human labels independent of the
+mechanism. Consistent with these files opening with a separator or ID card,
+which shifts every sheet boundary by one page. The district 03 sitting points
+the same way more weakly, 77% against 55%, on a classifier-selected frame that
+is not comparable.
+
+Pre-registered as secondary and it decides nothing. It is recorded here because
+a free deterministic prior separating 74% from 17% is a larger effect than
+anything the paper channels have produced, and because adopting it from the
+sheet that discovered it is exactly what this repo does not do.
+
 ## Rules
 
 R1. The transform is predicted, never searched. No rotation offset.
