@@ -153,6 +153,52 @@ a handwritten squiggle.
 **Redaction by detection asks the component whose failure mode is mistaking ink
 for paper to certify that it did not.** No threshold fixes that. DEFECTS #53.
 
+## The area floor was never what kept printing out
+
+Established by DEFECTS #61, which set out to fix something else. The detector
+was reading every page at an assumed 300 dpi; 53 corpus pages are 200 dpi, and
+on those the floor was therefore being applied at 0.045 in² instead of 0.02.
+
+Reading them at their own resolution gains 19 components across 11 pages.
+**All 19 were rendered and looked at, and all 19 are printing:** five fragments
+of large bold sideways fax-header text, two pieces of a casing schematic's
+hatching, part of a RECEIVED stamp, a piece of handwriting, and two pieces of
+plat linework. Two of them are round and solid enough to be called `hole`.
+
+So an honestly converted 0.02 in² floor admits ink. It always would have; the
+300 dpi pages simply do not happen to carry fax headers. What excludes printing
+is `MAX_ASPECT`, and the address line of DEFECTS #53 makes the same point from
+the other side: at 0.0625 in² it was well over the floor and was caught by its
+aspect of 12.2.
+
+**This is why the staple channel cannot be built by lowering the floor**, and
+it is a stronger reason than the original one. Below the floor there is no size
+envelope left to lean on and `MAX_ASPECT` does not reach chunky printed
+fragments, so a staple has to be recognised by structure: two marks, about
+10 mm apart, near an edge or corner, with no neighbours on their baseline.
+
+None of it changed a verdict. All 494 within-file pairs across the six affected
+records were compared under both readings and none moved, which is the margin
+doing the work the module was already relying on it for.
+
+## Orientation, and why a half turn costs nothing
+
+The census records an `orientation` for every page and nothing in this module
+consults it. That is safe for half turns and not for quarter turns, and the
+reason is closure rather than luck: `rot180` after `flip_v` is `flip_h`, and
+`rot180` after `same` is `rot180`. A 180 degree difference in how two pages
+were stored therefore permutes within the legitimate pair and within the
+control pair, and never moves a page from one set into the other.
+
+A quarter turn does break it, and the mechanism then finds nothing to pair and
+abstains, which is R3 behaving correctly rather than a silent wrong answer.
+Measured: **2.9% of adjacent corpus pairs differ by a quarter turn**, and 0 of
+the 54 same-family adjacent pairs in the 2026-09-06 frame do, so that sitting
+is unaffected. It is a cost in reach on any frame drawn from adjacent pairs
+without a classifier, which is what the staple channel's frame will be.
+
+Pinned by: tests/tier1/test_paper.py::test_a_half_turn_never_moves_a_page_between_the_two_sets
+
 ## Rules
 
 R1. The transform is predicted, never searched. No rotation offset.
@@ -184,6 +230,15 @@ R6. Printing is not a mark on the paper.
     Origin: DEFECTS #53, an underlined address larger than a punch hole.
     Pinned by: tests/tier1/test_paper.py::test_a_line_of_text_is_not_a_mark_on_the_paper
 
+R7. A page is read at its own resolution, and no caller takes a default.
+    Origin: DEFECTS #61. The size envelope is stated in square inches, so
+    something has to convert it, and until then nothing did: 53 corpus pages
+    are 200 dpi and were read as 300. The damaging half is not the floor but
+    `area_in2`, which came out 2.25x small and so put one physical mark outside
+    AREA_RATIO from itself, making the 11 adjacent pairs that straddle the
+    change unconfirmable by construction.
+    Pinned by: tests/tier2/test_papermatch.py::test_a_page_is_read_at_its_own_resolution
+
 ## Not yet a rule, because nothing enforces it
 
 If this module passes its pre-registered bar, `pipeline/reassemble.py` attaches
@@ -193,8 +248,9 @@ identity veto over a paper confirmation.
 
 That is written here as an intention and not as a numbered rule, because no
 test pins it and nothing in the code does it. **The module changes no output
-today.** It becomes R7 in the commit that wires it in, with the test that
-enforces it, and not before.
+today.** It becomes R8 in the commit that wires it in, with the test that
+enforces it, and not before. It was written here as R7, and R7 was taken on
+2026-09-06 by DEFECTS #61, which is a rule with a test behind it today.
 
 ## RETIRED
 
