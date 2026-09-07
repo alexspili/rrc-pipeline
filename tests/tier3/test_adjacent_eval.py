@@ -220,8 +220,10 @@ def test_what_blocks_wiring_is_the_missing_document_measurement():
 
 # ------------------------------- the wiring check, 2026-09-07
 
-#: The seven attachments the restricted confirmer adds, and the verdicts.
-#: Two came from the 2026-09-06 sitting, five from tests/fixtures/wiring_check.csv.
+#: The seven attachments the small-channel probe found, and the verdicts the
+#: wiring decision was taken on. Two came from the 2026-09-06 sitting, five
+#: from tests/fixtures/wiring_check.csv. The shipped two-channel confirmer's
+#: own count is pinned further down (DEFECTS #71).
 ADJACENT_ATTACHMENTS = 7
 JUDGED_CORRECT = 6
 BAR = 5
@@ -262,3 +264,76 @@ def test_page_parity_does_not_replicate_on_district_03():
     """
     parity_correct, total = 3, 7
     assert parity_correct / total < JUDGED_CORRECT / ADJACENT_ATTACHMENTS
+
+
+# ------------------------------- DEFECTS #71: the probe is not the confirmer
+
+#: The paper attachments the SHIPPED two-channel confirmer adds over the
+#: identity-only grouping, measured 2026-09-07 by regenerating the corpus
+#: grouping after the #70 fix. Verdicts crossed from the 2026-09-06 sitting
+#: (tests/fixtures/paper_sitting.csv) and the wiring-check sheet
+#: (tests/fixtures/wiring_check.csv). The probe's documented "7 attachments,
+#: 6 correct" was compare_small alone; six of the pairs below that it missed
+#: are solid-channel confirmations.
+SHIPPED_PAPER_ATTACHMENTS = {
+    ("1493451", 0, 12, 13): "same-sheet",
+    ("1493451", 0, 22, 23): "unjudged",
+    ("1493498", 0, 62, 63): "same-sheet",
+    ("1493547", 0, 5, 6): "same-sheet",
+    ("1494483", 0, 15, 16): "same-sheet",
+    ("1494717", 0, 20, 21): "unjudged",
+    ("1494774", 0, 6, 7): "same-sheet",
+    ("1494774", 0, 8, 9): "cannot-tell",
+    ("1495195", 0, 3, 4): "same-sheet",
+    ("1495195", 0, 37, 38): "same-sheet",
+    ("1495350", 0, 24, 25): "same-sheet",
+    ("1495482", 0, 16, 17): "same-sheet",
+    ("1502097", 0, 15, 16): "different",
+    ("1506419", 0, 22, 23): "same-sheet",
+}
+
+GROUPING = ROOT / "data" / "extract" / "reassemble.jsonl"
+
+
+def test_the_shipped_confirmer_is_not_the_probe_and_its_count_is_measured():
+    """The pin for DEFECTS #71, in two halves.
+
+    First, the instruments are different on purpose and must never be quoted
+    as one: the probe confirms with compare_small alone, the shipped
+    confirmer asks both channels. Asserted on the source, so editing either
+    into agreement re-opens the question rather than silently closing it.
+
+    Second, the shipped count and its verdict tally, as measured: 14 paper
+    attachments, of which 10 same-sheet, 1 different, 1 cannot-tell, 2
+    unjudged. Ten of eleven decisive verdicts. If the mechanism changes and
+    this fails, the number moved: re-measure and re-document, do not edit
+    the constant to green.
+    """
+    probe = (ROOT / "scripts" / "wiring_effect.py").read_text()
+    shipped = (ROOT / "pipeline" / "papermatch.py").read_text()
+    assert "compare_small" in probe and "paper.compare(" not in probe
+    assert "compare_small" in shipped and "paper.compare(" in shipped
+
+    tally = Counter(SHIPPED_PAPER_ATTACHMENTS.values())
+    assert len(SHIPPED_PAPER_ATTACHMENTS) == 14
+    assert tally == Counter({"same-sheet": 10, "different": 1,
+                             "cannot-tell": 1, "unjudged": 2})
+
+
+@pytest.mark.skipif(not GROUPING.exists(),
+                    reason="needs data/extract/reassemble.jsonl")
+def test_every_shipped_attachment_is_in_the_grouping_on_disk():
+    """The constant above is a copy of a measurement; the grouping on disk is
+    the measurement. They agree or the pin is stale.
+    """
+    docs = {}
+    for line in GROUPING.open():
+        if line.strip():
+            row = json.loads(line)
+            docs[(row["record_id"], int(row["file_index"]),
+                  int(row["face"]))] = set(row["pages"])
+    for (record, index, face, child) in SHIPPED_PAPER_ATTACHMENTS:
+        homes = [pages for (r, i, _), pages in docs.items()
+                 if r == record and i == index
+                 and face in pages and child in pages]
+        assert homes, f"{record}-{index} p{face}+p{child} not grouped together"

@@ -186,7 +186,9 @@ def main() -> None:
     # measurement its own protocol demanded (DEFECTS #67). Restricted to
     # adjacent pairs: offered every candidate it attaches pages 31 and 56
     # apart, and 18 of the 19 attachments Alex judged wrong are non-adjacent.
-    # Restricted, it makes 7 attachments of which 6 are judged correct.
+    # On this corpus it makes 14 paper attachments, 10 of 11 decisive
+    # verdicts same-sheet; the probe's "7 of which 6" was one channel of the
+    # two that ship (DEFECTS #71).
     confirms = papermatch.sheet_confirmer(
         lambda rec: RAW / rec.record_id
         / records[rec.record_id]["files"][rec.file_index]["name"],

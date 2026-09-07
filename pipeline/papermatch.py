@@ -213,8 +213,11 @@ def compare_pages(pdf_a: Path, page_a: int, pdf_b: Path, page_b: int,
 #: verification sheets 18 of the 19 attachments Alex judged WRONG are
 #: non-adjacent, against 24 of the 27 he judged right being adjacent.
 #:
-#: Restricted to adjacent pairs the confirmer makes 7 attachments of which 6
-#: are judged correct, 86%, against reassembly's own 78% of documents clean.
+#: Restricted to adjacent pairs the small-channel probe found 7 attachments,
+#: 6 judged correct, and the wiring decision was taken on those seven. The
+#: confirmer that ships here asks both channels and makes 14 paper
+#: attachments on district 03: 10 judged same-sheet, 1 different, 1
+#: cannot-tell, 2 unjudged. Ten of eleven decisive verdicts (DEFECTS #71).
 #:
 #: The cost is stated rather than hidden: a true non-adjacent sheet like
 #: 1501720 p2+p4 can never be confirmed. That pair carries one small mark and

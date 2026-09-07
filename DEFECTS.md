@@ -3557,3 +3557,55 @@ reads data/ and spends, so no commit-time tier can hold it. The runbook
 compensation is that a regeneration now precedes the spend it feeds.
 
 **Pin:** tests/tier2/test_names_resolve.py::test_every_name_referenced_resolves_somewhere
+
+## #71 — 2026-09-07 — "7 attachments, 6 correct" describes the probe, not the confirmer that ships
+
+**The claim, asserted in four places**: the `MAX_PAGE_GAP` comment in
+`pipeline/papermatch.py`, the comment above the confirmer in
+`scripts/measure_reassemble.py`, ce99e47's commit message, HANDOFF.md's
+wiring section and CLAUDE.md's state line:
+
+> Restricted to adjacent pairs the confirmer makes 7 attachments of which 6
+> are judged correct, 86%, against reassembly's own 78%.
+
+**What the shipped confirmer actually does.** Regenerating the grouping after
+the #70 fix, which was the first end-to-end run of the shipping path, adds 15
+attachments over the identity-only grouping. One is identity's own, enabled by
+a fresh read (1906587-1 p2+p4, a gap of two, which `MAX_PAGE_GAP` could never
+produce and identity's two-field threshold can). The other **14 are paper
+confirmations**, twice the documented 7.
+
+**Why: the instrument and the mechanism differ by a channel.**
+`scripts/wiring_effect.py`, the probe behind the number, confirms with
+`compare_small` alone, by construction and on purpose: it is the unrestricted
+probe whose far attachments motivated R8. `papermatch.sheet_confirmer` asks
+`compare_small` and then `paper.compare`. Six of the seven undocumented
+attachments are solid-mark confirmations, from the channel the probe never
+asks. The seventh, 1493451-0 p22+p23, is a small-channel confirmation the
+morning probe run did not surface; #68's silent-drop fix landed the same
+afternoon and is the plausible cause, stated as plausible rather than
+established.
+
+**The precision survives; the count was the fiction.** Crossed against the
+2026-09-06 sitting and the wiring-check sheet, the 14 already carry verdicts
+for 12: **10 same-sheet, 1 different** (1502097-0 p15+p16, attach-04, the
+known error the wiring rule priced in), **1 cannot-tell** (1494774-0 p8+p9),
+and 2 never judged (1493451-0 p22+p23, 1494717-0 p20+p21). Ten of eleven
+decisive verdicts. The pre-registered 5-of-7 rule was passed on the probe's
+seven and that history stands; what was wrong was carrying the probe's count
+forward as a description of the shipped mechanism. #59's shape, and the third
+member of the measured-one-path-shipped-another family after #45 and #70.
+
+**Found by:** diffing the regenerated grouping against the pre-wiring file
+before spending on it, and declining to quote a number that did not match its
+own documentation.
+
+**What remains:** two shipped attachments have no human verdict and the
+cannot-tell is attached; they ship because the wiring rule vetted the
+mechanism rather than the rows (#55's standard), and they are named as
+sitting backlog rather than silently included. Separately, 1493616-0 p4
+truncates the identity reader deterministically, twice on two runs, so that
+page is in no identity map and its file groups without it; R6 refuses to
+cache a truncation, so retrying without raising the reader's cap only spends.
+
+**Pin:** tests/tier3/test_adjacent_eval.py::test_the_shipped_confirmer_is_not_the_probe_and_its_count_is_measured
