@@ -67,9 +67,14 @@ def main() -> None:
     documents = [json.loads(l) for l in args.results.open() if l.strip()]
 
     rules: Counter = Counter()
-    checked = unparsed = 0
+    checked = unparsed = skipped = 0
     with args.out.open("w") as out:
         for row in documents:
+            # An errored row has nothing to validate and, when the error was
+            # API-level, no cache entry either (DEFECTS #73).
+            if row.get("error"):
+                skipped += 1
+                continue
             # The page id carries the file index and a record can hold five
             # files. Assuming file 0 hashes the wrong PDF, which misses the
             # cache and would otherwise validate a document nobody extracted.
@@ -97,7 +102,8 @@ def main() -> None:
                 for finding in findings:
                     print(f"     {finding}")
 
-    print(f"\n{checked} documents checked, {unparsed} unparsed")
+    print(f"\n{checked} documents checked, {unparsed} unparsed, "
+          f"{skipped} errored rows skipped")
     clean = checked - len({json.loads(l)["record_id"]
                            for l in args.out.open()
                            if json.loads(l)["findings"]})

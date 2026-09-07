@@ -127,11 +127,19 @@ def main() -> None:
     by_kind = defaultdict(Counter)
     per_doc = []
 
+    skipped = 0
     with out_path.open("w") as out:
         for line in results_path.open():
             if not line.strip():
                 continue
             doc = json.loads(line)
+            # A row carrying an error has no output to snap, and an
+            # API-level failure has no cache entry at all, so reading on
+            # would fall through to the live path with no client
+            # (DEFECTS #73).
+            if doc.get("error"):
+                skipped += 1
+                continue
             record_id, file_index, _ = pc.parse_page_id(doc["page_id"])
             entry = records[record_id]
             pdf = RAW / record_id / entry["files"][file_index]["name"]
@@ -177,6 +185,9 @@ def main() -> None:
                 f"unanchored {counts['unanchored']})") if total else "  none"
 
     print("SNAP COVERAGE: values the embedded text layer can locate\n")
+    if skipped:
+        print(f"  {skipped} errored rows skipped; this measures the "
+              "documents that have output\n")
     print(f"  overall            {rate(by_outcome)}\n")
     print("  by era (geometry expected to follow the value-accuracy "
           "gradient; stated, not hidden):")

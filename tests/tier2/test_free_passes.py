@@ -32,6 +32,7 @@ ERRORED_ROW = {
 
 
 def run_pass(script: str, tmp_path: Path, extra: list[str]) -> str:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     results = tmp_path / "results.jsonl"
     results.write_text(json.dumps(ERRORED_ROW) + "\n")
     cache = tmp_path / "cache.jsonl"
