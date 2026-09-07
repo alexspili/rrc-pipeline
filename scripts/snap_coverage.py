@@ -102,20 +102,33 @@ def classify_snap(raw: str, box, words):
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    ap = argparse.ArgumentParser(description=__doc__)
+    # Which run to measure. The defaults are the smoke run, unchanged; the
+    # corpus run passes its own pair. The prompt hash always comes from the
+    # results file itself, so a results/cache pair from different runs is
+    # caught by the cache refusing the hash rather than silently measuring
+    # one run against another's geometry.
+    ap.add_argument("--results", type=Path, default=SMOKE,
+                    help="run results jsonl (default: the smoke run)")
+    ap.add_argument("--cache", type=Path, default=CACHE,
+                    help="that run's result cache (default: the smoke cache)")
+    ap.add_argument("--out", type=Path, default=OUT,
+                    help="where the per-value outcomes land")
+    args = ap.parse_args()
+    results_path, cache_path, out_path = args.results, args.cache, args.out
 
     records = {json.loads(l)["record_id"]: json.loads(l)
                for l in MANIFEST.open() if l.strip()}
     cache = classify.ResultCache(
-        CACHE, prompt_hash=extractor.recorded_prompt_hash(SMOKE))
+        cache_path, prompt_hash=extractor.recorded_prompt_hash(results_path))
 
     by_outcome: Counter = Counter()
     by_era = defaultdict(Counter)
     by_kind = defaultdict(Counter)
     per_doc = []
 
-    with OUT.open("w") as out:
-        for line in SMOKE.open():
+    with out_path.open("w") as out:
+        for line in results_path.open():
             if not line.strip():
                 continue
             doc = json.loads(line)
@@ -177,7 +190,7 @@ def main() -> None:
         print(f"    {record_id} {str(pages):10s} {era:16s} {rate(counts)}")
     print(f"\n  the residue (ambig + none + unanchored) is the widened-band "
           "fallback's load, and Textract's ceiling")
-    print(f"\n{OUT}")
+    print(f"\n{out_path}")
 
 
 if __name__ == "__main__":
