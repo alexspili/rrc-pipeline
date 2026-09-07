@@ -37,7 +37,7 @@ sys.path.insert(0, str(ROOT))
 from pipeline import classify                     # noqa: E402
 from pipeline import extractor                    # noqa: E402
 from pipeline import formscan                     # noqa: E402
-from pipeline.guard import refuse_if_filled        # noqa: E402
+from pipeline.guard import RefusedToOverwrite, refuse_if_filled  # noqa: E402
 from pipeline import pageclass as pc              # noqa: E402
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
@@ -205,7 +205,13 @@ def main() -> None:
 
     print(f"\nspent: ${spend:.2f}   (${notional:.2f} if the cache were cold)")
     print(f"results: {RESULTS}")
-    write_template(written)
+    try:
+        write_template(written)
+    except RefusedToOverwrite as refusal:
+        # The guard doing its job (DEFECTS #26) is a clean outcome of a
+        # re-run, not a failure of it: the run above completed and is
+        # cached, and the keyed sheet stays keyed.
+        print(f"template kept: {refusal}")
 
 
 def write_template(written) -> None:
