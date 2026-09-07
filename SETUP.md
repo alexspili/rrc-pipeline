@@ -157,9 +157,10 @@ cut order retroactively publishes the full graph + history anyway.
 
 ## Step 7 — open Claude Code in the repo root
 
-Opening prompt, roughly:
-  "Read CLAUDE.md and HANDOFF.md. Corpus: data/raw, 202 records, 3,689
-   pages, manifest at data/manifest.jsonl. Next milestone is the page
+Opening prompt, roughly (written 2026-08-30; the corpus has grown since and
+CLAUDE.md carries the live figures):
+  "Read CLAUDE.md and HANDOFF.md. Corpus: data/raw, manifest at
+   data/manifest.jsonl. Next milestone is the page
    classifier and the census table. Per standing rule 5: propose the page
    classes, the classifier prompt approach, and the tier-1 tests before
    writing any pipeline code."

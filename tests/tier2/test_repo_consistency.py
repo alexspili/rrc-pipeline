@@ -63,6 +63,10 @@ NOT_CORPUS_COUNTS = {
                        # from the 2026-08-31 census page-grouping finding
         "68",          # the OCR floor in records (DEFECTS #15), not a corpus
                        # count: records with a legible G-1 or W-2 header
+        "28,827",      # every record the district 02 / 2007-2009 search
+                       # matches, of which 155 were pulled (2026-09-07). It is
+                       # the number that proved the session was binding, since
+                       # an unprimed one returns the whole archive.
     },
     "files": set(),
     "pages": {
@@ -78,18 +82,34 @@ CLAIM = re.compile(r"(?<![\w-])([\d,]+)\s+(records|files|pages)")
 
 
 def _manifest_counts():
+    """What the manifest holds, in total and per district.
+
+    Two populations since 2026-09-07: district 03, closed, which every
+    measurement in the docs rests on, and district 02, the sitting frame. A
+    document may legitimately state either subtotal or the total, so all three
+    are returned and a claim matching any of them passes. A claim matching none
+    of them is drift, which is what DEFECTS #6 is about.
+    """
     manifest = ROOT / "data" / "manifest.jsonl"
     if not manifest.exists():
         return None
     import json
+    from collections import defaultdict
 
     records = [json.loads(line) for line in manifest.open() if line.strip()]
-    files = [f for r in records for f in r["files"]]
-    return {
-        "records": len(records),
-        "files": len(files),
-        "pages": sum(f.get("pages") or 0 for f in files),
-    }
+    by_district = defaultdict(list)
+    for record in records:
+        by_district[(record.get("meta") or {}).get("district") or "?"].append(record)
+
+    def counts(rows):
+        files = [f for r in rows for f in r["files"]]
+        return {"records": len(rows), "files": len(files),
+                "pages": sum(f.get("pages") or 0 for f in files)}
+
+    populations = [counts(records)] + [counts(rows)
+                                       for rows in by_district.values()]
+    return {noun: {p[noun] for p in populations}
+            for noun in ("records", "files", "pages")}
 
 
 def test_docs_state_the_corpus_the_manifest_actually_holds():
@@ -115,8 +135,10 @@ def test_docs_state_the_corpus_the_manifest_actually_holds():
         for value, noun in CLAIM.findall(text):
             if value in NOT_CORPUS_COUNTS[noun]:
                 continue
-            if int(value.replace(",", "")) != truth[noun]:
-                wrong.append(f"{name}: {value} {noun} (manifest: {truth[noun]:,})")
+            if int(value.replace(",", "")) not in truth[noun]:
+                allowed = ", ".join(f"{v:,}" for v in sorted(truth[noun]))
+                wrong.append(f"{name}: {value} {noun} "
+                             f"(manifest holds: {allowed})")
 
     assert not wrong, (
         "Docs disagree with data/manifest.jsonl. Update the docs, or add the "

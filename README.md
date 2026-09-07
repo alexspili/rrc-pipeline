@@ -24,8 +24,8 @@ every pull request.
 Two findings, at two different confidence levels. They are not quoted as if they carried the same
 weight, and the weaker one is not quoted as a number at all.
 
-**Verified, record level.** **115 of 202 records (57%) contain a completion report.** Measured by
-classifying all 3,689 pages, above an independent OCR floor of 68 records, and hand-checked on a
+**Verified, record level.** **115 of the 202 records in district 03 (57%) contain a completion
+report.** Measured by classifying all 3,689 of that district's pages, above an independent OCR floor of 68 records, and hand-checked on a
 seeded random sample of 15 of the 115: 15 of 15 confirmed, no over-counting. This is the number
 the corpus decision rested on and it is reportable as it stands.
 

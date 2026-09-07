@@ -89,6 +89,27 @@ def warn_if_expiring(tok: str) -> None:
         print(f"warning: token expires in {left/60:.0f} min", file=sys.stderr)
 
 
+def check_order(order: str) -> None:
+    """Refuse `desc`, which is accepted by the server and binds to nothing.
+
+    DEFECTS #65. Measured on the district 02 window, 2026-09-07: ascending and
+    descending return the same first page, id for id. The payload sends
+    `order` and `orderBy` separately and `orderBy` is empty, so there is
+    probably no sort key for the direction to apply to; that is a hypothesis
+    and stays one, because testing it means inventing an `orderBy` value never
+    seen from a working client (standing rule 2).
+
+    A flag that silently does nothing is worse than no flag: two documents
+    said this one worked.
+    """
+    if order != "asc":
+        sys.exit(
+            "--order desc is accepted by the server and changes nothing "
+            "(DEFECTS #65): ascending and descending return the same page, "
+            "id for id. Use --start-page to sample elsewhere in a window; "
+            "that does work.")
+
+
 def mint_token() -> str:
     """TODO: automate via pubcore.neubus.com/api.php?function=GetTenantEnvOauth.
 
@@ -264,8 +285,9 @@ def main() -> None:
     ap.add_argument("--force", action="store_true",
                     help="proceed even if the match count looks unfiltered")
     ap.add_argument("--order", choices=["asc", "desc"], default="asc",
-                    help="result order by record id; desc samples the "
-                         "latest-imaged end of a window")
+                    help="result order by record id. Only asc does anything: "
+                         "desc is accepted by the server and binds to nothing "
+                         "(DEFECTS #65). Use --start-page instead.")
     ap.add_argument("--start-page", type=int, default=1,
                     help="skip into the middle of a large window")
     ap.add_argument("--no-strict", action="store_true",
@@ -278,6 +300,7 @@ def main() -> None:
         args.max_pages = 3
         print("dry run: defaulting to --max-pages 3", file=sys.stderr)
 
+    check_order(args.order)
     client = Client(load_token())
     done = load_done()
     DATA.mkdir(exist_ok=True)

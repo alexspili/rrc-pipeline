@@ -23,7 +23,8 @@ only, referenced by record id.
 
 ## Cut order (each line is a shippable stopping point)
 
-1. ~~fetch + cached corpus~~ DONE. Corpus closed at 202/249/3,689.
+1. ~~fetch + cached corpus~~ DONE. District 03 closed at 202/249/3,689;
+   district 02 opened 2026-09-07, 155 more records, sitting frame only.
 2. ~~page classifier w/ measured number on small labeled page set~~ DONE
    2026-08-31. Census: 115 of 202 records (57%) hold a completion report,
    hand-verified 15/15. Corpus sufficient; fetch.py stays closed.
@@ -146,8 +147,10 @@ by numeric record id only, resolve blobs/nuids fresh each run.
 Python 3 + requests only. Env: NEUBUS_TOKEN (required), NEUBUS_COOKIE /
 NEUBUS_XSRF (optional, proved unnecessary). CLI: --district --from --to
 --profile --search key=value (repeatable) --all-types --max-records
---max-pages --start-page --order asc|desc --dry-run --force --no-strict
-(experimental, known broken server-side). FETCH_DEBUG=1 prints request
+--max-pages --start-page --dry-run --force --no-strict
+(experimental, known broken server-side). **--order desc does nothing** and
+now refuses: it is accepted by the server and returns the same page id for id
+(DEFECTS #65). Use --start-page to reach elsewhere in a window. FETCH_DEBUG=1 prints request
 headers/body + response p-block.
 Behavior: client-side POTENTIAL filter by default; tripwire aborts if
 num_images > 200k (means filters ignored / stale token); dedupe via
@@ -155,9 +158,13 @@ data/manifest.jsonl keyed on record_id; downloads to data/raw/<record_id>/;
 verifies size; rate-paced. Known gaps: mint_token() NotImplemented; .env
 loaded via `set -a; source .env; set +a` (no dotenv dep).
 
-## Corpus status — CLOSED, do not pull more
+## Corpus status — district 03 CLOSED, district 02 opened 2026-09-07
 
-data/raw/ on Alex's machine (~/Projects/RRC/data/raw). Final: **202 records,
+Totals now **357 records, 405 files, 6,443 pages**. Two populations, never
+blended: district 03 below, closed, which every measurement in this document
+rests on; and district 02, 155 records, described at the end of this file.
+
+District 03, data/raw/ on Alex's machine. Final: **202 records,
 249 files, 3,689 pages, 0 dupes.** Upload years: 2007:34 2008:27 2009:17
 2010:2 2012:1 2013:1 **2014:120** (a second imaging wave — 59% of corpus;
 paper vintage of that wave unknown until classification). Files/record:
@@ -600,3 +607,78 @@ The confound is written down in advance: a regression there has two possible
 causes and this run cannot separate them. Needs a fresh `NEUBUS_TOKEN` on the
 day. `fetch.py --dry-run` first to size it. No census and no model money: the
 frame is adjacent pairs screened by the detector.
+
+---
+
+# District 02, fetched 2026-09-07
+
+## What was pulled and why
+
+The staple work could not measure one thing on any evidence in the repo: **the
+false-confirmation rate on adjacent pairs that are not one sheet.** DEFECTS #62 sets
+out what happened when the census `form_class` was asked to supply that label, and DEFECTS #63 and #64 record why the gap matters most in exactly that
+regime. So the corpus was reopened.
+
+**District 02 rather than more district 03**, Alex's choice. It is the adjacent
+Gulf Coast district, so the population is close enough to compare, and it is a
+genuine test of whether the paper channels generalise across offices, which is
+`docs/modules/paper.md`'s standing limitation. The confound is written down in
+advance: a regression here has two possible causes, the mechanism and the
+population, and this pull cannot separate them.
+
+## The pull
+
+    fetch.py --district 02 --from 01/01/2007 --to 01/01/2009
+             --start-page {70,110,160,210,260} --max-records 30
+
+**155 records, 156 files, 2,754 pages.** Five draws spread across the window
+rather than one contiguous block, because a contiguous block of record ids is
+one imaging batch and probably one box of paper.
+
+- The window holds **28,827 records**. The count is what proved the session was
+  binding: an unprimed session returns the whole 1.9M archive (DEFECTS #3).
+- **Composition varies by depth.** Page 1 of the result is entirely WELL LOG;
+  pages 50 onward are entirely POTENTIAL. Ascending order is record id order,
+  and the logs occupy the low ids. Sampling the front of this window would have
+  returned nothing usable.
+- Pages per file: **median 11**, min 1, max 288, against district 03's median
+  of 14. Thinner but not much. An early note calling them two-to-four-page
+  files came from the five smoke-test records only and was wrong.
+- Counties are right for the district: Victoria 27, Jackson 21, Refugio 15,
+  Live Oak 10, Bee 9, Karnes 6, Lavaca 6, and 42 with the field blank.
+
+## What these records are for, and what they are not for
+
+They are recorded in `tests/fixtures/paper_record_split.csv` as
+**`sitting_frame`**, a third value beside development and held_out. They are
+not a tuning set. Tuning on one would spend the thing the fetch just bought.
+
+`scripts/split_records.py` now **extends** that file and refuses to rewrite it,
+so a record's half stays whatever it was decided to be before anybody looked at
+it. A tier-2 test asserts the district 03 halves did not move.
+
+## Corpus totals now
+
+**357 records, 405 files, 6,443 pages**, across two populations that are never
+blended. Every measurement in this document above this section is district 03.
+The repo-consistency guard (DEFECTS #6) is now population-aware: a documented
+count must match the total or one of the district subtotals, so stating either
+is allowed and stating a wrong number still breaks the build.
+
+## One defect out of the fetch
+
+**DEFECTS #65: `--order desc` does nothing.** Ascending and descending return
+the same page, id for id. `fetch.py`'s help and this document both claimed it
+sampled the other end of a window. The flag now refuses and points at
+`--start-page`, which demonstrably works. Probable cause is that `orderBy` is
+sent empty, so there is no sort key for a direction to apply to; that stays a
+hypothesis because confirming it means inventing a value never observed from a
+working client.
+
+## Next
+
+Screen the 155 records for adjacent pairs both of whose pages carry at least
+two small marks, size the sitting from the count, then a blind sitting with the
+three-way label Alex chose on 2026-09-06: same sheet, same bundle but not the
+same sheet, different. That yields the adjacent negative rate and fresh
+positives in one sitting.

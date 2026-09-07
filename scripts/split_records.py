@@ -80,12 +80,49 @@ def split() -> list[dict]:
             for r in everything]
 
 
+#: Records fetched after the split was written. They are not development and
+#: they are not held-out negatives: they are the frame for the blind sitting
+#: the fetch exists to make possible. Kept in the same file so there is one
+#: place that says what every record is for.
+SITTING = "sitting_frame"
+
+
+def extend() -> list[dict]:
+    """Add records the split does not know about, changing no existing row.
+
+    Extending is a different operation from rewriting and only this one is
+    allowed. An existing row may never move: the whole value of the file is
+    that a record's half was decided before anybody looked at it.
+    """
+    known = {}
+    for line in SPLIT.read_text().splitlines()[1:]:
+        if line.strip():
+            record_id, half, reason = line.split(",", 2)
+            known[record_id] = (half, reason)
+    added = []
+    for record_id in sorted(records()):
+        if record_id in known:
+            continue
+        added.append({"record_id": record_id, "half": SITTING,
+                      "reason": "fetched after the split; sitting frame"})
+    return added
+
+
 def main() -> None:
     if SPLIT.exists():
-        raise SystemExit(
-            f"{SPLIT} already exists. The split is written once, before any "
-            f"constant is chosen; rewriting it after a measurement is the "
-            f"thing it exists to prevent.")
+        added = extend()
+        if not added:
+            raise SystemExit(
+                f"{SPLIT} already covers every record in the manifest. The "
+                f"split is written once and extended only; rewriting it after "
+                f"a measurement is the thing it exists to prevent.")
+        with SPLIT.open("a", newline="") as fh:
+            writer = csv.DictWriter(
+                fh, fieldnames=["record_id", "half", "reason"])
+            writer.writerows(added)
+        print(f"appended {len(added)} records as {SITTING!r}; "
+              f"no existing row touched")
+        return
     rows = split()
     with SPLIT.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=["record_id", "half", "reason"])

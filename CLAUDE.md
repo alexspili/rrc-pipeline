@@ -26,10 +26,12 @@ must be defensible line by line in an interview.
 
 ## Current state
 
-- fetch.py works end to end. Corpus 202 records, 249 files, 3,689 pages in
-  data/raw (git-ignored), manifest at data/manifest.jsonl. **Reopening it is
-  the declared next step, DISTRICT 02**, to buy the one thing no measurement
-  in hand can: a false-confirmation rate on ADJACENT not-one-sheet pairs.
+- fetch.py works end to end. Corpus 357 records, 405 files, 6,443 pages in
+  data/raw (git-ignored), manifest at data/manifest.jsonl. TWO populations:
+  district 03, closed, on which everything so far is measured; and DISTRICT
+  02, 155 records fetched 2026-09-07, reserved as the sitting frame and never
+  to be tuned on. It buys the one thing no measurement in hand can: a
+  false-confirmation rate on ADJACENT not-one-sheet pairs.
 - Corpus SPLIT, tests/fixtures/paper_record_split.csv: 91 development, 111
   held out, every record Alex has seen in development. Never tune on held-out.
 - Classifier and census DONE. 115 of 202 records (57%) hold a completion

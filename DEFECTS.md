@@ -3223,3 +3223,54 @@ outside the spent split.
 
 **Pin:** tests/tier1/test_paper.py::test_the_edge_band_hole_is_symmetric_between_the_two_turns
 and tests/tier3/test_staple_eval.py::test_the_edge_filter_earns_its_place_on_selectivity
+
+---
+
+## #65 — 2026-09-07 — `--order desc` does nothing, and two documents say it does
+
+**What happened:** sizing the district 02 fetch, I ran the same query twice,
+once ascending and once descending, to see the other end of the window:
+
+    order=asc   first ids: 1191587 1192110 1192851 1193077
+    order=desc  first ids: 1191587 1192110 1192851 1193077
+
+**Identical.** The flag is accepted, the request succeeds, the response is the
+same page of results.
+
+**Two places claim otherwise.** `fetch.py`'s own CLI help says "desc samples
+the latest-imaged end of a window", and HANDOFF.md's fetch section lists
+`--order asc|desc` among the working options. Both are wrong and one of them
+is the file a fresh thread is told to read before proposing anything.
+
+**Likely mechanism, stated as a hypothesis and not as a finding.** The search
+payload carries `order` and `orderBy` as separate fields, and `orderBy` is sent
+empty. A sort direction with no sort key is nothing to apply, so the server
+falls back to its default, which recon established is record id ascending. That
+is consistent with what is observed and it is **not verified**, because
+verifying it means sending an `orderBy` value never seen from a working client,
+which is exactly what standing rule 2 forbids without a capture.
+
+**This is DEFECTS #3's family, at lower stakes.** A parameter is accepted, the
+call succeeds, and nothing binds. #3 was the same shape with `strict:"false"`
+and it cost a day, because the response echoed the filters back. Here nothing
+echoes anything; the results simply do not change, and the only way to notice
+is to run it twice and compare, which is what turned it up.
+
+**What it cost so far: nothing.** No measurement used it. The corpus was
+fetched with ascending order throughout, and `--start-page` demonstrably does
+work: page 1 of the district 02 window is entirely WELL LOG and page 50 onward
+is entirely POTENTIAL, so the pages differ and deep sampling is available.
+
+**Fix: the flag refuses rather than lies.** `--order desc` exits with a message
+naming this entry and pointing at `--start-page`, which is the supported way to
+sample elsewhere in a window. Making it work would mean guessing `orderBy`, and
+a guess is what rule 2 exists to stop. The claim comes out of HANDOFF.md in the
+same commit.
+
+**What remains:** the window can still only be entered from the front. To reach
+the end of a 289-page result you page to it, and `--start-page` is O(1) in
+requests because it skips rather than fetches, but the server still decides
+what page N means. If a future measurement needs a genuinely different sort,
+that needs a fresh capture from the browser, not another guess.
+
+**Pin:** tests/tier2/test_fetch_cli.py::test_order_desc_refuses_because_it_does_not_bind

@@ -100,4 +100,25 @@ def test_the_split_covers_every_record_exactly_once():
     rows = _split_rows()
     ids = [r["record_id"] for r in rows]
     assert len(ids) == len(set(ids))
-    assert set(r["half"] for r in rows) == {"development", "held_out"}
+    assert set(r["half"] for r in rows) <= {"development", "held_out",
+                                            "sitting_frame"}
+
+
+def test_the_district_02_records_are_reserved_for_the_sitting():
+    """Added 2026-09-07 with the district 02 fetch. Those records are neither
+    development nor held-out negatives: they are the frame for the blind
+    sitting the fetch exists to make possible, and tuning on one would spend
+    the thing that was just bought.
+
+    The file is extended, never rewritten, so a record's half stays whatever
+    it was decided to be before anybody looked at it.
+    """
+    rows = _split_rows()
+    frame = [r for r in rows if r["half"] == "sitting_frame"]
+    assert frame, "no sitting frame recorded"
+    assert all("fetched after the split" in r["reason"] for r in frame)
+
+    original = [r for r in rows if r["half"] in ("development", "held_out")]
+    assert len(original) == 202, (
+        "the district 03 halves must not have moved; extending is allowed "
+        "and rewriting is not")
