@@ -121,3 +121,42 @@ def test_a_section_heading_and_a_form_class_must_not_contradict():
 
 def test_the_section_families_are_the_ones_measured():
     assert SECTION_FAMILY == {"sec_ii": "w2", "sec_iii": "g1"}
+
+
+# ------------------ DEFECTS #62: form_class may not define a negative stratum
+
+def test_form_class_may_not_define_a_negative_stratum():
+    """A label that is wrong half the time cannot say two pages differ.
+
+    DEFECTS #60 measured `form_class` on back pages against the section
+    heading printed on the page: 31 of 65 contradict, overwhelmingly one way.
+    DEFECTS #62 then built a "these two pages are not one sheet" stratum out
+    of "the next page is a different form family" and got 7 rows, **6 of them
+    pairs Alex judged SAME-sheet** and the seventh the one true pair the
+    module was built on. The stratum was not noisy, it was inverted.
+
+    What this pins is the distinction between sampling and truth. A noisy
+    label may choose which rows a human looks at. It may never stand in for
+    the human.
+    """
+    import json
+    census = ROOT / "data" / "census" / "vision_1000.jsonl"
+    if not census.exists():
+        pytest.skip("census absent; data/ is git-ignored (CLAUDE.md rule 3)")
+
+    labelled = contradicting = 0
+    for line in census.open():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        expected = SECTION_FAMILY.get(row.get("part"))
+        if expected and row.get("form_class") in ("g1", "w2"):
+            labelled += 1
+            contradicting += row["form_class"] != expected
+
+    assert labelled, "no back page carries a section heading; check the census"
+    assert contradicting / labelled > 0.20, (
+        f"form_class contradicts its own section heading on "
+        f"{contradicting}/{labelled} back pages. If a re-classification has "
+        f"genuinely fixed this, DEFECTS #62 needs re-reading before the label "
+        f"is trusted to define a negative anywhere.")

@@ -3020,3 +3020,52 @@ because a test that asserted it would be asserting a coincidence.
 
 **Pin:** tests/tier1/test_paper.py::test_the_area_floor_is_read_at_the_page_s_own_resolution
 and tests/tier2/test_papermatch.py::test_a_page_is_read_at_its_own_resolution
+
+---
+
+## #62 — 2026-09-07 — I built a negative stratum out of a label that is wrong half the time
+
+**What happened:** measuring whether a new small-mark channel is safe, I needed
+adjacent page pairs that are *not* one sheet. I built the stratum the way
+`docs/labeling-protocol-paper.md` builds its likely-false rows: a G-1 or W-2
+face immediately followed by a back-ish page whose `form_class` is a
+**different** form family. Different form, therefore not the same sheet.
+
+It returned 7 pairs. **Six of them are pairs Alex judged same-sheet**, and the
+seventh is 1495414 p6+p7, the one true pair the module was built on. The
+stratum was not merely noisy. It was inverted.
+
+**Why, and it was already written down.** DEFECTS #60 established that the
+census `form_class` on back pages contradicts its own section heading on **31
+of 65** labelled pages, overwhelmingly in one direction. A back page rarely
+prints a form number, so the classifier falls back on the base rate. "The next
+page is a different form family" is therefore not evidence that the next page
+is a different form family, and a stratum keyed on it is keyed on noise.
+
+**I cited #60 in the plan for this work and then used the label anyway.** The
+plan says in as many words that the frame needs no classifier. I reached for
+the classifier the moment I wanted a negative, because the existing protocol
+had a stratum shaped that way and I copied its shape without re-reading what
+had since been measured about the field it rests on.
+
+**What is and is not damaged.** Nothing shipped and nothing was reported: the
+contradiction was visible in the output because every row carried its record
+and pages (DEFECTS #54's fix, doing exactly its job). **The 2026-09-06 sitting
+is not affected.** It used that stratum only to *sample* rows for Alex, and
+took his blind verdict as ground truth rather than the stratum label; its Part
+A guaranteed-false pairs are a different construction entirely, being
+cross-record, cross-file and non-adjacent. A sampling frame may be noisy. A
+truth label may not.
+
+**Fix:** adjacent negatives come from the eight pairs Alex judged
+not-same-sheet, which are the only adjacent negatives in existence with a
+trustworthy label. The stratum built from `form_class` is deleted rather than
+weighted, and this entry records why it cannot come back.
+
+**What remains:** eight labelled negatives is a small denominator, and all
+eight are non-adjacent in page terms (p7+p11, p4+p8 and so on), so **there is
+still no measured false-confirmation rate on genuinely adjacent
+not-one-sheet pairs.** That gap is real, it is not closed here, and it is one
+of the things the fetch has to buy.
+
+**Pin:** tests/tier2/test_taxonomy_coverage.py::test_form_class_may_not_define_a_negative_stratum
