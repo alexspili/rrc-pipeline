@@ -103,6 +103,38 @@ def page_dimensions(pdf: Path) -> list[tuple[int, int]]:
     ]
 
 
+def page_resolutions(pdf: Path) -> list[float]:
+    """Scan resolution of each page's embedded image, in page order.
+
+    Pages carrying anything other than exactly one image get 0.0, matching
+    `page_dimensions`. Only the horizontal figure is returned: 26 corpus pages
+    differ between x and y by one part in 300, which is a rounding artefact of
+    the page box and not a second resolution.
+
+    Origin: DEFECTS #61. `pipeline/paper.py` states its size envelope in square
+    inches and something has to convert it. 53 of the 3,689 corpus pages are
+    200 dpi, and every one of them sits inside a file that is otherwise 300, so
+    a per-file assumption is not good enough either.
+    """
+    listing = _run(["pdfimages", "-list", str(pdf)])
+    per_page: dict[int, list[float]] = {}
+    highest = 0
+    for line in listing.splitlines():
+        parts = line.split()
+        if len(parts) < 14 or not parts[0].isdigit():
+            continue
+        page = int(parts[0])
+        try:
+            per_page.setdefault(page, []).append(float(parts[12]))
+        except ValueError:
+            per_page.setdefault(page, []).append(0.0)
+        highest = max(highest, page)
+    return [
+        per_page[p][0] if len(per_page.get(p, [])) == 1 else 0.0
+        for p in range(1, highest + 1)
+    ]
+
+
 def doc_hash(pdf: Path) -> str:
     """Half of the result cache key (CLAUDE.md rule 7)."""
     digest = hashlib.sha256()

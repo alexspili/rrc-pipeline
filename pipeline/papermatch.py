@@ -48,11 +48,17 @@ class MarkCache:
     def __init__(self, root: Path):
         self.root = Path(root)
 
-    def path(self, doc_hash: str, page: int) -> Path:
-        return self.root / f"{doc_hash}-{page}-{DETECTOR}.npz"
+    def path(self, doc_hash: str, page: int, dpi: float) -> Path:
+        # The resolution is part of the key and is not optional. It is a
+        # property of the page rather than of the detector, so it does not
+        # belong in DETECTOR, where a change invalidates every cached page in
+        # the corpus. It has to be in the key at all because it decides what
+        # counts as a mark: DEFECTS #61.
+        return self.root / f"{doc_hash}-{page}-{dpi:g}-{DETECTOR}.npz"
 
-    def get(self, doc_hash: str, page: int) -> list[paper.Mark] | None:
-        path = self.path(doc_hash, page)
+    def get(self, doc_hash: str, page: int,
+            dpi: float) -> list[paper.Mark] | None:
+        path = self.path(doc_hash, page, dpi)
         if not path.exists():
             return None
         with np.load(path, allow_pickle=False) as data:
@@ -62,31 +68,53 @@ class MarkCache:
                            outline=tuple(float(v) for v in o))
                 for m, k, o in zip(meta, kinds, outlines)]
 
-    def put(self, doc_hash: str, page: int, marks: list[paper.Mark]) -> None:
+    def put(self, doc_hash: str, page: int, dpi: float,
+            marks: list[paper.Mark]) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
         meta = np.array([[m.x, m.y, m.area_in2, m.fill] for m in marks],
                         dtype=np.float64).reshape(len(marks), 4)
         kinds = np.array([m.kind for m in marks], dtype="U8")
         outlines = np.array([m.outline for m in marks],
                             dtype=np.float32).reshape(len(marks), -1)
-        np.savez_compressed(self.path(doc_hash, page), meta=meta, kinds=kinds,
-                            outlines=outlines)
+        np.savez_compressed(self.path(doc_hash, page, dpi), meta=meta,
+                            kinds=kinds, outlines=outlines)
+
+
+def page_dpi(pdf: Path, page: int) -> float:
+    """The scan resolution of one page, or 300 if the file will not say.
+
+    `paper.solid_marks` states its size envelope in square inches, so somebody
+    has to supply the conversion, and until DEFECTS #61 nobody did: this module
+    took the 300 dpi default on every page. 53 corpus pages are 200 dpi and all
+    of them share a file with 300 dpi pages, where the assumption both raised
+    the floor to 0.045 in² and reported every area 2.25x small, which is
+    outside AREA_RATIO and so stopped a mark pairing with itself across the
+    change.
+
+    The fallback is 300 and is the corpus mode. It is reached only if poppler
+    reports no resolution at all, which happens on no page of the corpus.
+    """
+    resolutions = render.page_resolutions(pdf)
+    if page < 1 or page > len(resolutions) or resolutions[page - 1] <= 0:
+        return 300.0
+    return resolutions[page - 1]
 
 
 def page_marks(pdf: Path, page: int, cache: MarkCache | None = None,
                doc_hash: str | None = None) -> list[paper.Mark]:
     """Every solid mark on one page of one file."""
+    dpi = page_dpi(pdf, page)
     if cache is not None:
         doc_hash = doc_hash or render.doc_hash(pdf)
-        hit = cache.get(doc_hash, page)
+        hit = cache.get(doc_hash, page, dpi)
         if hit is not None:
             return hit
 
     image = render.extract_page_image(pdf, page).convert("L")
-    marks = paper.solid_marks(np.asarray(image) < 128)
+    marks = paper.solid_marks(np.asarray(image) < 128, dpi=dpi)
 
     if cache is not None:
-        cache.put(doc_hash, page, marks)
+        cache.put(doc_hash, page, dpi, marks)
     return marks
 
 
