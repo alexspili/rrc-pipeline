@@ -411,11 +411,19 @@ def run_batched(api, documents, *, cache=None, doc_hashes: dict | None = None,
             seen.add(custom_id)
             info = meta[custom_id]
             if entry.result.type != "succeeded":
+                # The API says why in the result's error object; dropping it
+                # turned a dated usage cap into ten identical unknowns
+                # (DEFECTS #72).
+                detail = getattr(entry.result, "error", None)
+                message = getattr(getattr(detail, "error", None),
+                                  "message", None) or (
+                    str(detail) if detail else "")
                 out[custom_id] = Extraction(
                     report=None, record_id=info["record_id"],
                     pages=info["pages"], input_tokens=0, output_tokens=0,
                     cached=False,
-                    error=f"batch result {entry.result.type}")
+                    error=f"batch result {entry.result.type}"
+                          + (f": {message}" if message else ""))
                 continue
             out[custom_id] = _extraction(
                 payload_of(entry.result.message),
