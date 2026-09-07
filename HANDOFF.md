@@ -816,3 +816,70 @@ something says otherwise. Unadopted.
 **The 2026-08-28 fixture list is unverified.** DEFECTS #69 found one of its
 page numbers wrong; the rest have had the same amount of checking, which is
 none.
+
+---
+
+# Day 8, 2026-09-07 evening: the run, the viewer, and four defects
+
+## The corpus extraction run happened
+
+`run_extraction.py --grouped --confirm`, batch
+msgbatch_01Soru8fL644i1R2P1PQMjKd. **197 of 223 documents extracted, $9.31**
+($0.29 more for the 5-document live smoke that preceded it, 5 of 5 clean).
+The grouping it extracted is the regenerated one, confirmer live, 223
+documents (176/44/3 by page count).
+
+The 26 failures are two families, both characterized (#72, #73):
+
+- **10 are the monthly API cap**, hit mid-batch:
+  "You will regain access on 2026-10-01 at 00:00 UTC." Cap-shaped, not
+  paper-shaped. Retrying costs about $0.35 and needs either October or a
+  raised limit in the console. The $1.54 re-score is behind the same wall.
+- **16 are a taxonomy finding, not a failure of extraction.** Every one is a
+  census g1/w2 FACE the model reads as the pre-1966 form family: Form 3,
+  Form 2, GWT-1, one "well test report"; the sampled revision is "1-1958".
+  R8 validates form_class against the census taxonomy, which has no such
+  class, so parsing refuses. The full 27-field responses are CACHED, so the
+  decision, whenever taken, re-parses free. This is the
+  `completion_face_legacy` class the stage-2 decided fix named, now with 16
+  paid-for exhibits. Gated on a rule-5 proposal, unchanged.
+
+Free passes over the 197: snap 1,678 of 4,742 values (35.4%), era gradient
+as the module doc predicts (48-75% on 1983 paper, 7-17% on 1966); findings
+151 clean, 46 carrying at least one, 40 errors led by depth.below_total at
+19.
+
+## The viewer exists, cut-order 7
+
+`scripts/export_viewer.py` projects a finished run into `data/viewer/`
+(never committed; 115 MB, 197 documents, 244 page images). `viewer/` is Vite +
+React + strict TypeScript: three region tiers rendered distinctly (#29's
+rule), the model band widened upward at display time (R5), click-to-zoom at
+readable scale with the found_in label as caption (the 2026-09-03 rule),
+attachment channels named per page, findings panel, client-side search. 23
+vitest tests; the pre-commit hook runs them; a tier-2 test pins the TS
+vocabularies against pipeline/extract.py. `cd viewer && npm run dev`.
+
+## Four defects, all from running things end to end
+
+- **#70** the wiring commit called papermatch and never imported it; the
+  committed path could not run at all. Pin: a pyflakes undefined-name check
+  over the whole repo (new dev dep, declared).
+- **#71** "7 attachments, 6 correct" was the one-channel probe's count; the
+  shipped two-channel confirmer makes 14 paper attachments, 10 of 11
+  decisive verdicts same-sheet. Corrected in four places, pinned in tier 3.
+- **#72** ten failures said "batch result errored" while the API named a
+  dated usage cap; the reason now travels into the error string.
+- **#73** the free passes crashed on a results row with nothing cached
+  behind it, and export_viewer repeated the mistake hours after the entry
+  was written. The pin covers all three walkers.
+
+## Open, in order
+
+1. **The legacy-form taxonomy call**, 16 cached documents, re-parse free,
+   rule-5 proposal required. 2. **The cap-blocked 10 and the re-score**,
+   about $1.90 total, after 2026-10-01 or a raised limit. 3. **README with
+   the real numbers** (cut-order 6). 4. Sitting backlog: two unjudged paper
+   attachments (1493451 p22+p23, 1494717 p20+p21) and one attached
+   cannot-tell (1494774 p8+p9). 5. 1493616-0 p4 truncates the identity
+   reader deterministically; that page is in no identity map.

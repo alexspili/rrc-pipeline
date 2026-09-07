@@ -41,8 +41,9 @@ line in an interview.
   quote 83.6% as accuracy on the target classes. `form_class` on back pages
   self-contradicts 31 times in 65 and MAY NOT define a negative (#60, #62).
 - Extraction SCORED 2026-09-01: **87.4%** status, **82.5%** value, by era, on a
-  prompt that no longer ships. Provenance CLOSED. Batched run **$8.07, NOT YET
-  RUN**: the gated spend everything waits on. Re-score is $1.54, not free.
+  prompt that no longer ships. Corpus run RUN 2026-09-07, $9.31: **197 of
+  223**; 10 blocked by the monthly API cap until 10-01, 16 pre-1966 "Form 3"
+  faces cached awaiting a taxonomy call. Re-score cap-blocked. Prov. CLOSED.
 - Reassembly BUILT, 25 of 32 multi-page documents clean; the six wrong are
   same-form same-well different-filing, beyond any form rule.
 - pipeline/paper.py confirms two pages are ONE SHEET from the marks on it: 0
@@ -58,12 +59,11 @@ line in an interview.
   cannot resolve it; page parity (74% vs 17% on d02) does NOT replicate on d03.
 - The area floor never kept printing out, MAX_ASPECT did; pages read at their
   own dpi (#61).
-- Next, in order: the **$8.07 extraction run**, 223 documents, batched, the only
-  thing costing money. The pipeline has never been run over its own corpus, and
-  that run re-scores the 15 ground-truth documents, whose published figures
-  describe a prompt retired 2026-09-05. Then the **TypeScript span viewer**,
-  cut-order 7, unbuilt, the only TypeScript here and the only way to see any
-  output. Then README with the real numbers.
+- Viewer BUILT 2026-09-07, cut-order 7: exporter + React/strict-TS, three
+  region tiers rendered distinctly, 23 vitest tests, hook runs them; bundle
+  197 docs, 244 page images, data/viewer; `cd viewer && npm run dev`.
+- Next: the legacy-form taxonomy call (16 cached docs re-parse free), the
+  cap-blocked 10 plus the re-score after 10-01, README with real numbers.
 
 ## Standing rules
 
