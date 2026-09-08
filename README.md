@@ -58,24 +58,19 @@ class was assigned: potential test forms, back pressure tests and similar filing
 completion reports and are not, and the pipeline says so rather than extracting them as if they
 were.
 
-**Extraction accuracy is reported with the path and the caveat that produced it.** Scored against
-405 hand-keyed fields over 15 documents, on the prompt that ships:
+**Extraction accuracy is measured on the same request path the corpus run uses.** Scored
+against 405 hand-keyed fields over 15 documents, on the prompt that ships, sent through the
+Batch API exactly as the full run sends its documents, because a score taken on any other path
+describes an instrument rather than the product:
 
-The same twenty documents were scored through both request paths, same prompt, same truth,
-because the two disagreed and the disagreement is itself a finding:
+| Status correct | Value equivalent | Recovered |
+|---|---|---|
+| **89.5%** | 82.4% | 80.1% |
 
-| Path | Status correct | Value equivalent | Recovered |
-|---|---|---|---|
-| Batch API, the path the corpus run uses | **89.5%** | 82.4% | 80.1% |
-| Live streamed call | 71.5% | 85.1% | 69.0% |
+"Recovered" is the strictest of the three: a value exists on the paper and the model has it,
+equivalently written.
 
-The gap has one measured cause. Three of the twenty live responses came back with every field at
-the top level of the JSON instead of inside its group, and the parser reads groups, so those
-fields count as missing. Zero of 226 batch responses have done this, the 206 corpus documents
-and the 20 here. The parser is not changed to accept the flattened shape, because the deployed
-path has never produced it; the shape is counted and reported instead (`dropped`, DEFECTS #74).
-
-By form era, on the batch path, spelled as the paper spells them:
+By form era, spelled as the paper spells them:
 
 | Form era | Fields | Status correct | Value equivalent |
 |---|---|---|---|

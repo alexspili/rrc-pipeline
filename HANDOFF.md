@@ -970,3 +970,14 @@ the template, `bench/`, `CONTEXT.md`, `make install`, a fabricated example
 rule, are gone; the example rule is now classify R1 verbatim.
 
 Session spend total: $13.14.
+
+## Alex's ruling on the two paths, 2026-09-07
+
+The README does not carry the live-path number or the flattened-shape story:
+a reader gets one accuracy figure, measured on the path the product runs.
+Either the live path is used, in which case the parser gets fixed, or it is
+not, in which case it does not appear. It is not used: `make smoke` and
+`make score` now run the batched arm by default, so the documented workflow
+scores the deployed path (#45's lesson made mechanical). The live arm stays
+reachable by calling the scripts directly, and the path comparison lives in
+DEFECTS #74 and this file, which is where instrument findings belong.

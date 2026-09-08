@@ -31,11 +31,15 @@ arms:
 census:
 	@set -a; . ./.env; set +a; $(PY) -m pipeline.census $(ARGS)
 
+# Both run the Batch API path, the same one the corpus run uses: a score
+# taken on the live streamed path measured an instrument, not the product,
+# and the two disagreed (DEFECTS #74). The live arm stays reachable by
+# calling the scripts directly.
 smoke:
-	@set -a; . ./.env; set +a; $(PY) scripts/smoke_extract.py $(ARGS)
+	@set -a; . ./.env; set +a; $(PY) scripts/smoke_extract.py --batched $(ARGS)
 
 score:
-	$(PY) scripts/score_extract.py $(ARGS)
+	$(PY) scripts/score_extract.py --results data/extract/smoke_batched.jsonl --cache data/extract/cache_smoke_batched.jsonl $(ARGS)
 
 findings:
 	$(PY) scripts/validate_extract.py $(ARGS)
