@@ -981,3 +981,59 @@ not, in which case it does not appear. It is not used: `make smoke` and
 scores the deployed path (#45's lesson made mechanical). The live arm stays
 reachable by calling the scripts directly, and the path comparison lives in
 DEFECTS #74 and this file, which is where instrument findings belong.
+
+---
+
+# 2026-09-08: the geometry thread reopens, on the closure's own terms
+
+Alex ran the viewer against the real bundle and judged the model-band tier
+by eye: the boxes are bad, worst on the oldest paper, badly enough that a
+reader who set the app up would walk away. That is product-level evidence
+no gate ever measured, and it is the new-measurement half of the closure
+clause. The band stays drawn in the viewer meanwhile, his call, since
+nothing is published yet.
+
+## The reopening argument, so the next thread does not re-litigate it
+
+What died on 2026-09-03 was a ONE-SAMPLE template anchored on the embedded
+text layer: coverage gate failed at 18 of 35 with anchor poverty the
+measured cause, landing gate failed 13 of 18. Textract was refused because
+word inventory is all it adds and landing looked binding.
+
+What reopens is a DIFFERENT mechanism with three record-backed differences:
+
+1. **Multi-sample templates.** The corpus run gives ~40 W-2 and ~29 G-1 of
+   Rev. 4/1/83 and ~28 W-2 of the 7/5/66 family (fold the spelling
+   variants; full tally in the session log). What recurs across 30 copies
+   is the printed form; what varies is the filling. One sample could never
+   make that separation. Never measured here.
+2. **Textract fixes the measured cause of the coverage failure.** Anchor
+   poverty is word inventory, its one specialty. The build-time carve-out
+   is already in extract.md: developer-machine only, templates committed,
+   the one-API-key runtime untouched.
+3. **The registration-residual finding says layout is stable**: 24
+   candidates under 0.005 residual, next at 0.040, 11 of 12 matching the
+   recorded revision. That is evidence against reading the landing failure
+   as layout instability, and it is the assignment mechanism for the ~58
+   documents whose revision the model cannot read.
+
+## What the next thread does, in order
+
+1. Protocol doc first, before any AWS call: docs/labeling-protocol-textract
+   (or extend -extract). Pre-registered, two-sided, reachability-checked
+   (#51), bars stated against the SHIPPED snap-plus-band tiers (#58), one
+   marked decision rule per stage (#31, R15). The grading instrument
+   already exists and was kept for exactly this: score_boxes.py, make
+   overlay, the hit/near/miss thresholds in docs/labeling-protocol-extract.md.
+2. Bounded probe (rule 2): ONE page through DetectDocumentText, response
+   shape verified against the docs before anything else is sent.
+3. The read: ~220 G-1/W-2 pages at $1.50/1k, about $0.35, cached under
+   data/textract/, boto3 declared with its reason. Needs AWS credentials in
+   .env, which only Alex can supply.
+4. Templates from recurrence across samples per revision; assignment by
+   registration residual where the revision is unreadable; then the graded
+   sitting, and the gate decides. If it fails, the thread re-closes and the
+   record says what the $0.35 bought.
+
+Publication items still open and unchanged: docs/recon empty vs CLAUDE.md's
+claim, README contact placeholders, the viewer-demo decision (#53 caution).
