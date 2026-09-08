@@ -1174,3 +1174,21 @@ under a deliberately stricter eye, which ran against the mechanisms.
 Wiring the template tier is the next step and is a rule-5 proposal;
 the paper-edge clip (measured spill: 8 of 14 and 5 of 14 regions into
 the scanner surround) rides with it.
+
+## The template tier is wired, 2026-09-08 last
+
+pipeline/templatetier.py ships the graded stack: snap, then a committed
+template where the page registers (stage-six measured geometry per
+field, stage-five rule geometry underneath), then the model band, then
+the page. Routing by model-read revision, or by residual with the 2x
+margin for unknown pages; every region clipped to the page's own paper
+bounds (render.sheet_bounds), which closes the scanner-surround spill.
+Corpus bundle re-exported: of 5,372 regioned values, snap carries 1,767,
+the template tier 752 (551 fields, 201 table rows), the band 2,853. The
+viewer draws the tier in its own color; the band tier is unchanged.
+
+Open next, none of it blocking: the README still quotes the
+pre-template geometry numbers and needs the wiring's numbers when Alex
+reviews it; alias-augmented registration stays a separate proposal from
+its harvest table; rev61278 (8 w2 documents) has fuel but no field
+specs; rev63075 sec_ii abstains at 3 fuel pages.
