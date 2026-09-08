@@ -13,6 +13,13 @@ anthropic>=1.0          # page classification (Haiku), extraction (Sonnet)
 numpy>=2.0              # array maths for pipeline/paper.py
 scipy>=1.11             # ndimage: connected components, morphological opening
 
+# Build-time Textract read for the stage-five template probe
+# (docs/labeling-protocol-extract.md). Imported ONLY by
+# scripts/textract_read.py; nothing in pipeline/ touches it, so the
+# one-API-key runtime property stands. Declared before first import
+# (DEFECTS #52).
+boto3>=1.34
+
 # Test runner
 pytest>=8
 
