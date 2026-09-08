@@ -1121,3 +1121,44 @@ w2_rev63075_face (1495195 p15 is a face; the reverse template abstained).
   that on paper; one rendered look would settle it.
 - Assignment's known-page agreement is inflated by fuel membership and
   says so; only the unknown-page numbers are evidence.
+
+## Stage six, same evening: measured geometry, and DEFECTS #79
+
+Alex inspected the stage-five overlays before grading, judged them poor,
+and directed the Forms/Tables stage. Two things came out of executing it,
+and the second matters to the stage-five sitting he has not graded yet.
+
+**Stage six is built to its sitting.** Pre-registered first (same rule,
+population, comparator and escape as stage five, because the instrument
+must not move between mechanisms); bounded probe on one 1966 page found
+50 key-value pairs, every one with a value box, keys being the printed
+labels verbatim; the batch analyzed 110 fuel pages for $7.15 total, 0
+refused. Median 48 to 65 keys per page on every era. The build pools
+Forms cells under the anchor discipline (one match per page or the page
+abstains, 25% floor, 0.03 spread) and pools measured table rows on the
+modal grid with header rows found by fuzzy recurrence. Ceiling: **32 of
+35 again**, but majority-measured now: of the 14 asserted residue
+regions, 11 are Forms cells and 2 measured rows. Sitting drawn:
+tests/fixtures/box_grades_stage6.csv, overlays in
+data/labelset/overlay_stage6/, scored by scripts/stage6_probe.py --score.
+
+**DEFECTS #79, found by measuring why the overlays looked poor.**
+register() fits page onto frame; the probes drew frame regions through
+the FORWARD transform, a pattern inherited from stage three, where a
+sibling-page frame kept the error near 0.001 and three graded stages
+never saw it. The Textract seed frame differs 6% in x from the graded
+page and the displacement reached 0.13 page-fractions on
+identity.county. Registration.page_box now carries the inverse, pinned
+by a tier-1 test; probe_boxes.py deliberately keeps the closed record's
+arithmetic, per the entry. **The stage-five sheet was redrawn with
+corrected geometry before any grade existed. Alex's eyeball verdict was
+partly a measurement of this defect, and his for-the-record grading must
+use the redrawn overlays in data/labelset/overlay_stage5/.**
+
+Both sittings now stand open on the same 35 boxes, both live at ceiling
+32, one rule each: stage five tests the anchor inventory with rule-based
+geometry, stage six tests measured geometry on top of it. Grading both
+sheets is two passes over the same two pages, and the pair separates
+mechanism from geometry cleanly whatever the verdicts.
+
+Spend this session: $0.345 DetectDocumentText, $7.15 AnalyzeDocument.
