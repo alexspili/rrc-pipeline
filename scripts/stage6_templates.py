@@ -145,31 +145,51 @@ def field_region(key_box, value_box):
     return (left, top, right, bottom)
 
 
-def row_edges(grids: list[list[tuple[int, tuple]]], floor: int):
-    """Pooled per-row boxes where enough pages agree on the row count."""
-    counts = [max(r for r, _ in grid) for grid in grids if grid]
+def row_edges(grids: list[list[tuple[int, tuple, str]]], floor: int):
+    """(pooled per-row boxes, leading header rows), or None.
+
+    Pools where enough pages agree on the row count. Header rows are
+    found by the stage's own principle: a row whose text is identical
+    across most pages is printed, a row whose text varies is filling.
+    The probe maps extracted row k past the headers; guessing an offset
+    would be the equal-band rule wearing a hat.
+    """
+    counts = [max(r for r, _, _ in grid) for grid in grids if grid]
     if not counts:
         return None
     modal = statistics.mode(counts)
     agreeing = [grid for grid in grids
-                if grid and max(r for r, _ in grid) == modal]
+                if grid and max(r for r, _, _ in grid) == modal]
     if len(agreeing) < floor:
         return None
-    rows = []
+    rows, header_rows, still_leading = [], 0, True
     for index in range(1, modal + 1):
-        per_page = []
+        per_page, texts = [], []
         for grid in agreeing:
-            cells = [box for r, box in grid if r == index]
+            cells = [(box, text) for r, box, text in grid if r == index]
             if cells:
-                per_page.append((min(b[0] for b in cells),
-                                 min(b[1] for b in cells),
-                                 max(b[2] for b in cells),
-                                 max(b[3] for b in cells)))
+                per_page.append((min(b[0] for b, _ in cells),
+                                 min(b[1] for b, _ in cells),
+                                 max(b[2] for b, _ in cells),
+                                 max(b[3] for b, _ in cells)))
+                texts.append(norm(" ".join(t for _, t in cells)))
         pooled = pool_boxes(per_page, max(2, len(agreeing) // 2))
         if pooled is None:
             return None
         rows.append(pooled)
-    return rows
+        # printed means recurring, and on this paper recurrence is fuzzy:
+        # the 1966 casing header reads differently on every page, so
+        # exact equality called it filling and mapped data row 0 onto
+        # the header row. Same 0.80 ratio as every other match here.
+        recurring = (texts and texts[0] != ""
+                     and sum(1 for t in texts
+                             if tpl._ratio(t, texts[0]) >= MATCH_RATIO)
+                     > len(texts) / 2)
+        if still_leading and recurring:
+            header_rows += 1
+        else:
+            still_leading = False
+    return rows, header_rows
 
 
 def main() -> None:
@@ -239,7 +259,7 @@ def main() -> None:
             key_texts[name] = max(set(texts), key=texts.count)
             contributions[name] = len(keys_f)
 
-        blocks_rows = {}
+        blocks_rows, headers = {}, {}
         stage5_blocks = {n: tuple(b) for n, b in raw["blocks"].items()}
         for block_name, block_box in stage5_blocks.items():
             grids = []
@@ -250,11 +270,11 @@ def main() -> None:
                     if iou >= best_iou:
                         best, best_iou = table, iou
                 grids.append([] if best is None else
-                             [(c.row, reg.transform.box(c.box))
+                             [(c.row, reg.transform.box(c.box), c.text)
                               for c in best.cells])
-            rows = row_edges(grids, floor)
-            if rows is not None:
-                blocks_rows[block_name] = rows
+            pooled = row_edges(grids, floor)
+            if pooled is not None:
+                blocks_rows[block_name], headers[block_name] = pooled
 
         s5_fields = set(raw["fields"])
         print(f"  forms fields pooled {len(fields)}/{len(specs)}; "
@@ -265,7 +285,8 @@ def main() -> None:
                   f"{key_texts[name][:44]!r}")
         print(f"  measured row sets {len(blocks_rows)}/"
               f"{len(stage5_blocks)}: "
-              f"{ {n: len(r) for n, r in blocks_rows.items()} }")
+              f"{ {n: (len(r), headers[n]) for n, r in blocks_rows.items()} }"
+              " (rows, header rows)")
 
         out = path.with_name(path.stem + "_forms.json")
         out.write_text(json.dumps({
@@ -278,6 +299,7 @@ def main() -> None:
             "field_pages": contributions,
             "blocks_rows": {n: [list(b) for b in rows]
                             for n, rows in blocks_rows.items()},
+            "header_rows": headers,
         }, indent=2) + "\n")
         print(f"  wrote {out.relative_to(ROOT)}")
 

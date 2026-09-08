@@ -1,0 +1,33 @@
+{
+  "revision": "rev4183",
+  "form_class": "w2",
+  "page_role": "sec_ii",
+  "word_source": "textract",
+  "geometry_source": "analyze_forms_tables",
+  "analyzed_fuel": 16,
+  "pooling_floor": 4,
+  "fields": {
+    "completion.elevation": [
+      0.04355491047030499,
+      0.2760046655352666,
+      0.2465010894943453,
+      0.28484752094579224
+    ],
+    "completion.drilling_contractor": [
+      0.04371999612266506,
+      0.38228986576212165,
+      0.21309997027149374,
+      0.4188583160202294
+    ]
+  },
+  "field_key_texts": {
+    "completion.elevation": "32. Elevation (DF. RKB. RT. GR. ETC.)",
+    "completion.drilling_contractor": "41. Name of Drilling Contractor"
+  },
+  "field_pages": {
+    "completion.elevation": 16,
+    "completion.drilling_contractor": 16
+  },
+  "blocks_rows": {},
+  "header_rows": {}
+}

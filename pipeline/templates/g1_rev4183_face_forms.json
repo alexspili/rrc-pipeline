@@ -1,0 +1,81 @@
+{
+  "revision": "rev4183",
+  "form_class": "g1",
+  "page_role": "face",
+  "word_source": "textract",
+  "geometry_source": "analyze_forms_tables",
+  "analyzed_fuel": 13,
+  "pooling_floor": 4,
+  "fields": {
+    "identity.field_name": [
+      0.04935112685066678,
+      0.14221681548294168,
+      0.3855140642151256,
+      0.17207611825405078
+    ],
+    "identity.operator_name": [
+      0.0486484729949733,
+      0.17169406622304276,
+      0.4702610983889049,
+      0.18363336626377702
+    ],
+    "identity.operator_address": [
+      0.048570352986428464,
+      0.2022947076542766,
+      0.11985599504113459,
+      0.2102324734240958
+    ],
+    "identity.rrc_district": [
+      0.8075206975902308,
+      0.08525956388298583,
+      0.9133747656729895,
+      0.11078156567555024
+    ],
+    "identity.location_survey": [
+      0.04782371078932604,
+      0.2321525620625739,
+      0.30607391257246713,
+      0.2596088337863407
+    ],
+    "identity.distance_to_town": [
+      0.41961470556622293,
+      0.23334402974098517,
+      0.739652795647205,
+      0.2607264271272131
+    ],
+    "identity.pipeline_connection": [
+      0.04182023578770751,
+      0.29190265978937446,
+      0.2393058990418724,
+      0.31875152009883695
+    ],
+    "identity.logs_run": [
+      0.7232007931088508,
+      0.3245213604489375,
+      0.9295960946189816,
+      0.3505907745498018
+    ]
+  },
+  "field_key_texts": {
+    "identity.field_name": "1. FIELD NAME (as per RRC Records or Wildcat)",
+    "identity.operator_name": "3. OPERATOR'S NAME (Exactly as shown on Form P-5, Organization Report)",
+    "identity.operator_address": "4. ADDRESS",
+    "identity.rrc_district": "7. RRC District No.",
+    "identity.location_survey": "5. Location (Section, Block, and Survey)",
+    "identity.distance_to_town": "5b. Distance and direction to nearest town in this county.",
+    "identity.pipeline_connection": "13. Pipe Line Connection",
+    "identity.logs_run": "16. Type of Electric or other Log Run."
+  },
+  "field_pages": {
+    "identity.field_name": 8,
+    "identity.operator_name": 11,
+    "identity.operator_address": 12,
+    "identity.rrc_district": 13,
+    "identity.location_survey": 11,
+    "identity.distance_to_town": 12,
+    "identity.pipeline_connection": 11,
+    "identity.logs_run": 13
+  },
+  "blocks_rows": {},
+  "header_rows": {}
+}

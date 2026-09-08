@@ -1,0 +1,73 @@
+{
+  "revision": "rev7566",
+  "form_class": "w2",
+  "page_role": "face",
+  "word_source": "textract",
+  "geometry_source": "analyze_forms_tables",
+  "analyzed_fuel": 27,
+  "pooling_floor": 7,
+  "fields": {
+    "identity.field_name": [
+      0.08767824140874284,
+      0.15692424498993515,
+      0.3431529259892465,
+      0.16544443438860185
+    ],
+    "identity.lease_name": [
+      0.4217691405169469,
+      0.15658875734643135,
+      0.5068110460486436,
+      0.1646426923988018
+    ],
+    "identity.operator_address": [
+      0.08670453355005793,
+      0.21192735507352456,
+      0.15742739286987803,
+      0.2196189399336217
+    ],
+    "identity.county": [
+      0.7481989398128678,
+      0.18458578256898261,
+      0.8425736433370902,
+      0.2089602041254674
+    ],
+    "identity.location_survey": [
+      0.08629626785233077,
+      0.26533732905472274,
+      0.312820585253708,
+      0.2741710874902067
+    ],
+    "identity.well_number": [
+      0.7469654607370186,
+      0.15649093312353907,
+      0.8285164660426158,
+      0.1799290704731626
+    ],
+    "identity.logs_run": [
+      0.48481268250518,
+      0.2933088232601992,
+      0.6706387655721225,
+      0.30248165262002746
+    ]
+  },
+  "field_key_texts": {
+    "identity.field_name": "1. FIELD NAME per RRC Records or Wildcat)",
+    "identity.lease_name": "2. LEASE NAME",
+    "identity.operator_address": "4. ADDRESS",
+    "identity.county": "10. County",
+    "identity.location_survey": "6. LOCATION (Section, Block. and Survey)",
+    "identity.well_number": "9. Well Number",
+    "identity.logs_run": "13. Type of Electric or other Log run"
+  },
+  "field_pages": {
+    "identity.field_name": 14,
+    "identity.lease_name": 18,
+    "identity.operator_address": 26,
+    "identity.county": 27,
+    "identity.location_survey": 25,
+    "identity.well_number": 16,
+    "identity.logs_run": 27
+  },
+  "blocks_rows": {},
+  "header_rows": {}
+}

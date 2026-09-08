@@ -1,0 +1,57 @@
+{
+  "revision": "rev63075",
+  "form_class": "w2",
+  "page_role": "face",
+  "word_source": "textract",
+  "geometry_source": "analyze_forms_tables",
+  "analyzed_fuel": 9,
+  "pooling_floor": 3,
+  "fields": {
+    "identity.field_name": [
+      0.10984289155968607,
+      0.16498347642716954,
+      0.36895883292361764,
+      0.17665799200187482
+    ],
+    "identity.operator_address": [
+      0.11096102062370031,
+      0.2197564123604271,
+      0.1805650622960246,
+      0.22793638872908134
+    ],
+    "identity.rrc_district": [
+      0.7780582205068304,
+      0.11084150845707813,
+      0.8625997907047893,
+      0.1350077253372716
+    ],
+    "identity.location_survey": [
+      0.10987450382729008,
+      0.27111351116954696,
+      0.3305884333697641,
+      0.2812188536875469
+    ],
+    "identity.well_number": [
+      0.7778288755830707,
+      0.1620211981427496,
+      0.8590245426374113,
+      0.18823807765226513
+    ]
+  },
+  "field_key_texts": {
+    "identity.field_name": "1. FIELD NAME a per RRC Records or Wildcat)",
+    "identity.operator_address": "4. ADDRESS",
+    "identity.rrc_district": "7. RRC District",
+    "identity.location_survey": "62. LOCATION (Section. Block. and Survey:",
+    "identity.well_number": "9. Well Number"
+  },
+  "field_pages": {
+    "identity.field_name": 4,
+    "identity.operator_address": 9,
+    "identity.rrc_district": 8,
+    "identity.location_survey": 8,
+    "identity.well_number": 5
+  },
+  "blocks_rows": {},
+  "header_rows": {}
+}
