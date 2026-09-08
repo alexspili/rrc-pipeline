@@ -54,6 +54,12 @@ from pipeline.validate import parse_date, parse_depth   # noqa: E402
 
 TRUTH = ROOT / "tests" / "fixtures" / "extract_truth.csv"
 CACHE = ROOT / "data" / "extract" / "cache_smoke.jsonl"
+SMOKE = ROOT / "data" / "extract" / "smoke.jsonl"
+
+#: Which run is being scored, switched by --results/--cache so the batched
+#: arm can be scored against the same truth. Module-level because the
+#: helpers below are called from several places; set once in main.
+RUN = {"results": SMOKE, "cache": CACHE}
 MANIFEST = ROOT / "data" / "manifest.jsonl"
 RAW = ROOT / "data" / "raw"
 
@@ -113,7 +119,7 @@ def file_indexes() -> dict[tuple[str, tuple[int, ...]], int]:
     otherwise be hashed against file 0 and quietly miss the cache. The sheet
     should carry the index; until it is redrawn, the run is the source.
     """
-    smoke = ROOT / "data" / "extract" / "smoke.jsonl"
+    smoke = RUN["results"]
     out = {}
     if smoke.exists():
         for line in smoke.open():
@@ -133,13 +139,13 @@ def files_of(record_id: str):
 
 def run_prompt_hash() -> str:
     """The prompt the scored run used, not whatever the prompt is today."""
-    return extractor.recorded_prompt_hash(ROOT / "data" / "extract" / "smoke.jsonl")
+    return extractor.recorded_prompt_hash(RUN["results"])
 
 
 def extracted(doc) -> ex.CompletionReport | None:
     index = file_indexes().get((doc["record_id"], doc["pages"]), 0)
     pdf = RAW / doc["record_id"] / files_of(doc["record_id"])[index]["name"]
-    cache = classify.ResultCache(CACHE, prompt_hash=run_prompt_hash())
+    cache = classify.ResultCache(RUN["cache"], prompt_hash=run_prompt_hash())
     result = extractor.extract_document(
         None, pdf, doc["pages"], record_id=doc["record_id"],
         file_index=index, cache=cache)
@@ -217,7 +223,12 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--detail", action="store_true",
                     help="print every disagreement")
+    ap.add_argument("--results", type=Path, default=SMOKE,
+                    help="run results jsonl (default: the live smoke run)")
+    ap.add_argument("--cache", type=Path, default=CACHE,
+                    help="that run's result cache")
     args = ap.parse_args()
+    RUN["results"], RUN["cache"] = args.results, args.cache
 
     docs = truth()
     rows = compare(docs)

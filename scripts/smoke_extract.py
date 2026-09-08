@@ -46,6 +46,13 @@ CENSUS = ROOT / "data" / "census" / "vision_1000.jsonl"
 OUT = ROOT / "data" / "extract"
 CACHE = OUT / "cache_smoke.jsonl"
 RESULTS = OUT / "smoke.jsonl"
+#: The batched arm keeps its own cache and results. The cache key is
+#: (document hash, pages, prompt hash) and carries nothing about the path,
+#: so sharing files with the live arm would make the second run a silent
+#: cache hit of the first and measure nothing (DEFECTS #74's path finding
+#: is the reason this arm exists).
+CACHE_BATCHED = OUT / "cache_smoke_batched.jsonl"
+RESULTS_BATCHED = OUT / "smoke_batched.jsonl"
 TEMPLATE = ROOT / "tests" / "fixtures" / "extract_truth.csv"
 
 SIZE = 20
@@ -125,6 +132,10 @@ def select(rows, texts, headers):
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--batched", action="store_true",
+                    help="same twenty documents through the Batch API, into "
+                         "their own cache and results, to measure the "
+                         "deployed path instead of the live one")
     args = ap.parse_args()
 
     rows = census()
@@ -157,6 +168,9 @@ def main() -> None:
 
     OUT.mkdir(parents=True, exist_ok=True)
     api = extractor.client()
+    if args.batched:
+        run_batched_arm(api, docs)
+        return
     cache = classify.ResultCache(CACHE, prompt_hash=extractor.PROMPT_HASH)
     spend = notional = 0.0
     written = []
@@ -212,6 +226,60 @@ def main() -> None:
         # re-run, not a failure of it: the run above completed and is
         # cached, and the keyed sheet stays keyed.
         print(f"template kept: {refusal}")
+
+
+def run_batched_arm(api, docs) -> None:
+    """The same draw through the batch path, results and cache of its own.
+
+    No template writing: the sheet belongs to the live arm's draw, and both
+    arms draw the same documents anyway.
+    """
+    cache = classify.ResultCache(CACHE_BATCHED,
+                                 prompt_hash=extractor.PROMPT_HASH)
+    requests = []
+    for doc in docs:
+        pdf = (RAW / doc["record_id"]
+               / files_of(doc["record_id"])[doc["file_index"]]["name"])
+        requests.append({"custom_id": doc["page_id"],
+                         "record_id": doc["record_id"],
+                         "file_index": doc["file_index"],
+                         "pdf": pdf, "pages": tuple(doc["pages"])})
+    results = extractor.run_batched(
+        api, requests, cache=cache,
+        on_progress=lambda m: print(f"  {m}"))
+
+    spend = notional = 0.0
+    with RESULTS_BATCHED.open("w") as out:
+        for doc in docs:
+            result = results[doc["page_id"]]
+            notional += result.cost_usd(batched=True)
+            if not result.cached:
+                spend += result.cost_usd(batched=True)
+            report = result.report
+            out.write(json.dumps({
+                "page_id": doc["page_id"], "stratum": doc["stratum"],
+                "pages": list(doc["pages"]),
+                "prompt_hash": extractor.PROMPT_HASH,
+                "predicted_class": doc["predicted"],
+                "form_class": report.form_class if report else None,
+                "form_revision": (report.form_revision.raw
+                                  if report else None),
+                "values": len(list(report.values())) if report else 0,
+                "present": report.present if report else 0,
+                "located": report.located if report else 0,
+                "dropped": list(report.dropped) if report else [],
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
+                "cached": result.cached, "error": result.error,
+            }) + "\n")
+    flattened = sum(1 for doc in docs
+                    if results[doc["page_id"]].report is not None
+                    and results[doc["page_id"]].report.dropped)
+    ok = sum(1 for doc in docs if results[doc["page_id"]].report is not None)
+    print(f"\ndocuments extracted: {ok} of {len(docs)}, "
+          f"{flattened} with dropped keys")
+    print(f"spent: ${spend:.2f}   (${notional:.2f} if the cache were cold)")
+    print(f"results: {RESULTS_BATCHED}")
 
 
 def write_template(written) -> None:
