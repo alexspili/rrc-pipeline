@@ -27,6 +27,10 @@ def _script():
     return module
 
 
+@pytest.mark.skipif(
+    not (ROOT / "data" / "extract" / "cache_identity.jsonl").exists(),
+    reason="prices from the identity cache; data/ is never committed "
+           "(DEFECTS #75)")
 def test_a_page_is_priced_from_the_cap_the_module_actually_sends():
     """The quote that missed by 2x priced an identity page as though it were a
     classifier page. Both modules are asked here, and they must disagree,

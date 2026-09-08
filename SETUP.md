@@ -188,3 +188,12 @@ CLAUDE.md carries the live figures):
    is 24h public-user anyway, low stakes); wrong file → `git rm --cached` +
    amend if unpushed, follow-up removal commit if pushed; ugly message
    pushed → leave it, it's history now.
+
+## Before publishing
+
+Run `sh scripts/check_clean_clone.sh`. It clones the repo into a scratch
+directory with no data/ and no .env and runs every command the README
+names; a stranger's first ten minutes must be skips and passes, not
+tracebacks about files the README explains are deliberately absent
+(DEFECTS #75). Then re-read README's contact block and docs/recon/ with a
+stranger's eyes.

@@ -3712,3 +3712,39 @@ A batched re-run of the same twenty documents, about $0.77, would measure
 the deployed path instead; not run, gated on the usual word.
 
 **Pin:** tests/tier1/test_extract.py::test_a_flattened_response_counts_its_root_keys_as_dropped
+
+## #75 — 2026-09-07 — Two test files had never met a machine without the corpus
+
+**What happened:** the pre-publication clean-clone check ran the README's
+own commands in a fresh clone with no `data/` and no `.env`.
+`make test` failed 25 tests: 24 in `tests/tier2/test_textlayer.py` and 1 in
+`tests/tier2/test_estimate_batch.py`, every one a raw FileNotFoundError on
+`data/manifest.jsonl`. `make score` died the same way. Forty-nine other
+data-dependent tests skipped cleanly, because the guard is this repo's own
+established pattern; these two files just never carried it, and nothing
+could notice, because every machine the suite had ever run on had the data.
+
+**Why it matters now and not before:** the repo is a portfolio. The first
+thing a stranger does is clone it and run the commands the README names,
+and the first impression would have been a wall of tracebacks about a file
+the README explains is deliberately absent.
+
+**Fix:** a source-scanning pin was written first, in the style of DEFECTS
+#52's import check, and rejected on its own evidence: it flagged three
+modules the clean clone passes and missed both modules the clean clone
+fails, because one file's guards do not cover the read that crashes and the
+other's data dependency is transitive through a script it imports. No scan
+of a test file's source can see either. The pin is therefore behavioral:
+`scripts/check_clean_clone.sh` clones the repo to a scratch directory,
+installs, runs the suite and the viewer tests, and fails on any test
+failure; it is the pre-publication gate and SETUP.md names it. The two
+modules get the skip guards they were missing, and `make score` exits with
+a sentence naming what is absent instead of a traceback.
+
+**What remains:** a skipped suite is weaker evidence than a run one, and a
+fresh clone now proves imports, pure logic and fixtures only: 607 passed,
+49 skipped before the fix widened the skips. That is the honest ceiling for
+a repository whose data cannot be published, and the README says the corpus
+is fetched, not shipped.
+
+**Pin:** scripts/check_clean_clone.sh, run before anything is published.

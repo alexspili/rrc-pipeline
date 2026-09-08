@@ -230,6 +230,15 @@ def main() -> None:
     args = ap.parse_args()
     RUN["results"], RUN["cache"] = args.results, args.cache
 
+    # A clean clone has neither the corpus nor a finished run, and the
+    # honest answer is a sentence, not a traceback (DEFECTS #75).
+    for path, what in ((MANIFEST, "the fetched corpus"),
+                       (args.results, "a finished extraction run"),
+                       (args.cache, "that run's cache")):
+        if not Path(path).exists():
+            sys.exit(f"{path} is missing: scoring needs {what}. data/ is "
+                     "never committed; see README, Running it.")
+
     docs = truth()
     rows = compare(docs)
     print(f"{len(docs)} documents, {len(rows)} fields\n" + "=" * 72)

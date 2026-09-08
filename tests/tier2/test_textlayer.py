@@ -26,6 +26,12 @@ ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw"
 MANIFEST = ROOT / "data" / "manifest.jsonl"
 
+# Every test here reads real corpus pages; a clean clone has none, and
+# greeted its first reader with 24 tracebacks instead of skips (DEFECTS #75).
+pytestmark = pytest.mark.skipif(
+    not MANIFEST.exists(),
+    reason="needs the fetched corpus; data/ is never committed")
+
 #: The four graded documents plus the 1966 template fuel. If the assumption
 #: holds anywhere it has to hold here, because these are the pages every
 #: provenance number in docs/modules/extract.md was measured on.
