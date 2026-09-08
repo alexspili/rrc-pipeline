@@ -1202,3 +1202,24 @@ which the schema forbids. Failing test first; viewer_region now applies
 the tier to present values only. The corpus tier mix restates from 752
 to 639 template-tier values (479 fields, 160 rows); the 113 removed were
 regions on non-present values and never belonged in the count.
+
+## R11, the one-back slot, 2026-09-09
+
+Every corpus document over two pages was a two-page filing plus one page
+of another filing for the same well, attached on well-level identity
+agreement. R11 closes the shape structurally: identity fills at most one
+child slot per face and a slot tie attaches nothing; a paper
+confirmation names the sheet's actual back and displaces identity
+back-likes; an evicted face stands back up as its own filing. The
+grouping is 225 documents: 1493399-0-41 keeps its paper-confirmed pair
+and sheds the demoted face p13 into its own filing, 1494036-0-12 and
+1912687-0-2 split, and the deliberately open p2+p8 hole of 2026-09-04
+closes without the family rule that would break the 1495193 pin. No
+clean document changed. Residue: p8, p9 and 1494036's p13 are
+slot_tie unattached, honest abstentions where identity cannot say which
+filing owns them.
+
+GATED: five documents now have page sets the extraction run never saw
+([41,42], [13], [12], [2], [6]); re-extracting them is about $0.20
+batched, and the viewer bundle re-exports after. Until then corpus.jsonl
+and the bundle describe the pre-R11 grouping.
