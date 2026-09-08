@@ -792,3 +792,101 @@ whether `elevation`, `contractor`, `total` and `directional` now pool; the
 alias table described above; and on fields where both snap and the template
 assert, the template's measured distance from the snap box, stage four's
 instrument.
+
+## Box grading, stage six: measured cells and value zones from AnalyzeDocument
+
+Written 2026-09-08, before any AnalyzeDocument call and before the
+stage-five sheet was graded. Alex directed this stage after inspecting the
+stage-five overlays by eye and judging them poor; his grades are still
+being collected for the record, and this stage's bar is therefore stated
+against the SHIPPED snap-plus-band stack, not against a stage-five verdict
+that does not exist yet. If the stage-five sitting later passes its rule,
+both results stand side by side and the wiring decision weighs them.
+
+### What is different from stage five
+
+Stage five fixed the anchor inventory and kept the geometry RULES:
+value_region corners a cell between a label and the next printed anchor,
+and row_region divides a table block into equal bands, the one declared
+guess, graded 3 of 6 in stage four. Stage six replaces those rules with
+measurements:
+
+1. **Tables analysis returns detected cell boundaries.** Pooled across a
+   revision's fuel pages and registered into the template frame, they
+   replace the equal-band guess with measured row edges.
+2. **Forms analysis returns key-value associations with geometry.** The
+   KEY boxes are label positions found by a system trained for exactly
+   that, so a field whose printed label never pooled as an anchor can
+   still be located; the VALUE boxes, pooled across samples, give the
+   zone where values sit inside a cell. Pooling filled positions died in
+   stage three of embedded-layer word poverty; whether it lives on
+   AnalyzeDocument output is an empirical question this stage measures.
+
+Build time only, unchanged: the calls run once on the developer's
+machine, outputs are cached, committed artifacts carry geometry and no
+filled text, and runtime registration stays the page's own embedded
+layer, exact-token, no aliases. The one-API-key runtime property stands.
+
+### Fuel, seal, cache, probe
+
+- Fuel is the SAME sealed population as stage five: the built templates'
+  fuel pages, records 1493608 and 1495195 excluded whole (DEFECTS #78's
+  test covers any committed artifact this stage produces).
+- Responses cached under data/textract/analyze/ keyed by content hash of
+  the bytes sent, never re-sent. Forms responses contain filled value
+  text, which is why they live under git-ignored data/ and why the
+  committed geometry is scanned under rule 3 like every anchor list.
+- **Bounded probe (rule 2): ONE page** through AnalyzeDocument with
+  FORMS and TABLES features, the stage-five seed 1494690 page 9, shape
+  verified against the AWS documentation before anything else is sent:
+  KEY_VALUE_SET blocks with KEY and VALUE entity types and their
+  relationship links, TABLE and CELL blocks with row and column indices,
+  every geometry ratio in [0, 1] under the same edge tolerance DEFECTS
+  #76 set, and the key texts read against the page's printed labels.
+- The batch is priced by dry run at the documented $50 to 65 per
+  thousand pages (roughly 110 fuel pages, order of $7) and **the spend
+  waits for an explicit go.**
+
+### Stage-six template artifacts
+
+Written BESIDE the stage-five artifacts, never over them: the pending
+stage-five sheet's key carries its own coordinates, so that sitting is
+self-contained either way, and keeping both builds lets the report
+compare them field by field. Per field: the Forms-derived cell where a
+pooled KEY matches the field's spec tokens, else the stage-five region;
+per table: measured row edges where Tables detects the grid, else the
+declared-guess band, each region carrying which source it came from.
+
+### The decision rule, fixed before the call
+
+**DECISION RULE (the only one this stage carries, R15):** identical in
+structure to stage five, on the same 35 boxes, against the same shipped
+comparator of 19, because the instrument and population must not move
+between mechanisms being compared.
+
+| Outcome on the 35 | Verdict |
+|---|---|
+| Located 26 or more, and McNemar exact one-sided p at or below 0.05 | PASS. Stage-six geometry becomes the template tier's geometry, wired under its own rule-5 proposal. |
+| Located 21 or fewer | DEAD. The stage-six thread closes with its number. |
+| 22 to 25, or 26 or more without the paired condition | INCONCLUSIVE. The elected escape fires. |
+
+"Located", the stack, snap's standing convention, the free ceiling
+computed before any sitting, the ceiling's zone shortcuts, and the
+elected escape to 1495195's 14 boxes with the 49-box bar of 38: all
+exactly as stage five pre-registered them, and the escape needs only the
+face template, as before. A stage-six sitting is a NEW blinded sheet
+drawn by the same code; the stage-five sheet is never reopened.
+
+Reachability, both directions (#51): the pass zone needs the stack to
+assert and land on 11 of the 20-box residue, which stage five's ceiling
+already shows is assertable; the DEAD zone is reachable because Forms
+quality on 1966 microfilm is unmeasured and a failure to detect keys
+there collapses coverage the same way anchor poverty did in stage three.
+
+### Secondary numbers, reported, governing nothing
+
+Key-detection rate per revision (which printed labels Forms finds, on
+which paper); measured row edges against the equal-band guess, as
+distances; value-zone spread per field across samples; per-field source
+mix in the final artifacts; cost actual against quote; and the field-by-
+field diff against the stage-five regions on the graded document.
