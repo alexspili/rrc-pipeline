@@ -602,3 +602,193 @@ pre-registered, and it is read with this table beside it.
 > Stages two and three were audited for the same flaw and are clean. Stage
 > two goes further and explicitly disclaims a second metric: "`hit` alone
 > governs nothing". That is the discipline this stage dropped.
+
+## Box grading, stage five: the multi-sample template probe
+
+Written 2026-09-08, before any AWS call, before any template was built, and
+before any box was drawn. Origin: the reopening recorded in HANDOFF.md under
+"2026-09-08: the geometry thread reopens". Alex judged the model-band tier in
+the viewer by eye against the real bundle and found it product-breaking on the
+oldest paper. That is the new measurement the closure clause requires. This
+stage does not re-litigate the closure: the one-sample template stays dead at
+its numbers, and this probe tests a different mechanism.
+
+### What is different from the mechanism that died
+
+Three things, each with a recorded basis.
+
+1. **Templates pool across 27 to 40 samples per revision** from the corpus
+   run (w2 rev4183: 39, g1 rev4183: 28, w2 rev7566: 27, before variant
+   folds), where the dead probe pooled 2 to 10. What recurs across thirty
+   copies at a fixed position is the printed form; what varies is the
+   filling. Never measured here.
+2. **Build-time word boxes come from Textract DetectDocumentText** instead
+   of the embedded text layer. The measured cause of the coverage failure
+   was anchor poverty from per-page OCR garbling, so no label ever pooled.
+   Word inventory is the one thing Textract adds and the one thing that
+   failure needs. Build time is not runtime: templates are committed as
+   static artifacts, nothing in pipeline/ imports boto3, and the
+   one-API-key runtime property is untouched.
+3. **Runtime registration is unchanged**: a page's own embedded-layer words,
+   exact-token match against the anchor table, robust affine, the gates in
+   pipeline/template.py as they stand. Registration is the half that worked
+   (96 anchors at 0.0014 median residual) and it is not being changed, so
+   the probe isolates one variable: the anchor inventory.
+
+### The read, and the two gates before it
+
+The pages read are every page of the 188 g1/w2 corpus documents EXCEPT
+record 1493608's. The graded document never touches Textract at all, so no
+fuel leak is possible rather than merely guarded. Cached under
+`data/textract/` keyed by sha256 of the exact bytes sent; a cached page is
+never re-sent.
+
+1. **The bounded probe (standing rule 2).** ONE page, the existing seed
+   1494690 page 9, through DetectDocumentText, response shape verified
+   against the AWS documentation before anything else is sent: WORD blocks
+   present, bounding boxes as ratios in [0, 1], word count sane against the
+   same page's `pdftotext` count, and positional agreement of tokens both
+   sources read (expected well under 0.01 page-fractions, since both are
+   fractions of a scan that fills the page box, the assumption tier 2
+   already pins).
+2. **The dry run.** Exact page count and price printed, nothing sent. The
+   estimate is about 230 pages at $1.50 per thousand, about $0.35. The
+   spend waits for an explicit go.
+
+### The build, declared before the numbers exist
+
+- **Fuel** per (form_class, revision, page_role): pages of documents whose
+  extracted `form_revision` folds to the revision, admitted by registration
+  onto the seed under the existing gates. A template is built where at
+  least 5 pages register; below that the template abstains and the count is
+  reported.
+- **Seeds** are chosen deterministically: the labeled-revision page with the
+  most unique Textract tokens for that (class, revision, role).
+- **Spelling variants fold only by registration**: a variant's pages join a
+  revision's fuel only if they register onto its seed under the residual
+  gate. Every fold is listed. A variant that does not register is a
+  different revision, whatever its label looks like.
+- **The anchor membership floor rises with the fuel**: a token pools only if
+  unique on its page and present on at least 25% of the registered fuel
+  pages, minimum 2. The spread bound is unchanged. A filled value cannot
+  recur at a fixed position across a quarter of thirty different wells'
+  filings; that is what separates form from filling.
+- **Field specs** for rev4183 (w2 and g1) and rev63075 come from the printed
+  field table earlier in this file, written 2026-08-31 from the paper. Data
+  entry, done before any sitting, same rules as the rev7566 specs: no
+  invented tokens, decoys observed not guessed.
+- **Privacy scan before commit (CLAUDE.md rule 3).** Committed templates
+  live in `pipeline/templates/`. The full anchor token list of every
+  template is read by eye for anything name- or address-shaped before the
+  commit, and the commit message says the scan happened.
+
+### The alias harvest, measured beside the probe and kept out of it
+
+Every fuel page has both readings of the same physical paper: Textract's and
+the embedded layer's, in the same coordinate space. Where a clean Textract
+word and an embedded-layer word co-locate one-to-one, the embedded spelling
+is recorded as an observed alias of that anchor. Co-location parameters are
+declared in the build script and echoed in its report.
+
+Aliases are NOT in the graded configuration. The probe tests one change, the
+anchor inventory, and a second change to the runtime matcher would make a
+pass or a fail unattributable. What is reported, free, from the build:
+every fuel page registered twice, exact-token against alias-augmented,
+matched-anchor counts and residuals side by side, and the same comparison on
+the assignment margins below. Adopting aliases is a separate proposal argued
+from that table.
+
+### Assignment by residual, reported, governing nothing
+
+For each unknown-revision g1/w2 face page (58 documents): register against
+every built face template with the embedded layer; assign to the lowest
+residual only if it clears MAX_RESIDUAL (0.010) and the next-best candidate
+is at least 2 times worse (the measured gap on rev7566 was 8 times).
+Anything else abstains. Validated by leave-label-out on the known-revision
+documents: mask the recorded revision, assign, compare. This is a reported
+number, not a gate; the graded document's registration is direct. If
+assignment is bad, the mechanism's scope shrinks to known-revision pages and
+the record says so.
+
+### The population, the comparator, and the sheet
+
+**Population: the same 35 boxes on record 1493608**, pages 5 and 6, the
+population every prior geometry number lives on. The standing caveat
+travels: this is the most text-layer-favourable 1966 document in the set, so
+the comparator is generous.
+
+**Comparator: the shipped stack locates 19 of 35, 54.3%**: 15 snapped plus 4
+band-located, and the 4 are known per box from the stage-two sheet (boxes 1,
+4, 8, 10). The stack under test is snap, then the template where the page
+registers and a region is asserted, then the band. An asserted template
+region supersedes the band, so the template can lose a box the band had.
+
+**Snap is not regraded.** The snap tier is byte-identical in both stacks
+(verified programmatically, not assumed), stands on its stage-four grades,
+and is counted as 15 located on both sides by the standing convention, so it
+cancels in the paired test. The sitting grades only the template regions
+asserted among the 20 non-snapped boxes, plus a handful of already-graded
+boxes as blinded consistency fillers whose grades govern nothing.
+
+Sheet at `tests/fixtures/box_grades_stage5.csv`, blinded and shuffled, drawn
+by the same code that draws the overlays. No earlier sheet is opened or
+rewritten. Grades are stage two's unchanged: `hit`, `near`, `miss`, `near`
+counts for a locator tier, `handwritten` and `note` as before.
+
+**A box is located** when snap located it, or the template asserted a region
+graded `hit` or `near`, or the template abstained and the band's stage-two
+grade on that exact box was `hit` or `near`.
+
+### The decision rule, fixed before the read
+
+**DECISION RULE (the only one this stage carries, R15):**
+
+| Outcome on the 35 | Verdict |
+|---|---|
+| Located 26 or more, and McNemar exact one-sided p at or below 0.05 | PASS. The template becomes the tier between snap and band, wired in under its own rule-5 proposal. |
+| Located 21 or fewer | DEAD. The thread re-closes and the record states what the money bought. |
+| 22 to 25, or 26 or more without the paired condition | INCONCLUSIVE. The elected escape fires. |
+
+26 of 35 is stage three's bar, kept deliberately: Wilson 95% lower bound
+57.9% clears the 54.3% comparator, the smallest clearing count is 25, and
+the bar asks one more. McNemar pairs on the 20 non-snapped boxes: b the
+boxes the new stack locates and the shipped stack did not, c the reverse, b
+tested against Binomial(b + c, 0.5), one-sided because a template that
+loses is dead either way.
+
+**The ceiling is computed free before any sitting**, as it was when it
+killed the one-sample template: 15 plus the template-asserted count among
+the 20 plus the band-located count among the template's abstentions. A
+ceiling of 21 or fewer is the DEAD zone with no sitting. A ceiling of 22 to
+25 fires the escape before grading rather than after. Both are outcomes of
+the one rule above, not second rules.
+
+**The elected escape, chosen now, before any number exists:** extend the
+same blinded sheet to the 1975 document's 14 boxes, record 1495195 page 15,
+for 49 paired boxes. The escape needs the rev63075 template, fuel 7
+documents, which meets the floor of 5. Comparator on 49: 19 plus 11, which
+is 30 of 49, 61.2%. **The bar is 38 of 49**: Wilson 95% lower bound 61.9%
+clears the comparator, the smallest clearing count is 37, and the bar asks
+one more. McNemar unchanged, now over the 29 non-snapped boxes of the pair
+of documents. The escape re-tests once and is final either way: 38 or more
+with the paired condition passes; anything else and the thread re-closes.
+
+Reachability, both directions (DEFECTS #51): the pass zone was
+reachability-checked above; the DEAD zone is reachable because the
+one-sample ceiling was 18; and "coverage makes the bar unreachable" is
+itself a zone of the rule rather than a surprise. The bar is stated against
+the shipped tiers, not perfection (DEFECTS #58).
+
+### Secondary numbers, reported, governing nothing
+
+Scalar against table-cell split; region areas against the caps; template
+regions coinciding with stage-two `miss`-graded model boxes, a free
+falsification check; the corpus-wide fraction of extracted values on
+registrable pages where a template asserts a region, beside the shipped
+band tier's measured rates; assignment accuracy and its margins; matched
+anchors and residuals per template under embedded-layer registration; the
+anchor-count comparison against the dead one-sample tables, including
+whether `elevation`, `contractor`, `total` and `directional` now pool; the
+alias table described above; and on fields where both snap and the template
+assert, the template's measured distance from the snap box, stage four's
+instrument.
