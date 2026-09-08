@@ -3813,3 +3813,44 @@ geometry, and on a page whose county box reads Brazoria it is in fact a
 stable correspondence. The gate removes most filling; it cannot remove
 filling that is homogeneous AND box-aligned, and the record says so
 instead of claiming the separation is complete.
+
+## #78 — 2026-09-08 — The escape's graded document fed the template that would score it
+
+**Found:** tracing the name-shaped anchor `blackman` for the rule-3 scan
+of the stage-five templates. It is a land-survey grant name, typed in the
+Location box, recurring at one position across record 1495195's three
+W-2 filings, three of the ten pages in the rev63075 face fuel. One of
+those three is page 15. Page 15 is the document the stage-five escape
+extends the grading to.
+
+**The mechanism of the miss:** the protocol sealed record 1493608 by
+name, at the read, so no leak into the primary verdict is possible. The
+escape document got no such sentence. It entered the fuel through the
+ordinary path, labeled revision plus registration, exactly as designed,
+and nothing checked. Scoring a template against a page whose own word
+positions are pooled into it is the leak stage three's exclusion was
+built against, and it would have surfaced only if the sitting landed in
+the inconclusive zone, which is the one zone where nobody would be
+looking for it.
+
+**Fix, after the failing test:** both records the stage-five rule can
+grade, 1493608 and 1495195, are sealed whole in the build's
+EXCLUDED_RECORDS; the templates are rebuilt; a tier-2 test asserts no
+committed template's built_from names either record, so the seal
+survives refactors. The seal reaches further than the leak: record
+1495195 holds filings of several revisions, and its rev7566-labeled
+documents were in the rev7566 fuel too, so the graded templates change
+on rebuild, the ceiling is recomputed, and the sheet is redrawn. That
+is legitimate exactly because nothing has been graded: the blind is
+intact and the guard on a filled sheet was checked before the redraw.
+1912687 and 1495193, graded in stage two but gradable by no stage-five
+rule, are deliberately not sealed, and this entry is where that line is
+drawn.
+
+**What remains:** rev63075 face fuel drops from 10 pages to 7, still
+over the floor of 5. The survey-name observation stands on its own:
+filling that repeats because one record filed three times pools at any
+page-counting floor, which is DEFECTS #77's residue arriving by a second
+route (same record rather than same district), and the floor counts
+pages, not records. Recorded, not fixed: the graded configuration is
+drawn and sealed, and a floor change now would be tuning it.

@@ -55,9 +55,12 @@ RAW = ROOT / "data" / "raw"
 TEXTRACT = ROOT / "data" / "textract"
 OUT = ROOT / "pipeline" / "templates"
 
-#: Sealed. The graded document has no Textract cache at all, and this
-#: assertion is the belt to that suspender.
-EXCLUDED_RECORDS = frozenset({"1493608"})
+#: Sealed: both records the stage-five rule can grade, whole (DEFECTS
+#: #78). 1493608 has no Textract cache at all; 1495195 is cached but
+#: contributes nothing, because the escape grades its page 15 and its
+#: other filings would otherwise reach the rev7566 fuel. The tier-2 seal
+#: test pins this against refactors.
+EXCLUDED_RECORDS = frozenset({"1493608", "1495195"})
 
 #: The templates stage five builds: the ones with field specs or a
 #: pre-registered role in the sitting. Revisions with enough fuel but no
@@ -228,8 +231,15 @@ def main() -> None:
             assert all(k[0] not in EXCLUDED_RECORDS for k in fuel)
             print(f"    fuel: {len(fuel)} pages registered onto the seed"
                   + (f"; folds: {dict(folds)}" if folds else "; folds: none"))
+            stale = OUT / f"{form_class}_{revision}_{role}.json"
             if len(fuel) < FLOOR_PAGES:
                 print(f"    ABSTAINS: fewer than {FLOOR_PAGES} pages")
+                if stale.exists():
+                    # an abstention must take its previous build with it,
+                    # or a sealed record lives on in a file the build no
+                    # longer writes (DEFECTS #78)
+                    stale.unlink()
+                    print(f"    removed stale {stale.relative_to(ROOT)}")
                 continue
 
             floor = max(2, math.ceil(ANCHOR_FRACTION * len(fuel)))
