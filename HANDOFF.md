@@ -1037,3 +1037,87 @@ What reopens is a DIFFERENT mechanism with three record-backed differences:
 
 Publication items still open and unchanged: docs/recon empty vs CLAUDE.md's
 claim, README contact placeholders, the viewer-demo decision (#53 caution).
+
+---
+
+# 2026-09-09 session, executed 2026-09-08: stage five, built to the sitting
+
+The reopening's plan above was executed in order. Everything below is
+committed; the one thing that is not done is the sitting itself, which is
+Alex's.
+
+## What happened, in order
+
+1. **Protocol first.** "Box grading, stage five" appended to
+   docs/labeling-protocol-extract.md before any AWS call: bar 26 of 35
+   kept from stage three, McNemar one-sided at or below 0.05 against the
+   shipped 19, DEAD at 21 or fewer, escape to 1495195's 14 boxes with the
+   49-box bar DERIVED before it was written down: 38 of 49 (smallest
+   Wilson-clearing count 37, plus one, same derivation as stage three).
+2. **Bounded probe passed** (rule 2): one page through
+   DetectDocumentText; WORD blocks parse clean, 537 words against the
+   embedded layer's 470 on the same page, positional agreement on 28
+   shared unique tokens median 0.0027, max 0.0068. The coordinate spaces
+   align and the probe measured it rather than assuming it.
+3. **The read: 233 of 233 pages cached, $0.345** against the $0.35
+   quote, keyed by content hash under data/textract/, never re-sent.
+   boto3 declared and confined to scripts/ (the one-API-key runtime
+   stands). DEFECTS #76 came out of it: a 1e-8 float overrun refused
+   three paid pages AND the reader discarded the paid responses; fixed
+   with the tests first, responses now cached before they are judged.
+4. **Templates built and committed** under pipeline/templates/, six of
+   the planned seven; w2_rev63075_sec_ii abstains at 3 fuel pages against
+   the floor of 5. Word source Textract, runtime registration unchanged.
+   Two defects found by reading the anchor lists for the rule-3 scan:
+   - **#77**: the 25% floor does not separate form from filling on a
+     one-district corpus; the spread gate (0.03 per axis) now does, and
+     box-aligned homogeneous filling (brazoria) is the characterised
+     residue.
+   - **#78**: the escape document's own page was in the fuel that would
+     score it, and record 1495195's other filings fed the rev7566
+     templates. Both gradable records are now sealed whole, pinned by a
+     tier-2 test; the sheet was redrawn before anything was graded.
+5. **The free gate: ceiling 32 of 35, 91.4%.** Snap 15, template asserts
+   14 of the 20-box residue, band backs up 3. The one-sample ceiling was
+   18. The graded document registers embedded-onto-Textract at 73
+   anchors residual 0.0019 (face) and 17 at 0.0017 (sec_ii). The
+   sitting is LIVE.
+6. **The sitting is drawn and waiting**: 19 boxes, 14 template regions
+   plus 5 blinded consistency fillers, tests/fixtures/box_grades_stage5.csv,
+   overlays in data/labelset/overlay_stage5/. Snap is not regraded.
+7. **Secondary numbers, governing nothing**: field specs written for
+   rev4183 (w2, g1) and rev63075 from the seed pages' printed labels;
+   assignment by residual assigns 19 of 58 unknown-revision pages at
+   median residual 0.0014 with 0 margin abstentions; the alias harvest
+   (observed embedded spellings, outside the graded path) lifts fuel
+   registration from 26/27 to 27/27 on the face and 8/10 to 10/10 on the
+   reverse, which is the follow-up proposal's evidence when the sitting
+   is done.
+
+## The sitting, when Alex sits down
+
+    open data/labelset/overlay_stage5
+    # fill grade (hit/near/miss), handwritten, note in
+    # tests/fixtures/box_grades_stage5.csv; the key file is the blind,
+    # do not open it
+    make test                                  # validates the sheet
+    .venv/bin/python scripts/stage5_probe.py --score
+
+The scorer applies the one marked rule and prints the verdict. PASS wires
+the template as the tier between snap and band under its own rule-5
+proposal; DEAD re-closes the thread with the record stating what the
+$0.35 bought; INCONCLUSIVE fires the elected escape, which needs only
+w2_rev63075_face (1495195 p15 is a face; the reverse template abstained).
+
+## Residue on the record, none of it blocking
+
+- Fold assignment is not exclusive: rev7866/rev7366 pages fed both
+  Section II fuels before the seal; measured, reported, unfixed.
+- The anchor floor counts pages, not records, so one record filing three
+  times can pool its filling (#78's residue). A record-counting floor is
+  a mechanism change and waits for the verdict.
+- The G-1 1983 back pages register onto w2_rev4183_sec_ii at margin:
+  the two forms plausibly share a printed reverse. Nobody has confirmed
+  that on paper; one rendered look would settle it.
+- Assignment's known-page agreement is inflated by fuel membership and
+  says so; only the unknown-page numbers are evidence.

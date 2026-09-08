@@ -75,6 +75,8 @@ NOT_CORPUS_COUNTS = {
         "143",         # the stage-2 stratified sample, drawn 2026-08-31
         "373",         # the P-5 header leak before DEFECTS #11, and still
                        # wrong after it (DEFECTS #20)
+        "233",         # the stage-five Textract read: every g1/w2 corpus
+                       # page except the sealed record's, 2026-09-08
     },
 }
 

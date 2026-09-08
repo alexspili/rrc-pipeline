@@ -62,8 +62,8 @@ line in an interview.
   own dpi (#61).
 - Viewer BUILT 2026-09-07 (cut 7): exporter + React/strict-TS, tiers drawn
   distinctly, 23 vitest tests in the hook; `cd viewer && npm run dev`.
-- Next: README review; the sitting backlog (two unjudged paper attachments,
-  one attached cannot-tell); the 1493616-0-4 identity truncation.
+- Next: the stage-five template sitting, live at ceiling 32/35 (grade
+  box_grades_stage5.csv, then stage5_probe.py --score); README review.
 
 ## Standing rules
 
