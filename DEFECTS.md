@@ -3678,3 +3678,37 @@ way on its first full run. Knowing the failure family did not stop me
 rebuilding it; only the pin does, so the pin now covers all three walkers.
 
 **Pin:** tests/tier2/test_free_passes.py::test_the_free_passes_survive_a_run_with_uncached_failures
+
+## #74 — 2026-09-07 — A flattened response loses 26 fields and `dropped` reports zero
+
+**What happened:** the re-score under the shipping prompt returned status
+correct 71.5% against the published 87.4%, and reading the flips found the
+cause before the number went anywhere: 63 of the 95 wrong statuses are
+fields the model did not return in the place the parser looks. Three of the
+twenty smoke documents came back FLATTENED, every field a root-level key
+beside `document` instead of inside `identity`/`completion`/`test`. The
+parser read `document.form_revision`, ignored 26 root keys per document, and
+`dropped` recorded nothing, because it only scans for unknown keys INSIDE
+the three groups it knows. A drop nobody counts is a drop nobody can argue
+with, and this is that failure inside the very field built to prevent it.
+
+**The path finding travels with it.** The flattened shape appeared in 3 of
+20 on the live streamed path and 0 of 206 on the batch path, same prompt
+hash. The re-score therefore describes the live path, which is the path the
+published numbers also used, so the comparison is fair; the corpus was
+extracted through batch, where the shape did not occur once. No mechanism
+for the difference is claimed here; the rates are the finding.
+
+**Fix:** the failing test first, then root-level unknown keys join
+`dropped`. Accounting only: whether the parser should ACCEPT the flattened
+shape (the keys are exact schema field names, so it is readable) changes a
+measured number and is a decision to be proposed, not slipped into a fix.
+
+**What remains:** the 71.5% and 85.1% stand as the live-path measurement on
+the shipping prompt. With three documents contributing most of the status
+misses through shape alone, the number mixes a parser stance with model
+accuracy, and separating them is exactly the flattened-shape decision.
+A batched re-run of the same twenty documents, about $0.77, would measure
+the deployed path instead; not run, gated on the usual word.
+
+**Pin:** tests/tier1/test_extract.py::test_a_flattened_response_counts_its_root_keys_as_dropped

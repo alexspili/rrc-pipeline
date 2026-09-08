@@ -6,6 +6,8 @@ several cases here are the probe's own output rather than invented shapes.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from pipeline import extract as ex
@@ -457,3 +459,21 @@ def test_the_prompt_asks_for_the_label_it_parses():
     from pipeline import extractor
     assert "found_in" in extractor.SYSTEM
     assert "PRINTED LABEL" in extractor.SYSTEM
+
+
+def test_a_flattened_response_counts_its_root_keys_as_dropped():
+    """The pin for DEFECTS #74. Three smoke documents returned every field as
+    a root-level key beside `document`; the parser kept form_revision and
+    silently ignored 26 fields per document, and `dropped` said zero. A key
+    the schema has no home for is recorded wherever it appears, not only
+    inside the groups the parser knows.
+    """
+    body = json.dumps({
+        "document": {"form_class": "w2",
+                     "form_revision": {"status": "blank"}},
+        "field_name": {"status": "illegible"},
+        "total_depth": {"status": "blank"},
+    })
+    report = ex.parse_report(body, record_id="r", file_index=0, pages=(1,))
+    assert "field_name" in report.dropped
+    assert "total_depth" in report.dropped
