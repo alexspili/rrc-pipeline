@@ -52,6 +52,10 @@ class Artifact:
     rows: dict[str, list[tuple[float, float, float, float]]] = \
         dc_field(default_factory=dict)
     header_rows: dict[str, int] = dc_field(default_factory=dict)
+    #: variant revision keys the build folded into this template by
+    #: registration (a 1978 W-2 is the 1975 layout reprinted); routing
+    #: honors them so a variant page reaches the template that fits it
+    folds: dict[str, str] = dc_field(default_factory=dict)
 
 
 def load_artifacts(directory: Path = TEMPLATES) -> dict[Key3, Artifact]:
@@ -71,7 +75,9 @@ def load_artifacts(directory: Path = TEMPLATES) -> dict[Key3, Artifact]:
         artifact = Artifact(
             template=template,
             fields={n: tuple(b) for n, b in raw["fields"].items()},
-            blocks={n: tuple(b) for n, b in raw["blocks"].items()})
+            blocks={n: tuple(b) for n, b in raw["blocks"].items()},
+            folds={variant: raw["revision"]
+                   for variant in raw.get("folds", {})})
         forms = path.with_name(path.stem + "_forms.json")
         if forms.exists():
             overlay = json.loads(forms.read_text())
@@ -95,9 +101,15 @@ def route(artifacts: dict[Key3, Artifact], form_class: str,
     as measured, abstaining beats guessing.
     """
     revision = tpl.revision_key(revision)
+    # a variant that folded into more than one template (rev7866 reached
+    # both Section II fuels) is not routed by pick-first: every folded
+    # target competes and the residual decides
+    targets = {artifact.folds[revision]
+               for artifact in artifacts.values()
+               if revision in artifact.folds} or {revision}
     if revision != "unknown":
         candidates = [(key, artifact) for key, artifact in artifacts.items()
-                      if key[0] == form_class and key[1] == revision]
+                      if key[0] == form_class and key[1] in targets]
         fits = []
         for key, artifact in candidates:
             reg = tpl.register(artifact.template, words)

@@ -236,15 +236,21 @@ BLOCKS: dict[Key, dict[str, tuple[str, ...]]] = {
         "tubing": ("tubingrecord", "tubing"),
         "producing_intervals": ("perforations",),
         "treatments": ("fracture", "squeeze"),
+        "formation_tops": ("geological", "markers"),
     },
     # Both later W-2 reverses print the same table headings the 1966 one
     # does; the fuzzy match covers 1983's singular "perforation".
     ("w2", "rev4183", "sec_ii"): {
-        "casing_strings": ("casingrecord", "casing"),
+        # `casing` is a column header on this revision and never unique;
+        # `strings` is printed in the heading's own "Report All Strings
+        # Set in Well", though as of 2026-09-09 it does not pool as an
+        # anchor either, so this block abstains on this revision
+        "casing_strings": ("casingrecord", "casing", "strings"),
         "liner_strings": ("liner",),
         "tubing": ("tubingrecord", "tubing"),
         "producing_intervals": ("perforations",),
         "treatments": ("fracture", "squeeze"),
+        "formation_tops": ("geological", "markers"),
     },
     ("w2", "rev63075", "sec_ii"): {
         "casing_strings": ("casingrecord", "casing"),
@@ -252,5 +258,6 @@ BLOCKS: dict[Key, dict[str, tuple[str, ...]]] = {
         "tubing": ("tubingrecord", "tubing"),
         "producing_intervals": ("perforations",),
         "treatments": ("fracture", "squeeze"),
+        "formation_tops": ("geological", "markers"),
     },
 }

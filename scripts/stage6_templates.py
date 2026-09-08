@@ -49,6 +49,14 @@ TEMPLATES = ROOT / "pipeline" / "templates"
 ANALYZE = ROOT / "data" / "textract" / "analyze"
 
 MATCH_RATIO = tpl.LABEL_RATIO
+
+#: A detected table belongs to a block on either of two measured kinds
+#: of evidence: most of the TABLE inside the block (a small grid in a
+#: block that runs from its heading to the next heading; symmetric IoU
+#: sat at 0.2 on all 16 rev4183 reverses), or a substantial symmetric
+#: overlap (the rev7566 liner grid extends half past its block boundary
+#: and sits at IoU 0.37 to 0.40 with containment barely 0.5).
+TABLE_MIN_CONTAINMENT = 0.6
 TABLE_MIN_IOU = 0.3
 
 
@@ -130,6 +138,22 @@ def _iou(a, b) -> float:
     inter = (right - left) * (bottom - top)
     return inter / ((a[2] - a[0]) * (a[3] - a[1])
                     + (b[2] - b[0]) * (b[3] - b[1]) - inter)
+
+
+def table_matches(table_box, block_box) -> bool:
+    """Most of the table inside the block, or a substantial overlap."""
+    left = max(table_box[0], block_box[0])
+    top = max(table_box[1], block_box[1])
+    right = min(table_box[2], block_box[2])
+    bottom = min(table_box[3], block_box[3])
+    if right <= left or bottom <= top:
+        return False
+    inter = (right - left) * (bottom - top)
+    area = ((table_box[2] - table_box[0])
+            * (table_box[3] - table_box[1]))
+    if area > 0 and inter / area >= TABLE_MIN_CONTAINMENT:
+        return True
+    return _iou(table_box, block_box) >= TABLE_MIN_IOU
 
 
 def field_region(key_box, value_box):
@@ -264,11 +288,14 @@ def main() -> None:
         for block_name, block_box in stage5_blocks.items():
             grids = []
             for _, reg, _, page_tables in fuel:
-                best, best_iou = None, TABLE_MIN_IOU
+                best, best_inside = None, 0.0
                 for table in page_tables:
-                    iou = _iou(reg.transform.box(table.box), block_box)
-                    if iou >= best_iou:
-                        best, best_iou = table, iou
+                    mapped = reg.transform.box(table.box)
+                    if not table_matches(mapped, block_box):
+                        continue
+                    inside = _iou(mapped, block_box)
+                    if inside > best_inside:
+                        best, best_inside = table, inside
                 grids.append([] if best is None else
                              [(c.row, reg.transform.box(c.box), c.text)
                               for c in best.cells])

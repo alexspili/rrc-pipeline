@@ -110,3 +110,20 @@ def test_sheet_bounds_find_the_paper_on_a_dark_surround():
     left, top, right, bottom = sheet_bounds(img)
     assert (left, top, right, bottom) == (0.1, 0.2, 0.9, 0.95)
     assert sheet_bounds(Image.new("L", (10, 10), 0)) == (0, 0, 1, 1)
+
+
+def test_a_folded_variant_routes_to_its_committed_template():
+    """The build folds sub-floor revisions into a template by registration
+    (rev61278 pages register onto the rev63075 face at margin), but route()
+    only matched exact revision keys, so a 1978 W-2 fell to the model band
+    with a template that fits it sitting on disk. The fold table travels
+    with the artifact and routing honors it; the registration gate still
+    decides."""
+    template = make_template()
+    artifacts = {("w2", "rev63075", "face"): Artifact(
+        template=template, fields={}, blocks={},
+        folds={"rev61278": "rev63075"})}
+    words = make_page(template)
+    routed = route(artifacts, "w2", "Rev. 6/12/78", words)
+    assert routed is not None
+    assert routed[0] == ("w2", "rev63075", "face")

@@ -51,7 +51,7 @@
     ]
   },
   "field_key_texts": {
-    "identity.field_name": "1. FIELD NAME per RRC Records or Wildcat)",
+    "identity.field_name": ": FIELD NAME KWC Records or Wildcat)",
     "identity.lease_name": "2. LEASE NAME",
     "identity.operator_address": "4. ADDRESS",
     "identity.county": "10. County",

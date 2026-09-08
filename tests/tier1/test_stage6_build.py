@@ -59,14 +59,33 @@ def test_field_region_is_capped():
 
 
 def test_row_edges_pool_on_the_modal_row_count():
-    grid_a = [(1, (0.1, 0.50, 0.9, 0.55)), (2, (0.1, 0.55, 0.9, 0.60))]
-    grid_b = [(1, (0.1, 0.51, 0.9, 0.56)), (2, (0.1, 0.56, 0.9, 0.61))]
-    odd = [(1, (0.1, 0.50, 0.9, 0.60))]
-    rows = row_edges([grid_a, grid_b, odd], floor=2)
+    grid_a = [(1, (0.1, 0.50, 0.9, 0.55), "SIZE"),
+              (2, (0.1, 0.55, 0.9, 0.60), "9-5/8")]
+    grid_b = [(1, (0.1, 0.51, 0.9, 0.56), "SIZE"),
+              (2, (0.1, 0.56, 0.9, 0.61), "16 in")]
+    odd = [(1, (0.1, 0.50, 0.9, 0.60), "SIZE")]
+    rows, header_rows = row_edges([grid_a, grid_b, odd], floor=2)
     assert len(rows) == 2
     assert abs(rows[0][1] - 0.505) < 1e-9
+    # row 1's text recurs across pages (printed), row 2's varies (filling)
+    assert header_rows == 1
 
 
 def test_row_edges_refuse_when_too_few_pages_agree():
-    grid = [(1, (0.1, 0.5, 0.9, 0.55))]
+    grid = [(1, (0.1, 0.5, 0.9, 0.55), "SIZE")]
     assert row_edges([grid], floor=2) is None
+
+
+def test_a_table_inside_a_larger_block_is_a_match():
+    """The stage-five block runs from its heading to the next heading, so
+    it is legitimately larger than the ruled grid inside it; symmetric
+    IoU sat at 0.2 on all 16 rev4183 reverses and no rows pooled. The
+    criterion is containment: most of the TABLE inside the block."""
+    from scripts.stage6_templates import table_matches
+    block = (0.1, 0.5, 0.9, 0.9)
+    table = (0.15, 0.55, 0.85, 0.65)     # small grid inside the block
+    assert table_matches(table, block)
+    outside = (0.15, 0.05, 0.85, 0.15)
+    assert not table_matches(outside, block)
+    straddling = (0.15, 0.45, 0.85, 0.55)  # only half inside
+    assert not table_matches(straddling, block)
