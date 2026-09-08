@@ -128,7 +128,8 @@ def send_page(client, records: dict, key: tuple[str, int, int],
     if digest in known:
         return "cached"
     response = client.detect_document_text(Document={"Bytes": data})
-    tw.words_from_response(response)      # shape-verify before caching
+    # cache BEFORE the shape check: a paid response that fails it costs a
+    # re-parse, never a re-spend (DEFECTS #76)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f"{digest[:16]}.json").write_text(json.dumps(response))
     with INDEX.open("a") as fh:
@@ -137,6 +138,11 @@ def send_page(client, records: dict, key: tuple[str, int, int],
             "sha256": digest, "bytes": len(data)}) + "\n")
     known.add(digest)
     time.sleep(PACE_SECONDS)
+    try:
+        tw.words_from_response(response)
+    except tw.TextractShape as err:
+        raise tw.TextractShape(
+            f"{record_id}-{file_index} p{page}: {err}") from err
     return "sent"
 
 

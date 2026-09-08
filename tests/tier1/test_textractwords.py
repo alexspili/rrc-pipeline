@@ -67,3 +67,71 @@ def test_word_without_confidence_refused():
 def test_degenerate_box_refused():
     with pytest.raises(TextractShape):
         words_from_response(response([word("X", width=0.0)]))
+
+
+def test_float_noise_at_the_page_edge_is_clamped_not_refused():
+    """DEFECTS #76: Textract returns edge-flush boxes whose Left+Width is
+    a few parts per billion over 1.0. Three real pages were refused."""
+    blocks = [word("X", left=0.95, width=0.0500000093)]
+    (box, _), = words_from_response(response(blocks))
+    assert box[2] == 1.0
+
+
+def test_a_real_overrun_is_still_refused():
+    with pytest.raises(TextractShape):
+        words_from_response(response([word("X", left=0.95, width=0.06)]))
+
+
+# ----------------------------------------------------------- alias harvest
+
+from pipeline.textractwords import expand_anchors, harvest_aliases  # noqa: E402
+
+
+def w(text, left, top, width=0.06, height=0.01):
+    return (left, top, left + width, top + height, text)
+
+
+def test_colocated_different_spelling_is_an_alias():
+    aliases = harvest_aliases([w("ELEVATION", 0.1, 0.2)],
+                              [w("ELEVATLON", 0.101, 0.2)])
+    assert aliases == {"elevation": "elevatlon"}
+
+
+def test_identical_spelling_is_not_an_alias():
+    assert harvest_aliases([w("ELEVATION", 0.1, 0.2)],
+                           [w("ELEVATION", 0.101, 0.2)]) == {}
+
+
+def test_word_not_unique_on_its_page_never_pairs():
+    textract = [w("ELEVATION", 0.1, 0.2), w("ELEVATION", 0.1, 0.8)]
+    assert harvest_aliases(textract, [w("ELEVATLON", 0.101, 0.2)]) == {}
+
+
+def test_two_embedded_words_over_one_clean_word_abstain():
+    embedded = [w("ELEVATLON", 0.1, 0.2), w("ELEVAT1ON", 0.11, 0.2)]
+    assert harvest_aliases([w("ELEVATION", 0.1, 0.2)], embedded) == {}
+
+
+def test_distant_words_never_pair():
+    assert harvest_aliases([w("ELEVATION", 0.1, 0.2)],
+                           [w("ELEVATLON", 0.5, 0.8)]) == {}
+
+
+def test_expand_maps_alias_to_its_anchors_entry():
+    anchors = {"elevation": "ANCHOR"}
+    out = expand_anchors(anchors, {"elevation": ["elevatlon"]})
+    assert out["elevatlon"] == "ANCHOR"
+    assert out["elevation"] == "ANCHOR"
+
+
+def test_alias_claimed_by_two_anchors_is_dropped():
+    anchors = {"elevation": "A", "eievation": "B"}
+    out = expand_anchors(anchors, {"elevation": ["elevatlon"],
+                                   "eievation": ["elevatlon"]})
+    assert "elevatlon" not in out
+
+
+def test_alias_shadowing_a_real_token_is_dropped():
+    anchors = {"elevation": "A", "elevatlon": "B"}
+    out = expand_anchors(anchors, {"elevation": ["elevatlon"]})
+    assert out["elevatlon"] == "B"

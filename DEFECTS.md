@@ -3748,3 +3748,35 @@ a repository whose data cannot be published, and the README says the corpus
 is fetched, not shipped.
 
 **Pin:** scripts/check_clean_clone.sh, run before anything is published.
+
+## #76 — 2026-09-08 — A 1e-8 edge overrun refused a paid page, and the refusal threw the response away
+
+**Found:** running the stage-five Textract read end to end. 229 of 232
+pages cached; 3 refused with `Left+Width out of [0, 1]: 1.0000000093`.
+
+**Two mechanisms, one incident.** The parser's ratio check treats the
+documented [0, 1] bound as exact, and Textract returns boxes flush with
+the page edge whose Left plus Width lands a few parts per billion over
+1.0 in floating point. That is arithmetic noise on a legitimate word, not
+a malformed response, and the strictness that was meant to refuse bad
+geometry refused three real pages. Second: `send_page` verifies shape
+AFTER the paid API call and BEFORE caching, so a refused response is a
+response that was paid for and then discarded. The money is $0.0045; the
+shape of the mistake is what matters, and it is DEFECTS #73's shape in a
+new place: a walker that assumes the happy path holds data it has already
+paid for.
+
+**A third, smaller flaw rode along:** the refusal line names the failing
+coordinate and not the page, so the report says three pages were refused
+and cannot say which three.
+
+**Fix, after the failing tests:** the parser accepts an overrun up to
+1e-6 and clamps it to the bound, raising as before beyond that; the
+tolerance is a declared constant, not a silent loosening. `send_page`
+caches the raw response before verifying it, so a future shape surprise
+costs a re-parse and not a re-spend. The refusal line carries the page.
+
+**What remains:** the three pages re-sent for $0.0045, inside the read's
+quoted $0.35. The clamp edits a coordinate by at most 1e-6 of a page,
+which is three orders of magnitude under the 0.0014 registration residual
+it could conceivably perturb.
