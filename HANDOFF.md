@@ -1231,3 +1231,21 @@ seen. Snap and findings re-ran free; the bundle re-exported at 225
 documents over 270 page images: snap 1,792, template tier 649 (484
 fields, 165 rows), band 2,830. The three formerly wrong multi-page
 documents now read as what the paper holds.
+
+## Coverage work, 2026-09-09: folds routed, formation_tops, hybrid matching
+
+Alex asked for the three biggest model-tier chunks. rev61278 turned out
+not to need a template: 4 unsealed documents against the floor of 5, no
+reverses, and its pages register onto rev63075 at margin, so routing now
+honors the build's fold table (multiple fold targets compete on
+residual). formation_tops got its block spec; table-to-block matching
+accepts containment or overlap, each justified by a measured failure of
+the other alone. The 1966 reverse pools all five row sets. Bundle: 744
+template-tier values (539 fields, 205 rows), band down to 2,735.
+
+Residue, honest: the 1983 reverse's casing, liner, tubing and formation
+headings repeat every token on the page (RECORD four times, CASING as a
+column header), pool no anchor, and those blocks abstain; a table-first
+mechanism (locate blocks from pooled detected-table positions instead
+of headings) is the idea that would reach them, unbuilt. Its treatments
+grid matches but fails row pooling. Both are recorded, not gates.
