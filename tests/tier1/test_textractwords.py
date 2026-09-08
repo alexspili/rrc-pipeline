@@ -82,6 +82,22 @@ def test_a_real_overrun_is_still_refused():
         words_from_response(response([word("X", left=0.95, width=0.06)]))
 
 
+def test_wide_spread_anchor_is_gated_out_of_the_build():
+    """DEFECTS #77: typed filling recurs across a one-district corpus and
+    pooled through the 25% floor. The spread gate is what removes it."""
+    from scripts.stage5_templates import MAX_ANCHOR_SPREAD, spread_gate
+
+    class A:
+        def __init__(self, spread):
+            self.spread = spread
+
+    anchors = {"witness": A((0.002, 0.002)),      # printed form
+               "houston": A((0.305, 0.605)),      # operator addresses
+               "chambers": A((0.288, 0.029))}     # typed county values
+    kept = spread_gate(anchors, MAX_ANCHOR_SPREAD)
+    assert set(kept) == {"witness"}
+
+
 # ----------------------------------------------------------- alias harvest
 
 from pipeline.textractwords import expand_anchors, harvest_aliases  # noqa: E402

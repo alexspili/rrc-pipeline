@@ -3780,3 +3780,36 @@ costs a re-parse and not a re-spend. The refusal line carries the page.
 quoted $0.35. The clamp edits a coordinate by at most 1e-6 of a page,
 which is three orders of magnitude under the 0.0014 registration residual
 it could conceivably perturb.
+
+## #77 — 2026-09-08 — The 25% anchor floor was declared to separate form from filling, and the filling pooled through it
+
+**Found:** reading the stage-five anchor token list for the privacy scan
+the protocol requires. Among the 148 face anchors: `brazoria`, `chambers`,
+`houston`, `77001`, `corporation`. Typed county values, operator
+addresses, a ZIP. The protocol's build section says "A filled value cannot
+recur at a fixed position across a quarter of thirty different wells'
+filings; that is what separates form from filling." Measured, that
+sentence is wrong: this corpus is one district, so its filling is
+homogeneous, and `houston` recurs on 12 of 28 pages. Same shape as
+DEFECTS #59: a plausible generalisation written down as if it were a
+measurement.
+
+**The data separates cleanly where the claim did not.** Printed anchors
+pool at centre spreads of 0.002 to 0.004 page-fractions; the five typed
+tokens spread 0.013 to 0.605. Four of the five sit beyond 0.03 on at
+least one axis, which is the bound the stage-three diagnostic measured
+for printed text ("75 of the 96 sit within 0.03").
+
+**Fix, after the failing test:** a spread gate at 0.03 per axis in the
+stage-five build, a declared constant. None of the five is personal
+information under rule 3 (counties, a city, a government-office ZIP, a
+corporate suffix), so the privacy scan itself stands.
+
+**What remains, characterised rather than waved at:** `brazoria` passes
+any reasonable spread gate, at 7 of 28 pages and 0.013 x 0.004, because
+seven typists aligned the same county name to the same printed box. A
+value that behaves geometrically like form cannot be excluded by
+geometry, and on a page whose county box reads Brazoria it is in fact a
+stable correspondence. The gate removes most filling; it cannot remove
+filling that is homogeneous AND box-aligned, and the record says so
+instead of claiming the separation is complete.

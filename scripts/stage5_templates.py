@@ -71,6 +71,20 @@ BUILDS = (("w2", "rev7566", ("face", "sec_ii")),
 FLOOR_PAGES = 5
 ANCHOR_FRACTION = 0.25
 
+#: A pooled anchor whose centre spread exceeds this on either axis is
+#: filling, not form (DEFECTS #77). Printed anchors on this fuel pool at
+#: 0.002 to 0.004; typed county values, addresses and ZIPs at 0.013 to
+#: 0.605. The bound is the one the stage-three diagnostic measured for
+#: printed text. Filling that is homogeneous AND box-aligned (`brazoria`
+#: at 0.013) still passes, and the defect entry characterises that residue
+#: rather than claiming the separation is complete.
+MAX_ANCHOR_SPREAD = 0.03
+
+
+def spread_gate(anchors: dict, cap: float = MAX_ANCHOR_SPREAD) -> dict:
+    return {t: a for t, a in anchors.items()
+            if a.spread[0] <= cap and a.spread[1] <= cap}
+
 ROLE_PARTS = {"face": {"face"}, "sec_ii": {"sec_ii", "continuation"}}
 
 
@@ -220,11 +234,14 @@ def main() -> None:
 
             floor = max(2, math.ceil(ANCHOR_FRACTION * len(fuel)))
             fuel_words = [textract_words(index, k) for k in fuel]
-            anchors, used, rejected = tpl.build_anchors(fuel_words,
-                                                        min_pages=floor)
+            pooled, used, rejected = tpl.build_anchors(fuel_words,
+                                                       min_pages=floor)
+            anchors = spread_gate(pooled)
             heights = sorted(tpl.line_height(w) for w in fuel_words)
             height = heights[len(heights) // 2]
             print(f"    anchor floor {floor} of {len(fuel)} pages: "
+                  f"{len(pooled)} pooled, {len(pooled) - len(anchors)} "
+                  f"gated as filling (spread > {MAX_ANCHOR_SPREAD}), "
                   f"{len(anchors)} canonical anchors, "
                   f"{len(rejected)} pages rejected in pooling")
 
