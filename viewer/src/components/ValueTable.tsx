@@ -1,3 +1,6 @@
+import { Fragment, useEffect, useRef } from "react";
+
+import { fieldLabel, rowIndex } from "../lib/fields";
 import type { Doc, ViewerValue } from "../types";
 
 const GROUP_ORDER = ["document", "identity", "completion", "test"];
@@ -32,16 +35,44 @@ export function ValueTable(props: {
   selectedField: string | null;
   onSelect: (field: string | null) => void;
 }) {
+  // A click on the page selects a field whose row may sit anywhere in
+  // this pane; bring it into view. "nearest" keeps a row the user
+  // clicked directly from jumping.
+  const selectedRow = useRef<HTMLTableRowElement | null>(null);
+  useEffect(() => {
+    selectedRow.current?.scrollIntoView?.({
+      block: "nearest",
+      behavior: "smooth",
+    });
+  }, [props.selectedField]);
+
   return (
     <div className="values">
-      {groupsOf(props.doc).map(([group, values]) => (
+      {groupsOf(props.doc).map(([group, values]) => {
+        const last = values[values.length - 1];
+        const lastRow = last ? rowIndex(last.field) : null;
+        return (
         <section key={group}>
           <h2>{group}</h2>
           <table>
             <tbody>
-              {values.map((v) => (
+              {values.map((v, i) => {
+                const row = rowIndex(v.field);
+                const before = i > 0 ? values[i - 1] : undefined;
+                const previous = before ? rowIndex(before.field) : null;
+                const rowBreak =
+                  row !== null && row !== previous && (lastRow ?? 0) > 0;
+                return (
+                <Fragment key={v.field}>
+                {rowBreak && (
+                  <tr className="row-break">
+                    <td colSpan={3}>row {row + 1}</td>
+                  </tr>
+                )}
                 <tr
-                  key={v.field}
+                  ref={
+                    v.field === props.selectedField ? selectedRow : undefined
+                  }
                   className={
                     (v.region ? "locatable" : "") +
                     (v.field === props.selectedField ? " selected" : "")
@@ -49,7 +80,7 @@ export function ValueTable(props: {
                   onClick={() => v.region && props.onSelect(v.field)}
                 >
                   <td className="field">
-                    {v.field.replace(`${group}.`, "")}
+                    {fieldLabel(v.field)}
                   </td>
                   <td className="raw">
                     {v.status === "present" ? (
@@ -74,11 +105,14 @@ export function ValueTable(props: {
                     )}
                   </td>
                 </tr>
-              ))}
+                </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </section>
-      ))}
+        );
+      })}
     </div>
   );
 }

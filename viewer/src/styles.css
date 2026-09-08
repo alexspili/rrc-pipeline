@@ -97,3 +97,5 @@ header .meta { color: #6b7280; font-size: 12px; }
 .findings.clean { color: #6b7280; font-size: 12px; padding: 12px 0; }
 
 .error, .loading, .hint { padding: 32px; color: #6b7280; }
+
+.values tr.row-break td { padding: 6px 4px 2px; border-bottom: none; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; }
