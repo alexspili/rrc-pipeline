@@ -1,24 +1,15 @@
 #!/usr/bin/env python3
-"""Stage five's free gate: the stack ceiling on the 35 graded boxes.
+"""Stage six's free gate, sheet and scorer, on the same 35 boxes.
 
 Pre-registered in docs/labeling-protocol-extract.md, "Box grading, stage
-five". The stack under test is snap, then the multi-sample template where
-the page registers and a region is asserted, then the band. A box is
-located when snap located it, or the template asserted a region graded hit
-or near, or the template abstained and the band's stage-two grade on that
-exact box was hit or near. The bar is 26 of 35 with McNemar one-sided at
-or below 0.05 against the shipped 19; the ceiling is computable free, and
-a ceiling of 21 or fewer is the DEAD zone with no sitting, 22 to 25 fires
-the elected escape before grading.
+six": identical rule, population, comparator and escape as stage five,
+because the instrument must not move between mechanisms being compared.
+The only change is where a region comes from: the pooled Forms cell
+where one exists, else the stage-five region; measured table rows past
+the detected header rows, else the equal-band fallback. Registration is
+still the page's embedded layer onto the stage-five anchors, exact-token.
 
-Registration here is the shipping configuration: the graded document's own
-embedded-layer words, exact-token, onto the Textract-built anchor table.
-No aliases (the single-variable rule in the protocol), no API calls, no
-cost.
-
-Reuses scripts/probe_boxes.py's loaders for the graded document, grades
-and snap outcomes, so the two probes cannot disagree about what the 35
-boxes are.
+The stage-five sheet is never reopened; this stage draws its own.
 """
 
 from __future__ import annotations
@@ -27,6 +18,7 @@ import argparse
 import csv
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,46 +29,35 @@ from pipeline import template as tpl              # noqa: E402
 from pipeline.guard import refuse_if_filled       # noqa: E402
 from pipeline.textlayer import page_words         # noqa: E402
 from scripts import probe_boxes as pb             # noqa: E402
+from scripts.stage5_probe import load_template    # noqa: E402
 
 TEMPLATES = ROOT / "pipeline" / "templates"
-SHEET = ROOT / "tests" / "fixtures" / "box_grades_stage5.csv"
-#: Committed, not under data/: the answer key cannot be regenerated once
-#: its sheet is graded, and it carries field names and coordinates rather
-#: than corpus imagery (DEFECTS #36).
-KEY = ROOT / "tests" / "fixtures" / "box_grades_stage5_key.csv"
-OVERLAYS = ROOT / "data" / "labelset" / "overlay_stage5"
+SHEET = ROOT / "tests" / "fixtures" / "box_grades_stage6.csv"
+KEY = ROOT / "tests" / "fixtures" / "box_grades_stage6_key.csv"
+OVERLAYS = ROOT / "data" / "labelset" / "overlay_stage6"
 
-#: The stage-five rule's numbers, fixed in the protocol before the read.
 BAR_COUNT, BAR_TOTAL = 26, 35
 DEAD_AT = 21
 COMPARATOR = 19
-
-#: Blinded consistency fillers: already-graded model boxes, re-drawn so the
-#: sitting checks itself against stage two. Their grades govern nothing.
 FILLERS = 5
-SEED = 20260908
+SEED = 20260909
 
 
-def load_template(role: str):
-    path = TEMPLATES / f"{pb.FORM_CLASS}_{pb.REVISION}_{role}.json"
+def load_forms(role: str):
+    path = (TEMPLATES
+            / f"{pb.FORM_CLASS}_{pb.REVISION}_{role}_forms.json")
     if not path.exists():
         return None
     raw = json.loads(path.read_text())
-    if raw.get("word_source") != "textract":
-        raise SystemExit(f"{path} is not a stage-five template")
-    anchors = {t: tpl.Anchor(t, tuple(v["box"]), v["pages"],
-                             tuple(v["spread"]))
-               for t, v in raw["anchors"].items()}
-    template = tpl.Template(
-        revision=raw["revision"], form_class=raw["form_class"],
-        page_role=raw["page_role"], anchors=anchors,
-        line_height=raw["line_height"], built_from=raw["built_from"])
-    template.fields = {n: tuple(b) for n, b in raw["fields"].items()}
-    return template, {n: tuple(b) for n, b in raw["blocks"].items()}
+    return {
+        "fields": {n: tuple(b) for n, b in raw["fields"].items()},
+        "rows": {n: [tuple(b) for b in rows]
+                 for n, rows in raw["blocks_rows"].items()},
+        "headers": raw["header_rows"],
+    }
 
 
 def compute():
-    """Everything the ceiling, the sheet and the scorer share."""
     pdf, pages, report = pb.report_rows()
     rows = pb.graded_rows()
     snaps = pb.snap_outcomes()
@@ -84,24 +65,22 @@ def compute():
     registered = {}
     for page, role in pb.TARGET[2].items():
         loaded = load_template(role)
+        forms = load_forms(role)
         if loaded is None:
-            print(f"  page {page} ({role}): no stage-five template built")
+            print(f"  page {page} ({role}): no stage-five template")
             continue
-        template, blocks, = loaded
-        words = page_words(pdf, page)
-        reg = tpl.register(template, words)
-        registered[page] = (template, blocks, reg)
+        template, blocks = loaded
+        reg = tpl.register(template, page_words(pdf, page))
+        registered[page] = (template, blocks, forms, reg)
         if reg is None:
-            shared = len(set(tpl.unique_tokens(words))
-                         & set(template.anchors))
-            print(f"  page {page} ({role}): REFUSED to register "
-                  f"({shared} shared anchors, floor {tpl.MIN_ANCHORS})")
+            print(f"  page {page} ({role}): REFUSED to register")
         else:
+            forms_n = len(forms["fields"]) if forms else 0
             print(f"  page {page} ({role}): registered on {reg.matched} "
-                  f"anchors, residual median {reg.residual_median:.4f}, "
-                  f"p90 {reg.residual_p90:.4f}")
+                  f"anchors, residual {reg.residual_median:.4f}; forms "
+                  f"geometry: {forms_n} fields, "
+                  f"{len(forms['rows']) if forms else 0} row sets")
 
-    from collections import Counter
     table_rows: Counter = Counter()
     for name, _ in report.named_values():
         if "[" in name:
@@ -111,99 +90,81 @@ def compute():
     for row in rows:
         page, field = int(row["page"]), row["field"]
         entry = registered.get(page)
-        if entry is None or entry[2] is None:
+        if entry is None or entry[3] is None:
             continue
-        template, blocks, reg = entry
-        box, source = None, None
-        if field in template.fields:
-            # frame to page runs through the inverse (DEFECTS #79)
-            box = reg.page_box(template.fields[field])
-            source = "template"
+        template, blocks, forms, reg = entry
+        box = source = None
+        base = field.split("[")[0]
+        if forms and field in forms["fields"]:
+            box, source = forms["fields"][field], "forms_kv"
+        elif field in template.fields:
+            box, source = template.fields[field], "template"
         elif "[" in field:
-            table = field.split("[")[0]
             index = int(field.split("[")[1].split("]")[0])
-            cells = table_rows[table]
-            per_row = max(1, cells // max(1, index + 1)) if cells else 1
-            n_rows = max(index + 1, cells // max(1, per_row))
-            if table in blocks:
-                band = tpl.row_region(blocks[table], index, n_rows)
+            if forms and base in forms["rows"]:
+                measured = forms["rows"][base]
+                position = forms["headers"].get(base, 0) + index
+                if position < len(measured):
+                    box, source = measured[position], "forms_row"
+            if box is None and base in blocks:
+                band = tpl.row_region(blocks[base], index,
+                                      max(1, table_rows[base]))
                 if band is not None:
-                    box = reg.page_box(band)
-                    source = "template_row"
+                    box, source = band, "template_row"
         if box is not None:
-            asserted[row["box_num"]] = (box, source, field)
+            # frame to page runs through the inverse (DEFECTS #79)
+            asserted[row["box_num"]] = (reg.page_box(box), source, field)
 
     snap_boxes = {r["box_num"] for r in rows
                   if snaps.get(r["field"], {}).get("outcome")
                   in ("unique", "disambiguated")}
     residue = [r for r in rows if r["box_num"] not in snap_boxes]
-    t_on_residue = [r for r in residue if r["box_num"] in asserted]
-    band_backstop = [r for r in residue if r["box_num"] not in asserted
-                     and r["grade"] in ("hit", "near")]
-    ceiling = len(snap_boxes) + len(t_on_residue) + len(band_backstop)
+    on_residue = [r for r in residue if r["box_num"] in asserted]
+    backstop = [r for r in residue if r["box_num"] not in asserted
+                and r["grade"] in ("hit", "near")]
+    ceiling = len(snap_boxes) + len(on_residue) + len(backstop)
     return (pdf, rows, snaps, asserted, snap_boxes, residue,
-            t_on_residue, band_backstop, ceiling)
+            on_residue, backstop, ceiling)
 
 
 def ceiling_report(state) -> None:
     (pdf, rows, snaps, asserted, snap_boxes, residue,
-     t_on_residue, band_backstop, ceiling) = state
-    print("\nTHE STACK, snap then template then band:")
+     on_residue, backstop, ceiling) = state
+    sources = Counter(s for _, s, _ in asserted.values())
+    print("\nTHE STACK, snap then stage-six geometry then band:")
     print(f"  snap-located boxes                {len(snap_boxes):2d}")
-    print(f"  template asserts on the residue   {len(t_on_residue):2d}"
-          f"/{len(residue)}")
-    print(f"  band-located among abstentions     {len(band_backstop):2d}")
+    print(f"  asserted on the residue           {len(on_residue):2d}"
+          f"/{len(residue)}   (sources over all 35: {dict(sources)})")
+    print(f"  band-located among abstentions     {len(backstop):2d}")
     print(f"  CEILING                           {ceiling:2d}/{len(rows)}"
           f" = {ceiling / len(rows):.1%}")
     print(f"  comparator: the shipped stack locates {COMPARATOR}"
-          f"/{len(rows)} = {COMPARATOR / len(rows):.1%}")
+          f"/{len(rows)}; the stage-five ceiling was 32")
 
     print(f"\nPRE-REGISTERED ZONES (bar {BAR_COUNT}/{BAR_TOTAL} plus "
           "McNemar one-sided <= 0.05)")
     if ceiling <= DEAD_AT:
-        print(f"  ceiling {ceiling} <= {DEAD_AT}: DEAD, no sitting. The "
-              "thread re-closes and the record states what the money "
-              "bought.")
+        print(f"  ceiling {ceiling} <= {DEAD_AT}: DEAD, no sitting.")
     elif ceiling < BAR_COUNT:
         print(f"  ceiling {ceiling} in 22-25: the elected escape fires "
-              "BEFORE grading; the sheet extends to 1495195's 14 boxes "
-              "and the 49-box bar of 38 governs.")
+              "before grading.")
     else:
         print(f"  ceiling {ceiling} clears {BAR_COUNT}: the sitting is "
               "live and grading decides.")
 
-    print("\nWHERE THE STACK'S CEILING LOSES BOXES (the residue any "
-          "verdict carries)")
+    print("\nWHERE THE CEILING LOSES BOXES")
     for row in residue:
         if row["box_num"] in asserted or row["grade"] in ("hit", "near"):
             continue
         outcome = snaps.get(row["field"], {}).get("outcome", "-")
-        print(f"  p{row['page']} {row['field']:44s} "
-              f"snap={outcome:14s} model_grade={row['grade']}")
-
-    print("\nSECONDARY, governing nothing: template regions coinciding "
-          "with a miss-graded model box")
-    both = [r for r in rows if r["box_num"] in asserted
-            and r["grade"] == "miss"]
-    print(f"  {len(both)} of {len(asserted)} asserted regions cover a box "
-          "the model box missed; those are the boxes the sitting tests")
+        print(f"  p{row['page']} {row['field']:44s} snap={outcome}")
 
 
 def write_sheet(state) -> None:
-    """The blinded stage-five sheet: the template's residue regions plus
-    consistency fillers, shuffled, mechanism hidden.
-
-    The sitting grades ONLY the template regions on the non-snapped boxes;
-    snap stands on its stage-four grades and is counted per the standing
-    convention, so it never appears here. The fillers are already-graded
-    model boxes re-drawn blind; their grades govern nothing and check the
-    sitting against stage two.
-    """
     import random
 
-    (pdf, rows, snaps, asserted, snap_boxes, residue, t_on_residue,
-     band_backstop, ceiling) = state
-
+    (pdf, rows, snaps, asserted, snap_boxes, residue, on_residue,
+     backstop, ceiling) = state
     refuse_if_filled(SHEET, "grade")
 
     from scripts import score_boxes as sb
@@ -212,7 +173,7 @@ def write_sheet(state) -> None:
     by_num = {r["box_num"]: r for r in rows}
 
     entries = []
-    for row in t_on_residue:
+    for row in on_residue:
         box, source, field = asserted[row["box_num"]]
         entries.append((int(row["page"]), box, field, row["raw"], source,
                         row["box_num"]))
@@ -256,7 +217,7 @@ def write_sheet(state) -> None:
             image, [(number, box) for number, box, _, _ in sorted(items)])
         legend = [f"{number:3d}  {field:44s} {raw!r}"
                   for number, box, field, raw in sorted(items)]
-        stem = f"STAGE5_{pb.TARGET[0]}_f{pb.TARGET[1]}_p{page:03d}"
+        stem = f"STAGE6_{pb.TARGET[0]}_f{pb.TARGET[1]}_p{page:03d}"
         image.save(OVERLAYS / f"{stem}.png")
         (OVERLAYS / f"{stem}.txt").write_text(
             f"{pb.TARGET[0]} page {page}: {len(items)} boxes\n"
@@ -270,18 +231,15 @@ def write_sheet(state) -> None:
     with KEY.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(key_rows[0]))
         writer.writeheader()
-        writer.writerows(sorted(key_rows,
-                                key=lambda r: int(r["box_num"])))
+        writer.writerows(sorted(key_rows, key=lambda r: int(r["box_num"])))
     print(f"\n  sheet: {SHEET}  ({len(sheet_rows)} boxes: "
-          f"{len(t_on_residue)} template regions, {FILLERS} fillers)")
+          f"{len(on_residue)} stage-six regions, {FILLERS} fillers)")
     print(f"  key:   {KEY}  (the blind; scoring reads it, you do not)")
 
 
 def score_sheet(state) -> None:
-    """Apply the stage-five rule, fixed in the protocol before the read."""
-    (pdf, rows, snaps, asserted, snap_boxes, residue, t_on_residue,
-     band_backstop, ceiling) = state
-
+    (pdf, rows, snaps, asserted, snap_boxes, residue, on_residue,
+     backstop, ceiling) = state
     if not SHEET.exists() or not KEY.exists():
         print("\nnothing to score: run --sheet first")
         return
@@ -293,20 +251,20 @@ def score_sheet(state) -> None:
                                                         "").strip()]
     if ungraded:
         print(f"\nnot scored: {len(ungraded)} of {len(key)} boxes are "
-              "ungraded, and a rule applied to part of a sheet is not the "
-              "rule that was pre-registered")
+              "ungraded; finish the sheet or clear it")
         return
 
-    template_grade = {k["orig_box_num"]: graded[k["box_num"]]["grade"].strip()
-                      for k in key if k["source"].startswith("template")}
+    mechanism_grade = {
+        k["orig_box_num"]: graded[k["box_num"]]["grade"].strip()
+        for k in key if k["source"] != "model_filler"}
     by_num = {r["box_num"]: r for r in rows}
 
     new_located, shipped_located = {}, {}
     for row in residue:
         num = row["box_num"]
         shipped_located[num] = row["grade"] in ("hit", "near")
-        if num in template_grade:
-            new_located[num] = template_grade[num] in ("hit", "near")
+        if num in mechanism_grade:
+            new_located[num] = mechanism_grade[num] in ("hit", "near")
         else:
             new_located[num] = shipped_located[num]
     b = sum(1 for n in new_located
@@ -316,19 +274,16 @@ def score_sheet(state) -> None:
     located = len(snap_boxes) + sum(new_located.values())
     p = pb.mcnemar_one_sided(b, c)
 
-    from collections import Counter
-    split = {"template": Counter(), "template_row": Counter()}
+    split = {}
     for k in key:
-        if k["source"] in split:
-            split[k["source"]][graded[k["box_num"]]["grade"].strip()] += 1
+        split.setdefault(k["source"], Counter())[
+            graded[k["box_num"]]["grade"].strip()] += 1
 
-    print("\nSTAGE FIVE RESULT, the one marked rule (protocol, R15)\n")
-    for name, counts in split.items():
-        total = sum(counts.values())
-        if total:
-            print(f"  {name:13s} hit {counts['hit']:2d}  near "
-                  f"{counts['near']:2d}  miss {counts['miss']:2d}   "
-                  f"(reported, governs nothing)")
+    print("\nSTAGE SIX RESULT, the one marked rule (protocol, R15)\n")
+    for name, counts in sorted(split.items()):
+        print(f"  {name:13s} hit {counts['hit']:2d}  near "
+              f"{counts['near']:2d}  miss {counts['miss']:2d}   "
+              "(reported, governs nothing)")
     print(f"\n  located {located}/{len(rows)}  (snap {len(snap_boxes)}, "
           f"stack on the residue {sum(new_located.values())}/"
           f"{len(residue)})")
@@ -336,15 +291,13 @@ def score_sheet(state) -> None:
     print(f"  McNemar b={b} c={c}, one-sided p = {p:.4f}")
 
     if located >= BAR_COUNT and p <= 0.05:
-        print("\n  PASS. The template becomes the tier between snap and "
-              "band, wired in under its own rule-5 proposal.")
+        print("\n  PASS. Stage-six geometry becomes the template tier's "
+              "geometry, wired under its own rule-5 proposal.")
     elif located <= DEAD_AT:
-        print("\n  DEAD. The thread re-closes and the record states what "
-              "the money bought.")
+        print("\n  DEAD. The stage-six thread closes with its number.")
     else:
-        print("\n  INCONCLUSIVE. The elected escape fires: the sheet "
-              "extends to 1495195's 14 boxes and the 49-box bar of 38 "
-              "governs, once, final either way.")
+        print("\n  INCONCLUSIVE. The elected escape fires: 1495195's 14 "
+              "boxes, the 49-box bar of 38, once, final either way.")
 
     fillers = [(k, graded[k["box_num"]]["grade"].strip()) for k in key
                if k["source"] == "model_filler"]
@@ -356,14 +309,11 @@ def score_sheet(state) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--sheet", action="store_true",
-                    help="write the blinded stage-five grading sheet")
-    ap.add_argument("--score", action="store_true",
-                    help="score the graded sheet against the "
-                         "pre-registered rule")
+    ap.add_argument("--sheet", action="store_true")
+    ap.add_argument("--score", action="store_true")
     args = ap.parse_args()
 
-    print(f"STAGE FIVE, record {pb.TARGET[0]}\n")
+    print(f"STAGE SIX, record {pb.TARGET[0]}\n")
     state = compute()
     if args.score:
         score_sheet(state)

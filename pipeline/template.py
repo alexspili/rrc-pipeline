@@ -134,6 +134,17 @@ class Affine:
         x1, y1 = self.apply(box[2], box[3])
         return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
 
+    def invert(self) -> "Affine":
+        """The inverse map. Raises on a degenerate transform, which a
+        registration that passed its gates cannot produce."""
+        det = self.a * self.e - self.b * self.d
+        if abs(det) < 1e-12:
+            raise ValueError("affine is not invertible")
+        return Affine(self.e / det, -self.b / det,
+                      (self.b * self.f - self.e * self.c) / det,
+                      -self.d / det, self.a / det,
+                      (self.d * self.c - self.a * self.f) / det)
+
 
 IDENTITY = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
@@ -155,12 +166,23 @@ class Anchor:
 
 @dataclass(frozen=True)
 class Registration:
-    """How a page maps onto a template's frame, and how well."""
+    """How a page maps onto a template's frame, and how well.
+
+    `transform` runs page to frame, the direction the fit was made in.
+    Anything DRAWN on the page goes through `page_box`, the inverse.
+    Applying `transform` to a frame-space region displaces it by twice
+    the frame-to-page offset, invisibly when the frame is a sibling page
+    and by seventeen line-heights when it is not (DEFECTS #79).
+    """
 
     transform: Affine
     matched: int
     residual_median: float
     residual_p90: float
+
+    def page_box(self, frame_box: tuple[float, float, float, float]):
+        """A frame-space region, mapped onto the registered page."""
+        return self.transform.invert().box(frame_box)
 
 
 @dataclass

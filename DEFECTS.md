@@ -3854,3 +3854,43 @@ page-counting floor, which is DEFECTS #77's residue arriving by a second
 route (same record rather than same district), and the floor counts
 pages, not records. Recorded, not fixed: the graded configuration is
 drawn and sealed, and a floor change now would be tuning it.
+
+## #79 — 2026-09-08 — Template regions were drawn through the transform's wrong direction
+
+**Found:** measuring, rather than eyeballing, why the stage-five overlays
+looked poor to Alex. `register()` fits the PAGE's word positions onto the
+template frame, so its transform runs page to frame. Drawing a
+frame-space field region on the page needs the inverse, frame to page.
+The probe code applies the forward transform to frame boxes, a pattern
+inherited verbatim from stage three's probe_boxes.py.
+
+**Why three graded stages never caught it:** the error is proportional to
+how far the transform sits from identity. Stage three's frame WAS a page
+of the same corpus, so a and e sat near 1.0 and the displacement was
+around 0.001, which is why stage four could measure template regions
+0.001 to 0.002 from their snap boxes. The stage-five frame is the
+Textract seed page, whose crop differs from the graded page by 6% in x
+(a = 0.9394), and the forward-versus-inverse displacement on the face
+runs to 0.13 page-fractions, seventeen line-heights, on
+identity.county. The bug was latent, bounded small by an accident of
+frame choice, and became material the moment the frame stopped being a
+sibling page.
+
+**Consequence for the pending sitting:** the stage-five sheet Alex
+inspected, and has not yet graded, was drawn with displaced regions. The
+sheet is redrawn with the corrected direction before any grade exists;
+the ceiling is unaffected, because coverage asks whether a region is
+asserted, not where it lands. His eyeball judgement that it "does not
+look great" was partly a measurement of this defect.
+
+**Scope:** stage five and six draw through the inverse now
+(Registration.page_box). probe_boxes.py keeps its original arithmetic:
+it is the closed stage-three and stage-four record's instrument, its
+error there was measured at a fraction of a line height, and rewriting a
+closed record's instrument would change what `make probebox` reproduces.
+This entry is the marker that its pattern is not to be copied again.
+
+**Pin:** a tier-1 test registers a synthetic page scaled 10% from its
+template frame and asserts the drawn region lands on the page's own
+field position; under the forward transform it lands two scale-errors
+away and the test fails.
