@@ -48,9 +48,9 @@ above unchanged. Full working: `docs/modules/classify.md`.
 
 The distance between those two paragraphs is most of what this repository is for.
 
-**The full corpus has been extracted: 223 of 223 documents, $10.17 in model spend.** The
+**The full corpus has been extracted: 225 of 225 documents, $10.42 in model spend.** The
 extractor, asked only to extract, also acted as a second opinion on the classifier: 35 of the
-223 predicted G-1/W-2 faces came back as something else. Three are Form 2 "Well Record"
+predicted G-1/W-2 faces came back as something else. Three are Form 2 "Well Record"
 filings, the completion report family that predates both forms, classed and kept. The other 32
 are other forms, among them 12 cementing reports, 5 plugging records, a transporter
 authorization, and 14 documents whose mastheads were rendered and read one by one before any
@@ -102,38 +102,46 @@ sample, 14 carried a readable revision, including 7 of the 12 documents whose te
 form number at all, and the years span **1966, 1975 and 1983**. Accuracy is reported per era
 bucket rather than blended, and the buckets come from the paper.
 
-**A highlight can be shown for 77.3% of extracted values, and the era gradient is steeper than
-the accuracy gradient.** Measured over 562 values in a 20-document run, at two tiers a viewer
-renders differently: a word box measured off the page's own text layer, and an approximate band
-from the model. On 1983 forms it is 100%; on 1966 forms it is 54.3%. The remaining 22.7% get the
-page and the raw text and nothing finer, and that is reported rather than filled in with a guess.
-Three mechanisms were measured against this and two were killed by thresholds written before the
-numbers existed: the model's own boxes land on the field 60.9% of the time overall and 11.4% on
-1966 paper, and per-revision form templates failed a coverage gate at 18 of 35 and a landing gate
-at 13 of 18. Over the full corpus, the strict text-layer tier alone locates 1,761 of 5,259
-extracted values; the rest carry the model's band at the rates above.
+**Every extracted value carries a highlight, at a tagged honesty tier, and the tiers were each
+graded against a pre-registered bar.** Three tiers ship, strongest first. A word box measured
+off the page's own text layer, where the value's text matches uniquely: graded 14 of 15 hits.
+A per-revision form template, built once from Textract word geometry pooled across 27 to 40
+sample pages per revision and committed as a static artifact, locating the field's printed cell
+on any page that registers: the stack it anchors graded 30 and then 32 of 35 boxes located on
+the worst-measured 1966 document, against 19 for the stack without it, McNemar p = 0.0017 and
+0.0001. And the model's own box as a fallback band, which lands 60.9% of the time overall and
+11.4% on 1966 paper, tagged as the weakest thing shown. Over the full corpus the text layer
+locates 1,792 of 5,271 extracted values, the templates 744, and the band carries the remaining
+2,735. The same template mechanism failed its first gate outright, at 18 of 35 coverage from a
+single sample page, and was closed; it reopened only when new product-level evidence met the
+closure's own clause, with fresh pre-registered bars, and passed. Both verdicts are in
+`docs/modules/extract.md` with the thresholds that were written before the numbers existed.
 
-**The validation rules fire on real errors, with no labels involved.** Run over all 223
-documents: 173 come back clean and 50 carry at least one finding, 41 errors and 88 warnings
+**The validation rules fire on real errors, with no labels involved.** Run over all 225
+documents: 157 come back clean and 68 carry at least one finding, 40 errors and 90 warnings
 across twelve rules. The commonest error is a depth recorded below the well's own total depth,
-19 times. One API number fails its county prefix check, which is the class of error the archive
+18 times. One API number fails its county prefix check, which is the class of error the archive
 itself contains: the demo document's G-5 carries an API number with two digits transposed, and
 the check catches it.
 
 ## Roads not taken
 
 - **Reading the form number instead of abstaining on it.** A targeted OCR or vision read of the
-  top-right corner would recover the illegible slice rather than abstaining on it. Deferred: it
-  reopens an AWS Textract dependency the pipeline does not currently need, for a gain bounded by
-  the illegible share of completion faces, and abstention already handles that slice honestly.
-- **AWS Textract for word-level geometry.** It would supply the word
-  inventory the form templates lacked. Its trigger condition was written down
-  before the measurement that would fire it: open only on anchor poverty or
-  garbled labels, never on a layout-assumption failure, which better OCR
-  cannot repair. The measurement fired it exactly. A second gate, also
-  pre-committed, then refused it by one box. The escalation had a real
-  opening and was still not taken, and reopening it now needs a new
-  measurement rather than an appeal to that one.
+  top-right corner would recover the illegible slice rather than abstaining on it. Partly
+  superseded from the other direction: a page whose masthead cannot be read can now be routed by
+  its printed layout instead, registered against the committed templates by residual, and the
+  classifier-side abstention fix remains deferred.
+- **AWS Textract at runtime.** Textract does run in this project, but only on the developer's
+  machine, at build time, to pool template geometry that is then committed to the repository;
+  a user of the pipeline still needs exactly one API key. The runtime road stays untaken. The
+  history of that line is the most instructive thing in the geometry story: the escalation's
+  trigger fired once and a second pre-committed gate refused it by one box; the closure clause
+  said reopening required a new measurement and a new gate; five days later it got both and
+  passed twice. The clause worked in both directions.
+- **An LLM to clean the OCR's garbled words.** Measured before deciding: recovering garbles
+  registered 4 additional pages, against a 99-page residue that only template coverage can
+  reach, so the inference, the cost and the unmeasured failure mode were declined for the small
+  half of the problem.
 - **A hosted backend for the viewer.** Rejected on cost, prompt-injection surface and uptime; the
   viewer is static and does no inference.
 
@@ -167,9 +175,9 @@ R1. A page whose aspect ratio exceeds 2.0 is never extraction-eligible.
     Pinned by: tests/tier1/test_pageclass.py::test_oversize_page_is_never_extraction_eligible
 ```
 
-There are 48 numbered rules across 4 module files. A test asserts that every module file carries
+There are 49 numbered rules across 4 module files. A test asserts that every module file carries
 both sections and that every rule names its pin, because for a while two files carried neither.
-`DEFECTS.md` is the append-only log the origins point back to: 74 entries, of which 5 predate
+`DEFECTS.md` is the append-only log the origins point back to: 80 entries, of which 5 predate
 the first line of code, and several record the same mistake being made twice by the same author
 on the same day, which is what the log is for.
 
@@ -185,8 +193,8 @@ other way. The mechanism, not the count, is the claim.
 
 | Tier | Scope | Runs on | Tests | Measured |
 |---|---|---|---|---|
-| 1 | Pure functions, no I/O | Save | 419 | 42s |
-| 2 | Real boundaries, fixtures | Commit, via the hook | 262 + 23 TS | 54s |
+| 1 | Pure functions, no I/O | Save | 472 | 42s |
+| 2 | Real boundaries, fixtures | Commit, via the hook | 282 + 28 TS | 52s |
 | 3 | Eval harness on labeled data | Merge, `make eval` | 29 | under 1s |
 
 The split exists so the agent has a fast signal to iterate against and a slow one it cannot
@@ -238,7 +246,7 @@ worst possible moment.
 
 ## What the history shows
 
-This was built in ten days, 2026-08-29 to 2026-09-07, in 217 commits, unsquashed and in
+This was built in eleven days, 2026-08-29 to 2026-09-08, in 250 commits, unsquashed and in
 sequence, because the sequence is the evidence. Reviewing three or four consecutive fix commits
 will show the loop running or will show that it does not.
 
@@ -248,11 +256,14 @@ All from the repository. Nothing estimated.
 
 - Extraction, shipping prompt, deployed batch path: 89.5% status, 82.4% value equivalent,
   on 405 hand-keyed fields over 15 documents
-- Corpus extracted: 223 of 223 documents, $10.17 in model spend
+- Corpus extracted: 225 of 225 documents, $10.42 in model spend
+- Highlight tiers over the corpus: 1,792 values on measured word boxes, 744 on committed
+  template geometry, 2,735 on the model's band
+- Build-time Textract, committed as static templates: 343 page reads, $7.50, zero runtime AWS
 - `CLAUDE.md`: 145 lines, budget 145
-- Numbered rules: 48 across 4 module files; retired so far: 0
-- Logged defects: 74, of which 5 predate the first line of code
-- Tests: 419 tier 1, 262 tier 2, 29 tier 3, 23 TypeScript
+- Numbered rules: 49 across 4 module files; retired so far: 0
+- Logged defects: 80, of which 5 predate the first line of code
+- Tests: 472 tier 1, 282 tier 2, 29 tier 3, 28 TypeScript
 
 ## What this is not
 
@@ -280,4 +291,4 @@ bundle: `scripts/export_viewer.py`, then `cd viewer && npm install && npm run de
 ## Contact
 
 Alex Spiliotopoulos
-[email] · [linkedin.com/in/alexspiliotopoulos] · github.com/alexspili
+[alexspi@gmail.com] · [linkedin.com/in/alexspiliotopoulos] · github.com/alexspili
