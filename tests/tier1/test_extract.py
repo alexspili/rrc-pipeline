@@ -477,3 +477,47 @@ def test_a_flattened_response_counts_its_root_keys_as_dropped():
     report = ex.parse_report(body, record_id="r", file_index=0, pages=(1,))
     assert "field_name" in report.dropped
     assert "total_depth" in report.dropped
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("2", "completion_face_legacy"), ("form2", "completion_face_legacy"),
+    ("form_2", "completion_face_legacy"),
+    ("3", "other_form"), ("form3", "other_form"), ("form_3", "other_form"),
+    ("g3", "other_form"), ("gwt-1", "other_form"), ("other", "other_form"),
+    ("well_test_report", "other_form"),
+])
+def test_legacy_spellings_map_to_the_class_the_paper_supports(raw, expected):
+    """The ten spellings the 2026-09-07 corpus run returned, mapped after
+    all 17 faces were rendered and their mastheads read. Form 2 "Well
+    Record" is the pre-G-1/W-2 completion report; Form 3 is a potential
+    test and not a completion.
+    """
+    assert ex.normalise_form_class(raw) == expected
+
+
+def test_gwt1_does_not_collide_with_the_enumerated_gt1():
+    """The nearest miss in the vocabulary: gt1 is the gas tax report and is
+    a real class. The alias sits behind the enum match, so each stays
+    itself.
+    """
+    assert ex.normalise_form_class("gt1") == "gt1"
+    assert ex.normalise_form_class("gt-1") == "gt1"
+    assert ex.normalise_form_class("gwt-1") == "other_form"
+
+
+def test_an_unobserved_string_still_raises():
+    """R8 survives the alias table: only spellings seen on read paper map."""
+    with pytest.raises(ValueError):
+        ex.normalise_form_class("w17")
+    with pytest.raises(ValueError):
+        ex.normalise_form_class("form9")
+
+
+def test_a_form3_body_parses_as_other_form():
+    body = json.dumps({
+        "document": {"form_class": "3",
+                     "form_revision": {"status": "blank"}},
+        "identity": {"field_name": {"status": "illegible"}},
+    })
+    report = ex.parse_report(body, record_id="r", file_index=0, pages=(1,))
+    assert report.form_class == "other_form"

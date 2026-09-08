@@ -420,6 +420,27 @@ def _text(value) -> str | None:
     return text or None
 
 
+#: Observed model spellings for forms the vocabulary does not enumerate,
+#: mapped after reading the paper: all 17 corpus faces the 2026-09-07 run
+#: refused were rendered and their mastheads read. Form 2 "Well Record" is
+#: the pre-G-1/W-2 completion report and is the first real member of the
+#: class the stage-2 decided fix defined; Form 3 "Potential Test Form"
+#: (1-1958), GWT-1 (Rev. 6-1-54) and the rest are test filings or non-RRC
+#: paper, not completions. Keys are normalise_form_class tokens (lowercased,
+#: dashes and spaces stripped). Only strings seen on read paper belong here;
+#: an unknown string still raises, which is R8.
+LEGACY_ALIASES = {
+    "2": "completion_face_legacy",        # Form 2 "Well Record"
+    "form2": "completion_face_legacy",
+    "3": "other_form",                    # Form 3 "Potential Test Form"
+    "form3": "other_form",
+    "g3": "other_form",                   # Form 3, gas-well instance
+    "gwt1": "other_form",                 # GWT-1 back pressure test
+    "other": "other_form",
+    "welltestreport": "other_form",       # a testing contractor's own sheet
+}
+
+
 def normalise_form_class(raw: str) -> str:
     """One spelling per class, and the class must exist.
 
@@ -436,6 +457,11 @@ def normalise_form_class(raw: str) -> str:
     for member in PageClass:
         if member.value.replace("_", "") == token.replace("_", ""):
             return member.value
+    # The enum match first, the alias table second, so an alias can never
+    # shadow a real class ("gwt1" stays distinct from the enum's "gt1").
+    alias = LEGACY_ALIASES.get(token.replace("_", ""))
+    if alias:
+        return alias
     raise ValueError(f"form_class={raw!r} is not a page class")
 
 
