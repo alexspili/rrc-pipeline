@@ -1223,3 +1223,11 @@ GATED: five documents now have page sets the extraction run never saw
 ([41,42], [13], [12], [2], [6]); re-extracting them is about $0.20
 batched, and the viewer bundle re-exports after. Until then corpus.jsonl
 and the bundle describe the pre-R11 grouping.
+
+## The R11 grouping is extracted and exported, 2026-09-09
+
+225 of 225 documents, $0.25 for the five page sets the cache had never
+seen. Snap and findings re-ran free; the bundle re-exported at 225
+documents over 270 page images: snap 1,792, template tier 649 (484
+fields, 165 rows), band 2,830. The three formerly wrong multi-page
+documents now read as what the paper holds.
