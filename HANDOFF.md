@@ -1162,3 +1162,15 @@ sheets is two passes over the same two pages, and the pair separates
 mechanism from geometry cleanly whatever the verdicts.
 
 Spend this session: $0.345 DetectDocumentText, $7.15 AnalyzeDocument.
+
+## Both sittings graded, both PASS, 2026-09-08 late
+
+Stage five located 30 of 35 (McNemar b=12 c=1, p=0.0017); stage six 32
+of 35, its exact ceiling (b=13 c=0, p=0.0001, twelve hits and two nears
+and no miss among its regions). Full record with caveats:
+docs/modules/extract.md, "The reopening and the two passes". Grades
+committed; fillers 4 of 5 consistent with stage two in both sittings
+under a deliberately stricter eye, which ran against the mechanisms.
+Wiring the template tier is the next step and is a rule-5 proposal;
+the paper-edge clip (measured spill: 8 of 14 and 5 of 14 regions into
+the scanner surround) rides with it.

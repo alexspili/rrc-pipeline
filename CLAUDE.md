@@ -62,8 +62,8 @@ line in an interview.
   own dpi (#61).
 - Viewer BUILT 2026-09-07 (cut 7): exporter + React/strict-TS, tiers drawn
   distinctly, 23 vitest tests in the hook; `cd viewer && npm run dev`.
-- Next: the stage-five template sitting, live at ceiling 32/35 (grade
-  box_grades_stage5.csv, then stage5_probe.py --score); README review.
+- Stages five and six both PASSED 2026-09-08: 30 and 32 of 35 vs 19.
+  Next: wire the template tier (rule-5 proposal pending); README review.
 
 ## Standing rules
 
