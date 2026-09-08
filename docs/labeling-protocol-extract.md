@@ -890,3 +890,43 @@ which paper); measured row edges against the equal-band guess, as
 distances; value-zone spread per field across samples; per-field source
 mix in the final artifacts; cost actual against quote; and the field-by-
 field diff against the stage-five regions on the graded document.
+
+## Alias-augmented registration: the adoption rule
+
+Written 2026-09-08, after the template tier was wired exact-token and
+before the alias numbers below existed. The harvest (stage five's build)
+recorded, per anchor, the embedded-layer spellings observed at that
+anchor's position on real paper. Adopting them into runtime registration
+widens the matchable vocabulary; the risk is a spurious match helping a
+page register where it should have been refused, and the registration
+gates (MIN_ANCHORS, MAX_RESIDUAL, the assignment margin) stay in force
+either way and are not loosened here.
+
+The instrument is free: every g1/w2 corpus page, sealed records
+excluded, routed twice through the wired templatetier machinery, once
+exact-token and once with the anchor table expanded by the stored
+aliases. No API calls, no sitting.
+
+**DECISION RULE (one, R15):** aliases are adopted into the shipped
+registration if and only if BOTH hold.
+
+1. At least 5 pages register or assign under aliases that exact-token
+   refuses. Below that the gain does not pay for the code, and the
+   thread closes with its number.
+2. Among pages of documents whose model-read revision folds to a
+   committed template, the routed-revision agreement rate under aliases
+   is at least the rate under exact-token, on the union of pages either
+   configuration routes. Folds recorded in the committed templates count
+   as agreement; the granularity artifacts (a document label against a
+   page-level route) sit identically in both arms and cancel.
+
+Reachability, both directions: the harvest table (fuel pages 26/27 to
+27/27, 8/10 to 10/10) says condition 1 is reachable, and it fails if
+the recovered fuel pages were the whole story; condition 2 is a
+comparison of two measured rates and can fall either way.
+
+Reported, governing nothing: every disagreement introduced or removed,
+read individually (R14); residual distributions both arms; the change in
+unknown-revision assignments; and the residue, the pages neither arm
+registers, which is the number any LLM-normalization argument would
+have to start from.
