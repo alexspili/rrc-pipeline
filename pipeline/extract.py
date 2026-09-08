@@ -489,11 +489,17 @@ def parse_report(body: str, *, record_id: str, file_index: int,
 
     known = {"identity": IDENTITY_FIELDS, "test": TEST_FIELDS,
              "completion": tuple(COMPLETION_FIELDS) + tuple(COMPLETION_TABLES)}
+    # Root-level keys are scanned too. Three re-score documents returned
+    # every field flattened beside `document`, and the first version of this
+    # accounting only looked inside the groups it knew, so 26 fields per
+    # document vanished with dropped reporting zero (DEFECTS #74).
     dropped = tuple(sorted(
-        f"{group}.{key}"
-        for group, allowed in known.items()
-        for key in (obj.get(group) or {})
-        if key not in allowed))
+        {f"{group}.{key}"
+         for group, allowed in known.items()
+         for key in (obj.get(group) or {})
+         if key not in allowed}
+        | {key for key in obj
+           if key not in ("document", *known)}))
 
     return CompletionReport(
         record_id=record_id, file_index=file_index, pages=pages,
