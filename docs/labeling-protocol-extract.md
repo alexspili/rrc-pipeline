@@ -930,3 +930,21 @@ read individually (R14); residual distributions both arms; the change in
 unknown-revision assignments; and the residue, the pages neither arm
 registers, which is the number any LLM-normalization argument would
 have to start from.
+
+### The result, same evening: DO NOT ADOPT, by one page
+
+Gain 4 against the floor of 5: 1494037-0 p8, 1495350-0 p25, 1500024-2
+p3, 2306415-0 p1, every one routed to the template its label names, with
+agreement 100% in both arms, nothing lost, no route changed, residual
+medians 0.0015 against 0.0016. Condition 2 passed and condition 1
+failed. The rule was written before the numbers and the verdict is the
+failing one; a floor argued down to 4 after seeing a 4 would be worth
+nothing (DEFECTS #31's discipline).
+
+What the probe actually taught: the residue neither arm registers is 99
+pages, and aliases cannot touch it, because a page can only register
+onto a committed template and most of the 99 belong to revisions that
+have none (rev61278 at 8 documents with no field specs, the thin
+minors, the 39 unknown no-fits). Garble recovery was worth 4 pages;
+template coverage is worth up to 99. Any future argument here, LLM
+normalization included, starts from that asymmetry.
