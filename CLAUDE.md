@@ -40,10 +40,11 @@ line in an interview.
   completion report. G-1 face precision **94.0%**; W-2 NOT established; never
   quote 83.6% as accuracy on the target classes. `form_class` on back pages
   self-contradicts 31 times in 65 and MAY NOT define a negative (#60, #62).
-- Extraction SCORED 2026-09-01: **87.4%** status, **82.5%** value, by era, on a
-  prompt that no longer ships. Corpus run RUN 2026-09-07, $9.31: **197 of
-  223**; 10 blocked by the monthly API cap until 10-01, 16 pre-1966 "Form 3"
-  faces cached awaiting a taxonomy call. Re-score cap-blocked. Prov. CLOSED.
+- Extraction RE-SCORED 2026-09-07, shipping prompt, live path: **71.5%**
+  status, **85.1%** value equivalent; 3 of 20 responses FLATTENED (#74), 0 of
+  206 on batch, so the status figure mixes a parser stance with accuracy.
+  87.4/82.5 are the retired prompt. Corpus COMPLETE: **206 of 223**, $10.17;
+  17 pre-1966 legacy faces cached, one taxonomy call away. Prov. CLOSED.
 - Reassembly BUILT, 25 of 32 multi-page documents clean; the six wrong are
   same-form same-well different-filing, beyond any form rule.
 - pipeline/paper.py confirms two pages are ONE SHEET from the marks on it: 0
@@ -59,11 +60,10 @@ line in an interview.
   cannot resolve it; page parity (74% vs 17% on d02) does NOT replicate on d03.
 - The area floor never kept printing out, MAX_ASPECT did; pages read at their
   own dpi (#61).
-- Viewer BUILT 2026-09-07, cut-order 7: exporter + React/strict-TS, three
-  region tiers rendered distinctly, 23 vitest tests, hook runs them; bundle
-  197 docs, 244 page images, data/viewer; `cd viewer && npm run dev`.
-- Next: the legacy-form taxonomy call (16 cached docs re-parse free), the
-  cap-blocked 10 plus the re-score after 10-01, README with real numbers.
+- Viewer BUILT 2026-09-07 (cut 7): exporter + React/strict-TS, tiers drawn
+  distinctly, 23 vitest tests in the hook; `cd viewer && npm run dev`.
+- Next: the legacy-form call (17 cached, re-parse free), the flattened-shape
+  decision with an optional $0.77 batched re-score, README with real numbers.
 
 ## Standing rules
 

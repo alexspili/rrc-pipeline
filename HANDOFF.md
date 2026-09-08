@@ -883,3 +883,44 @@ vocabularies against pipeline/extract.py. `cd viewer && npm run dev`.
    attachments (1493451 p22+p23, 1494717 p20+p21) and one attached
    cannot-tell (1494774 p8+p9). 5. 1493616-0 p4 truncates the identity
    reader deterministically; that page is in no identity map.
+
+## Later the same evening: the limit raised, the run completed, the re-score read
+
+Alex raised the API limit and both blocked spends ran.
+
+**The corpus run is API-complete: 206 of 223, $10.17 extraction total** (the
+$0.29 smoke five, $9.31, then $0.57 for the ten the cap had refused; 9 of
+those 10 extracted). The residue is now ONE family: **17 faces the model
+reads as the pre-1966 form family**, the 16 known plus 1494483-0-15, which
+came back "Form 2". All 17 full responses are cached; the taxonomy call
+re-parses them free. Bundle re-exported: 206 documents, 253 page images;
+snap 34.5%; findings 157 clean, 49 carrying at least one.
+
+**The re-score, $1.84 actual against the $1.54 quote: status 71.5%, value
+equivalent 85.1%**, against the published 87.4/82.5 on the retired prompt.
+The flips were read before the number was written anywhere (rule 10's
+habit), and 63 of 95 wrong statuses are fields the model never returned
+where the parser looks: **three of the twenty documents came back
+flattened**, every field a root-level key beside `document`. `dropped`
+reported zero for them, which is DEFECTS #74; root keys are counted now.
+
+**The shape is path-correlated and the rates are the finding: 3 of 20 on
+the live streamed path, 0 of 206 on the batch path, same prompt hash.** The
+re-score is a fair comparison (the published numbers were live-path too) and
+it describes a path the corpus does not use. Two decisions follow, both
+gated: whether the parser should accept the flattened shape (the keys are
+exact schema field names; accepting changes a measured number, so it is
+proposed, not slipped into a fix), and whether to spend about $0.77 on a
+batched re-run of the same twenty documents to measure the deployed path.
+
+Session spend in full: $12.09. $0.08 identity, $10.17 extraction, $1.84
+re-score.
+
+## Open, in the order I would take them, superseding the list above
+
+1. The legacy-form taxonomy call, 17 cached documents, rule-5 proposal.
+2. The flattened-shape decision, with the optional $0.77 batched re-score.
+3. README with the real numbers (cut-order 6).
+4. Sitting backlog: 1493451 p22+p23 and 1494717 p20+p21 unjudged, 1494774
+   p8+p9 attached on a cannot-tell.
+5. 1493616-0 p4 truncates the identity reader deterministically.
