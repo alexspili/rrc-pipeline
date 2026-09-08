@@ -57,6 +57,34 @@ def test_a_value_with_no_region_stays_on_the_page_floor():
     assert xv.viewer_region({"region": None}, {"outcome": "unique"}) is None
 
 
+TEMPLATE_REGION = {"page": 9, "box": [0.09, 0.19, 0.41, 0.26],
+                   "source": "template"}
+
+
+def test_the_template_tier_beats_the_model_box():
+    xv = _exporter()
+    region = xv.viewer_region({"region": dict(MODEL_REGION)}, None,
+                              dict(TEMPLATE_REGION))
+    assert region == TEMPLATE_REGION
+
+
+def test_snap_still_beats_the_template_tier():
+    xv = _exporter()
+    snap = {"outcome": "unique", "display_box": [0.11, 0.21, 0.39, 0.24]}
+    region = xv.viewer_region({"region": dict(MODEL_REGION)}, snap,
+                              dict(TEMPLATE_REGION))
+    assert region["source"] == "text_layer"
+
+
+def test_the_template_tier_lifts_a_value_off_the_page_floor():
+    """The point of the tier: a field the model gave no box still gets a
+    located region when a registered template knows where it is."""
+    xv = _exporter()
+    region = xv.viewer_region({"region": None}, None,
+                              dict(TEMPLATE_REGION))
+    assert region == TEMPLATE_REGION
+
+
 def test_attachments_name_their_channel():
     """A page attached on agreeing identity fields is identity's; a page
     attached with none is the paper confirmer's, the only other way into a

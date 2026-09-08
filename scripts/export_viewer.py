@@ -11,14 +11,23 @@ carry personal information. The viewer's code is committable; its data is
 not, and the split is load-bearing, not incidental.
 
 Region tiers, as shipped and measured (docs/modules/extract.md, mechanism
-decision of 2026-09-03):
+decision of 2026-09-03, template tier added after the two passes of
+2026-09-08):
 
-  text_layer  the snap pass matched the value uniquely or disambiguated it;
-              the exported box is the matched line run
-  model       the model's own box, exported untouched; the viewer widens it
-              upward at display time (R5), because widening is a display
-              rule and baking it into coordinates would hide the raw claim
-  (no region) page plus raw text, the floor that is never wrong
+  text_layer   the snap pass matched the value uniquely or disambiguated
+               it; the exported box is the matched line run
+  template     a committed per-revision template registered onto this
+               page located the field: stage-six measured geometry where
+               it pooled, stage-five rule geometry underneath, clipped
+               to the page's own paper bounds
+  template_row a table row from the same tier: measured edges past the
+               detected header where they pooled, the equal-band rule
+               otherwise
+  model        the model's own box, exported untouched; the viewer widens
+               it upward at display time (R5), because widening is a
+               display rule and baking it into coordinates would hide the
+               raw claim
+  (no region)  page plus raw text, the floor that is never wrong
 
 The source tag on every region is the honesty tier and the viewer renders
 the tiers distinctly (DEFECTS #29's design rule).
@@ -39,6 +48,7 @@ from pipeline import classify                      # noqa: E402
 from pipeline import extractor                     # noqa: E402
 from pipeline import pageclass as pc               # noqa: E402
 from pipeline import render                        # noqa: E402
+from pipeline import templatetier                  # noqa: E402
 from pipeline import textlayer                     # noqa: E402
 
 MANIFEST = ROOT / "data" / "manifest.jsonl"
@@ -58,29 +68,39 @@ CAVEATS = [
     "Model-box bands land 60.9% of the time overall and 11.4% on 1966 "
     "paper; that tier is the weakest thing shipped and is tagged.",
     "At least 1 snap in 15 lands on the wrong field (DEFECTS #32).",
+    "The template tier passed its pre-registered probes at 30 and 32 of "
+    "35 located against the shipped 19, on the graded 1966 document "
+    "(extract.md, the two passes).",
     "Regions are locators for a reviewer, not measurements.",
 ]
 
 SNAPPED = ("unique", "disambiguated")
 
 
-def viewer_region(value_dict: dict, snap_row: dict | None) -> dict | None:
+def viewer_region(value_dict: dict, snap_row: dict | None,
+                  template_region: dict | None = None) -> dict | None:
     """The region the viewer shows for one value, tiered. Pure.
 
     `value_dict` is {"region": {"page": int, "box": [l,t,r,b], "source": str}
-    or None}; `snap_row` is the snap pass's row for this value, or None.
-    A snapped match replaces the box with the matched line run and the source
-    with text_layer; anything else ships the region it has; no region is the
-    page-plus-raw floor and stays None.
+    or None}; `snap_row` is the snap pass's row for this value, or None;
+    `template_region` is the template tier's answer, already page-space
+    and paper-clipped, or None. The order is the graded stack: snap,
+    then template, then the model box, then the page-plus-raw floor. A
+    template region can locate a field the model gave no box at all,
+    which is where the tier moves values off the page floor.
     """
     region = value_dict.get("region")
-    if region is None:
-        return None
     if snap_row and snap_row.get("outcome") in SNAPPED \
             and snap_row.get("display_box"):
-        return {"page": region["page"],
-                "box": list(snap_row["display_box"]),
-                "source": "text_layer"}
+        anchor = region or template_region
+        if anchor is not None:
+            return {"page": anchor["page"],
+                    "box": list(snap_row["display_box"]),
+                    "source": "text_layer"}
+    if template_region is not None:
+        return dict(template_region)
+    if region is None:
+        return None
     return dict(region)
 
 
@@ -166,6 +186,7 @@ def main() -> None:
 
     cache = classify.ResultCache(
         args.cache, prompt_hash=extractor.recorded_prompt_hash(args.results))
+    artifacts = templatetier.load_artifacts()
     rows = [json.loads(l) for l in args.results.open() if l.strip()]
     if args.limit:
         rows = rows[:args.limit]
@@ -194,11 +215,45 @@ def main() -> None:
             continue
         report = result.report
 
+        # the template tier: register each page once, find the paper once
+        page_geo, page_images = {}, {}
+        for page in row["pages"]:
+            page_images[page] = render.extract_page_image(pdf, page)
+            try:
+                words = textlayer.page_words(pdf, page)
+            except Exception:                       # noqa: BLE001
+                words = []
+            routed = (templatetier.route(
+                          artifacts, report.form_class,
+                          report.form_revision.raw, words)
+                      if words else None)
+            if routed is not None:
+                key3, registration = routed
+                page_geo[page] = (artifacts[key3], registration,
+                                  render.sheet_bounds(page_images[page]))
+        table_counts: dict[str, int] = {}
+        for name, _ in report.named_values():
+            if "[" in name:
+                base = name.split("[")[0]
+                index = int(name.split("[")[1].split("]")[0])
+                table_counts[base] = max(table_counts.get(base, 0),
+                                         index + 1)
+
         values = []
         for name, value in report.named_values():
             v = value_row(name, value)
             snap_row = snap.get((record_id, tuple(row["pages"]), name))
-            v["region"] = viewer_region(v, snap_row)
+            template_region = None
+            for page in sorted(page_geo):
+                artifact, registration, bounds = page_geo[page]
+                resolved = templatetier.region_for(
+                    artifact, registration, name, table_counts, bounds)
+                if resolved is not None:
+                    template_region = {"page": page,
+                                       "box": list(resolved[0]),
+                                       "source": resolved[1]}
+                    break
+            v["region"] = viewer_region(v, snap_row, template_region)
             tier = v["region"]["source"] if v["region"] else (
                 "page" if v["status"] == "present" else "no_value")
             source_counts[tier] = source_counts.get(tier, 0) + 1
@@ -208,8 +263,8 @@ def main() -> None:
             page_key = pc.page_id(record_id, file_index, page)
             if page_key in pages_meta:
                 continue
-            img = render.downscale_image(
-                render.extract_page_image(pdf, page), cap=PAGE_LONG_EDGE)
+            img = render.downscale_image(page_images[page],
+                                         cap=PAGE_LONG_EDGE)
             img.save(pages_dir / f"{page_key}.jpg", quality=85)
             try:
                 words = textlayer.page_words(pdf, page)

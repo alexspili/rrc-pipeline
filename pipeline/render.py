@@ -164,6 +164,35 @@ def extract_page_image(pdf: Path, page: int) -> Image.Image:
             return img.convert("L")
 
 
+#: Paper-bounds detection: a pixel is paper when brighter than this, and
+#: a row or column belongs to the paper when a majority of it is. The
+#: scans put the paper on a dark scanner surround, so the bright majority
+#: box IS the sheet; measured on the stage-five graded pages the paper
+#: starts at x 0.051 and 0.084 of the image, which is why template
+#: geometry gets clipped to this box (extract.md, the two passes).
+SHEET_BRIGHT = 128
+SHEET_MAJORITY = 0.5
+
+
+def sheet_bounds(img: Image.Image) -> tuple[float, float, float, float]:
+    """The paper's bounding box, as fractions of the image.
+
+    A page with no detectable surround comes back as the whole image,
+    so clipping against the result is always safe.
+    """
+    import numpy as np
+    bright = np.asarray(img.convert("L")) > SHEET_BRIGHT
+    cols = bright.mean(axis=0) > SHEET_MAJORITY
+    rows = bright.mean(axis=1) > SHEET_MAJORITY
+    if not cols.any() or not rows.any():
+        return (0.0, 0.0, 1.0, 1.0)
+    x0 = int(np.argmax(cols))
+    x1 = int(len(cols) - np.argmax(cols[::-1]))
+    y0 = int(np.argmax(rows))
+    y1 = int(len(rows) - np.argmax(rows[::-1]))
+    return (x0 / len(cols), y0 / len(rows), x1 / len(cols), y1 / len(rows))
+
+
 def downscale_image(img: Image.Image,
                     cap: int = pc.DEFAULT_LONG_EDGE) -> Image.Image:
     """Cap the long edge, preserving aspect. Never upscales."""
