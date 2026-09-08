@@ -949,3 +949,24 @@ into its own cache and results (sharing the live cache would make it a
 silent cache hit and measure nothing), scored by
 `score_extract --results data/extract/smoke_batched.jsonl --cache
 data/extract/cache_smoke_batched.jsonl`. About $0.77, gated on a word.
+
+## The batched arm, and the README, 2026-09-07 last
+
+`smoke_extract --batched`, $1.05 against the $0.77 quote: **20 of 20
+extracted, 0 flattened.** Scored against the same truth: **status 89.5%,
+value equivalent 82.4%, recovered 80.1%.** The live arm's 71.5% was three
+flattened responses; the flattened shape has now appeared 3 times in 20 on
+the live path and 0 times in 226 on the batch path. The parser is left
+unchanged: the deployed path has never produced the shape, so accepting it
+would change a measured number to serve a path only the smoke instrument
+uses. Said in the README and reversible by a word.
+
+README rewritten with the real numbers, every one measured in this
+repository: both scoring paths with the gap's cause, the era table as the
+paper spells it, the 223-document corpus with the 35 second opinions, the
+highlight tiers, the findings counts, 48 rules, 74 defects, 733 tests, 145
+of 145 lines, 217 commits over ten days. Placeholders that survived from
+the template, `bench/`, `CONTEXT.md`, `make install`, a fabricated example
+rule, are gone; the example rule is now classify R1 verbatim.
+
+Session spend total: $13.14.
