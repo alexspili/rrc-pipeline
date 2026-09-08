@@ -737,6 +737,28 @@ R8. Two agreeing fields are required, and total depth may raise a score but
     Pinned by: tests/tier1/test_reassemble.py::test_one_agreeing_field_is_not_enough
     and ::test_total_depth_can_never_reject_a_pair
 
+R11. A face holds one back. Identity agreement fills at most one child
+    slot; two identity children on one face is a slot tie and attaches
+    nothing, with an evicted face standing back up as its own filing. A
+    paper confirmation names the sheet's actual back and carries its own
+    slot; once it has, an identity child that is itself back-like, a
+    section or a face demoted by its own box evidence, is a different
+    filing's back and stands down, while a continuation, being a further
+    sheet, is not displaced. Two confirmations on one face is the
+    machinery contradicting itself and both stand down.
+    Origin: every document over two pages in the corpus grouping was a
+    two-page filing plus one page of another filing for the same well,
+    joined by well-level agreement (1493399-0-41, 1494036-0-12,
+    1912687-0-2, the last being the hole left open on 2026-09-04 because
+    the family rule that would close it breaks the 1495193 pin; this
+    rule closes it structurally and the pin, one face one child, never
+    sees it). Cost stated: a genuine face plus section plus continuation
+    with no paper confirmation is a slot tie and keeps only its face; no
+    such document exists in the corpus grouping today.
+    Pinned by: tests/tier1/test_reassemble.py::test_two_identity_backs_for_one_face_are_a_slot_tie
+    and ::test_a_confirmed_back_displaces_an_identity_back
+    and ::test_one_back_never_sees_the_slot_rule
+
 ## RETIRED
 
 Nothing yet. The module is not built.

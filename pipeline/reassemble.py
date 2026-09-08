@@ -232,6 +232,8 @@ class Document:
 class Unattached:
     page: PageRecord
     #: no_face | below_threshold | tie | contradicted | not_a_candidate
+    #: | different_form | slot_tie (R11: a second child competing for a
+    #: face's one back slot)
     #: | different_form
     #:
     #: `not_a_candidate` is the module declining to have an opinion: the page
@@ -501,7 +503,8 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS, confirms=None):
         if len(winners) > 1:
             return "tie"
         attached[id(winners[0])].append(
-            (candidate, agreeing_fields(candidate, winners[0])))
+            (candidate, agreeing_fields(candidate, winners[0]),
+             best[0] == 1))
         return None
 
     # Faces first, in rank order, so a face can only fall to a richer one.
@@ -521,15 +524,59 @@ def group(pages, min_agreements: int = MIN_AGREEMENTS, confirms=None):
         if reason is not None:
             unattached.append(Unattached(candidate, reason))
 
+    # R11, the one-back slot. A two-page form has one back, so identity
+    # agreement fills at most one child slot per face: two identity
+    # children on one face is two filings for one well wearing one
+    # document's name, which is the shape of every wrong multi-page
+    # corpus document (1493399-0-41, 1494036-0-12, 1912687-0-2), and
+    # identity cannot say which child is the document's. That is a tie,
+    # and a tie attaches to nothing (R7). A paper confirmation carries
+    # its own slot, being evidence about the sheet rather than the well,
+    # and a sheet has one back, so two confirmations on one face is the
+    # machinery contradicting itself and both stand down. The 1495193
+    # pin has one child and never sees this rule.
+    for face in list(parents):
+        joined = attached[id(face)]
+        by_identity = [j for j in joined if not j[2]]
+        by_paper = [j for j in joined if j[2]]
+        evicted = []
+        if len(by_paper) > 1:
+            evicted += by_paper
+            by_paper = []
+        if len(by_paper) == 1:
+            # the sheet's back is confirmed, so an identity child that is
+            # itself back-like, a section or a face demoted by its own
+            # box evidence, is a different filing's back and stands down;
+            # a continuation is a further sheet and is not displaced
+            displaced = [j for j in by_identity
+                         if j[0].part in ("sec_ii", "sec_iii")
+                         or j[0].is_face]
+            evicted += displaced
+            by_identity = [j for j in by_identity if j not in displaced]
+        if len(by_identity) > 1:
+            evicted += by_identity
+        if evicted:
+            attached[id(face)] = [j for j in joined if j not in evicted]
+            for p, _, _ in evicted:
+                # an evicted face was demoted to a child on its own box
+                # evidence, and the slot tie is the sign that demotion
+                # joined two filings; it stands back up as its own
+                # document rather than falling out of the count
+                if p.is_face:
+                    parents.append(p)
+                    attached[id(p)] = []
+                else:
+                    unattached.append(Unattached(p, "slot_tie"))
+
     faces = parents
     documents = []
     for face in faces:
         joined = attached[id(face)]
-        ordered = tuple(sorted([face] + [p for p, _ in joined],
+        ordered = tuple(sorted([face] + [p for p, _, _ in joined],
                                key=lambda p: p.page))
         documents.append(Document(
             face=face, pages=ordered,
-            evidence=tuple((p.page, fields) for p, fields in joined)))
+            evidence=tuple((p.page, fields) for p, fields, _ in joined)))
     return documents, unattached
 
 

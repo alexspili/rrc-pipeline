@@ -357,7 +357,14 @@ def test_two_back_like_faces_no_longer_reach_the_richness_tie_break():
 
 def test_a_face_that_becomes_a_child_holds_no_children_of_its_own():
     """Documents stay flat. A chain would make the face of a document
-    ambiguous, which is what the ranking exists to prevent."""
+    ambiguous, which is what the ranking exists to prevent.
+
+    Updated 2026-09-09 for R11. This test used to expect all three pages
+    as one document, which is exactly the shape of the three wrong
+    multi-page corpus documents (a face, a demoted face, and a section,
+    joined by well-level agreement). Under the one-back slot the demoted
+    face stands back up as its own filing and the section's slot is a
+    tie; the ranking assertion this test exists for is unchanged."""
     rich = page(1, "face", operator_name="Sun Oil Company",
                 lease_name="State Tract 130", well_number="1",
                 completion_date="9-22-77", rrc_district="03")
@@ -366,10 +373,11 @@ def test_a_face_that_becomes_a_child_holds_no_children_of_its_own():
                   lease_name="State Tract 130", well_number="1")
     poor = page(3, "sec_ii", operator_name="Sun Oil Company",
                 lease_name="State Tract 130")
-    documents, _ = ra.group([rich, middle, poor])
-    assert len(documents) == 1
-    assert documents[0].face.page == 1
-    assert [p.page for p in documents[0].pages] == [1, 2, 3]
+    documents, unattached = ra.group([rich, middle, poor])
+    assert sorted(d.face.page for d in documents) == [1, 2]
+    assert all(len(d.pages) == 1 for d in documents)
+    assert [(u.page.page, u.reason) for u in unattached] == \
+        [(3, "slot_tie")]
 
 
 def test_two_genuine_faces_that_agree_on_nothing_stay_two_documents():
@@ -842,3 +850,74 @@ def test_an_unknown_family_never_refuses_a_pair():
     assert ra.family_of(section) is None
     documents, _ = ra.group([face, section])
     assert [p.page for p in documents[0].pages] == [7, 8]
+
+
+# ------------------------------------------------- R11, the one-back slot
+
+def test_two_identity_backs_for_one_face_are_a_slot_tie():
+    """A two-page form has one back. Two backs agreeing with one face by
+    identity is two filings for one well, the disease every wrong
+    multi-page corpus document shares (1493399-0-41, 1494036-0-12,
+    1912687-0-2), and identity cannot say which back is the document's.
+    The slot is a tie and a tie attaches to nothing (R7's principle)."""
+    face = page(12, "face", **SUN)
+    back_a = page(9, "sec_ii", **SUN)
+    back_b = page(13, "sec_ii", **SUN)
+    docs, unattached = ra.group([face, back_a, back_b])
+    assert [d.pages for d in docs] == [(face,)]
+    reasons = {u.page.page: u.reason for u in unattached}
+    assert reasons == {9: "slot_tie", 13: "slot_tie"}
+
+
+def test_a_paper_confirmed_back_keeps_its_own_slot():
+    """The paper channel is evidence about the SHEET; it does not compete
+    with the identity slot. A confirmed back plus one identity child is a
+    legitimate three-page document."""
+    face = page(12, "face", **SUN)
+    confirmed = page(13, "sec_ii", **SUN)
+    other = page(15, "continuation", **SUN)
+    docs, unattached = ra.group(
+        [face, confirmed, other],
+        confirms=lambda a, b: {a.page, b.page} == {12, 13})
+    assert not unattached
+    assert [tuple(p.page for p in d.pages) for d in docs] == [(12, 13, 15)]
+
+
+def test_two_paper_confirmations_on_one_face_are_a_machinery_contradiction():
+    """A sheet has one back. Two candidates both confirmed onto one face
+    means the confirmer contradicted itself, and the honest reading is to
+    attach neither."""
+    face = page(12, "face", **SUN)
+    back_a = page(13, "sec_ii", **SUN)
+    back_b = page(14, "sec_ii", **SUN)
+    docs, unattached = ra.group([face, back_a, back_b],
+                                confirms=lambda a, b: True)
+    assert [d.pages for d in docs] == [(face,)]
+    assert {u.reason for u in unattached} == {"slot_tie"}
+
+
+def test_one_back_never_sees_the_slot_rule():
+    """The pin's shape: one face, one child. The cap must be invisible."""
+    face = page(7, "face", **SUN)
+    section = page(8, "sec_ii", **SUN)
+    docs, unattached = ra.group([face, section])
+    assert not unattached
+    assert [tuple(p.page for p in d.pages) for d in docs] == [(7, 8)]
+
+
+def test_a_confirmed_back_displaces_an_identity_back():
+    """A sheet has one back. When the paper has confirmed which page it
+    is, another back-like page agreeing by identity is a different
+    filing's back (1493399-0-41: the confirmed p42 is the document's, the
+    demoted face p13 is not), and it stands down; a demoted face stands
+    back up as its own filing."""
+    face = page(41, "face", form_class="g1", **SUN)
+    true_back = page(42, "sec_iii", form_class="g1", **SUN)
+    other_back = page(13, "face", form_class="g1", sources=BACK_BOXES,
+                      **SUN)
+    docs, unattached = ra.group(
+        [face, true_back, other_back],
+        confirms=lambda a, b: {a.page, b.page} == {41, 42})
+    assert not unattached
+    assert sorted(tuple(p.page for p in d.pages) for d in docs) == \
+        [(13,), (41, 42)]
