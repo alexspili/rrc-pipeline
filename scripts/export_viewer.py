@@ -88,7 +88,14 @@ def viewer_region(value_dict: dict, snap_row: dict | None,
     then template, then the model box, then the page-plus-raw floor. A
     template region can locate a field the model gave no box at all,
     which is where the tier moves values off the page floor.
+
+    Only a present value carries a region: the template knows where a
+    FIELD is whether or not anything was written in it, and pointing at
+    a blank is the schema violation the viewer's loader refuses
+    (DEFECTS #80).
     """
+    if value_dict.get("status") != "present":
+        template_region = None
     region = value_dict.get("region")
     if snap_row and snap_row.get("outcome") in SNAPPED \
             and snap_row.get("display_box"):

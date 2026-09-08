@@ -63,16 +63,18 @@ TEMPLATE_REGION = {"page": 9, "box": [0.09, 0.19, 0.41, 0.26],
 
 def test_the_template_tier_beats_the_model_box():
     xv = _exporter()
-    region = xv.viewer_region({"region": dict(MODEL_REGION)}, None,
-                              dict(TEMPLATE_REGION))
+    region = xv.viewer_region(
+        {"region": dict(MODEL_REGION), "status": "present"}, None,
+        dict(TEMPLATE_REGION))
     assert region == TEMPLATE_REGION
 
 
 def test_snap_still_beats_the_template_tier():
     xv = _exporter()
     snap = {"outcome": "unique", "display_box": [0.11, 0.21, 0.39, 0.24]}
-    region = xv.viewer_region({"region": dict(MODEL_REGION)}, snap,
-                              dict(TEMPLATE_REGION))
+    region = xv.viewer_region(
+        {"region": dict(MODEL_REGION), "status": "present"}, snap,
+        dict(TEMPLATE_REGION))
     assert region["source"] == "text_layer"
 
 
@@ -80,9 +82,22 @@ def test_the_template_tier_lifts_a_value_off_the_page_floor():
     """The point of the tier: a field the model gave no box still gets a
     located region when a registered template knows where it is."""
     xv = _exporter()
-    region = xv.viewer_region({"region": None}, None,
+    region = xv.viewer_region({"region": None, "status": "present"}, None,
                               dict(TEMPLATE_REGION))
     assert region == TEMPLATE_REGION
+
+
+def test_a_blank_value_gets_no_template_region():
+    """DEFECTS #80: the template knows where a FIELD is whether or not a
+    value was written in it, and the schema's rule is that only a present
+    value carries a region. The viewer's loader refused a bundle over
+    this; the exporter must refuse first."""
+    xv = _exporter()
+    for status in ("blank", "illegible", "not_on_this_form",
+                   "page_not_in_document"):
+        region = xv.viewer_region({"region": None, "status": status},
+                                  None, dict(TEMPLATE_REGION))
+        assert region is None, status
 
 
 def test_attachments_name_their_channel():

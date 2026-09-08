@@ -3894,3 +3894,26 @@ This entry is the marker that its pattern is not to be copied again.
 template frame and asserts the drawn region lands on the page's own
 field position; under the forward transform it lands two scale-errors
 away and the test fails.
+
+## #80 — 2026-09-09 — The template tier pointed at values that have nothing to point at
+
+**Found:** by the viewer's own loader, which refused the wired bundle at
+1493451-0-12 completion.type_of_completion: "a blank value has nothing
+to point at". The schema's settled rule is that only a present value
+carries a region (pipeline/extract.py enforces it for model regions),
+and the template tier attached regions by FIELD, which exists on the
+paper whether or not a value was written in it. A blank checkbox row
+got a region and the invariant fired.
+
+**Why only the viewer caught it:** the invariant lived in two places,
+extract.py's constructor for model regions and load.ts for the bundle,
+and the new tier bypassed the first without any Python-side test
+guarding the second. The loader held, which is what it is for; the
+exporter should never have been able to write the bundle.
+
+**Fix, after the failing test:** viewer_region applies the template
+tier only to present values, and the tier-2 exporter test now asserts
+a non-present value ships no region even when a template region is
+offered. The corpus tier mix quoted at wiring time (752 template-tier
+values) counted regions on non-present values and is restated from the
+corrected export.

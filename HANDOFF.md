@@ -1192,3 +1192,13 @@ pre-template geometry numbers and needs the wiring's numbers when Alex
 reviews it; alias-augmented registration stays a separate proposal from
 its harvest table; rev61278 (8 w2 documents) has fuel but no field
 specs; rev63075 sec_ii abstains at 3 fuel pages.
+
+## DEFECTS #80, 2026-09-09: the wiring pointed at blanks, the loader held
+
+The viewer's loader refused the first wired bundle: the template tier
+attached regions by field, and a field exists on paper whether or not a
+value was written in it, so blank and illegible values got regions,
+which the schema forbids. Failing test first; viewer_region now applies
+the tier to present values only. The corpus tier mix restates from 752
+to 639 template-tier values (479 fields, 160 rows); the 113 removed were
+regions on non-present values and never belonged in the count.
