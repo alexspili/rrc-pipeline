@@ -40,11 +40,11 @@ line in an interview.
   completion report. G-1 face precision **94.0%**; W-2 NOT established; never
   quote 83.6% as accuracy on the target classes. `form_class` on back pages
   self-contradicts 31 times in 65 and MAY NOT define a negative (#60, #62).
-- Extraction RE-SCORED 2026-09-07, shipping prompt, live path: **71.5%**
-  status, **85.1%** value equivalent; 3 of 20 responses FLATTENED (#74), 0 of
-  206 on batch, so the status figure mixes a parser stance with accuracy.
-  87.4/82.5 are the retired prompt. Corpus COMPLETE: **206 of 223**, $10.17;
-  17 pre-1966 legacy faces cached, one taxonomy call away. Prov. CLOSED.
+- Extraction RE-SCORED 2026-09-07, live path: **71.5%** status, **85.1%**
+  value equiv; 3 of 20 FLATTENED (#74), 0 of 206 on batch, so the figure
+  mixes a parser stance with accuracy; 87.4/82.5 are the retired prompt.
+  Corpus **223 of 223**, $10.17: 136 w2, 52 g1, 3 legacy Form 2, 14 other
+  forms the census called completion faces, confirmed on paper. Prov. CLOSED.
 - Reassembly BUILT, 25 of 32 multi-page documents clean; the six wrong are
   same-form same-well different-filing, beyond any form rule.
 - pipeline/paper.py confirms two pages are ONE SHEET from the marks on it: 0
@@ -62,8 +62,8 @@ line in an interview.
   own dpi (#61).
 - Viewer BUILT 2026-09-07 (cut 7): exporter + React/strict-TS, tiers drawn
   distinctly, 23 vitest tests in the hook; `cd viewer && npm run dev`.
-- Next: the legacy-form call (17 cached, re-parse free), the flattened-shape
-  decision with an optional $0.77 batched re-score, README with real numbers.
+- Next: the flattened-shape decision, `smoke_extract --batched` at $0.77
+  ready on a word, README with real numbers (cut-order 6).
 
 ## Standing rules
 

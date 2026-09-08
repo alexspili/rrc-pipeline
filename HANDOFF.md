@@ -924,3 +924,28 @@ re-score.
 4. Sitting backlog: 1493451 p22+p23 and 1494717 p20+p21 unjudged, 1494774
    p8+p9 attached on a cannot-tell.
 5. 1493616-0 p4 truncates the identity reader deterministically.
+
+## The taxonomy call was made and the corpus is whole, 2026-09-07 late
+
+All 17 refused faces were rendered and their mastheads read before any
+mapping was written. Form 2 "Well Record" is the pre-G-1/W-2 completion
+report: 3 documents, now `completion_face_legacy`, the class the stage-2
+decided fix defined, holding its first real members. Form 3 "Potential Test
+Form" (1-1958), GWT-1, a packer leakage test, a log header and a
+contractor's test sheet are not completions: 14 documents, `other_form`.
+The mapping is an alias table behind the enum match in
+`pipeline/extract.py`, so `gwt-1` cannot shadow `gt1` and an unobserved
+string still raises (R8). Approved as a rule-5 proposal before code.
+
+Re-parsed from cache for $0.00: **223 of 223 extracted.** By class: 136 w2,
+52 g1, 12 w15, 5 w3, 1 p4, 3 completion_face_legacy, 14 other_form. So the
+extractor, asked only to extract, identified 32 of the census's 223
+predicted completion faces as other forms, 14 of them confirmed on the
+paper this evening; the classifier prompt fix stays separately gated.
+Findings: 173 clean, 50 flagged. Bundle: 223 documents, 273 page images.
+
+The batched re-score arm is built and not run: `smoke_extract --batched`
+into its own cache and results (sharing the live cache would make it a
+silent cache hit and measure nothing), scored by
+`score_extract --results data/extract/smoke_batched.jsonl --cache
+data/extract/cache_smoke_batched.jsonl`. About $0.77, gated on a word.
