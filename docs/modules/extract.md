@@ -6,7 +6,17 @@ values, each carrying where on the page it came from.
 Not yet built. This file currently records the decisions taken before any code
 exists, so that they are not silently revisited later.
 
-## Provenance: CLOSED 2026-09-03
+## Provenance: CLOSED 2026-09-03, REOPENED and RESOLVED 2026-09-08
+
+**Superseding note, 2026-09-08.** The closure below stood until new
+product-level evidence met its own reopening clause. Two pre-registered
+probes then passed: multi-sample Textract-built templates (stage five,
+located 30 of 35 against the shipped 19, McNemar p 0.0017) and measured
+AnalyzeDocument geometry on top of them (stage six, 32 of 35, p 0.0001,
+zero misses among its regions). See "The reopening and the two passes"
+below; the text between here and there is kept as the record of the
+closure it was. "Shut permanently on this argument" meant that argument,
+and the reopening carried a new one, as the closure clause required.
 
 Everything from here to "Cost is output, not pixels" is the provenance
 thread, and it is finished. **The shipped mechanism is snap, then the widened
@@ -533,6 +543,56 @@ readings, and the one with a threshold attached governs.
 
 **No further Textract argument is live.** Reopening it needs a new
 measurement and a new gate, not an appeal to this one.
+
+## The reopening and the two passes, 2026-09-08
+
+The reopening's evidence was product-level: Alex ran the viewer on the
+real bundle and the model-band tier failed his eye, worst on the oldest
+paper. That is a new measurement, and the mechanism proposed was new:
+templates pooled across the 27 to 40 corpus samples per revision, word
+boxes from DetectDocumentText at build time only, runtime registration
+unchanged. Protocols: docs/labeling-protocol-extract.md, stages five and
+six, both pre-registered before their AWS calls, both judged on the same
+35 boxes against the same shipped 19 of 35 with the same paired test.
+
+**Stage five, the anchor inventory: PASS.** Located 30 of 35 (85.7%),
+McNemar b=12 c=1, p=0.0017. The anchor poverty that killed the
+one-sample template is measurably gone: `elevation`, `contractor` and
+`directional` pool, the Section II template locates 7 of 8 fields, and
+the ceiling went from 18 to 32.
+
+**Stage six, measured geometry: PASS at its ceiling.** AnalyzeDocument
+Forms and Tables on the 110 fuel pages, $7.15, cached. Pooled Forms
+cells and measured table rows replace the cell-cornering rule and the
+equal-band guess where they pool. Located 32 of 35 (91.4%), b=13 c=0,
+p=0.0001, and its fourteen graded regions took 12 hit, 2 near, 0 miss.
+
+Along the way, three defects with their failing tests first: #76 (a
+paid response discarded over 1e-8 of float noise), #77 (typed filling
+pooling through the recurrence floor; the spread gate), #78 (the escape
+document inside the fuel that would score it; both gradable records
+sealed), and #79, found by measuring why the overlays looked poor: the
+probes drew frame regions through the forward transform, displacing
+them up to 0.13 page-fractions, and the sheets were redrawn through the
+inverse before any grade existed.
+
+**Caveats that travel with the passes.** The grader states he was
+stricter than in stage two, tightening near toward miss because the
+crammed form makes a one-field-off region confusing; the consistency
+fillers agreed 4 of 5 with stage two in both sittings, and the
+strictness runs against the mechanisms, so the passes are conservative.
+The comparator is still the most text-layer-favourable 1966 document.
+And a measured residue: geometry lives in image fractions and knows
+nothing of the paper's edge, so 8 of 14 stage-five and 5 of 14
+stage-six regions spill into the scanner surround, up to 0.071, on
+pages whose paper starts at x 0.051 and 0.084. Benign for landing,
+confusing to an eye, and the paper bounds the repo already computes are
+the obvious clip; that goes with the wiring, gated, not slipped in.
+
+**What passes: the stack snap, then the template tier carrying stage-six
+geometry where it pools and stage-five geometry else, then the band,
+then the page.** Wiring is a separate rule-5 proposal, as both verdict
+lines required.
 
 The gate as it was written, kept for the record:
 
