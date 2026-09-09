@@ -42,8 +42,9 @@ export function App() {
         <p>{error}</p>
         <p>
           The viewer reads data/viewer/, which scripts/export_viewer.py
-          writes from a finished extraction run. That directory is never
-          committed: the pages carry personal information.
+          writes from a finished extraction run. That directory is not in
+          the repository: run <code>make demo</code> to download it from
+          release corpus-v1, or export it from a run of your own.
         </p>
       </div>
     );

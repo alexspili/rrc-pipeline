@@ -852,7 +852,7 @@ as the module doc predicts (48-75% on 1983 paper, 7-17% on 1966); findings
 ## The viewer exists, cut-order 7
 
 `scripts/export_viewer.py` projects a finished run into `data/viewer/`
-(never committed; 115 MB, 197 documents, 244 page images). `viewer/` is Vite +
+(git-ignored; 137 MB, 225 documents, 270 page images). `viewer/` is Vite +
 React + strict TypeScript: three region tiers rendered distinctly (#29's
 rule), the model band widened upward at display time (R5), click-to-zoom at
 readable scale with the found_in label as caption (the 2026-09-03 rule),

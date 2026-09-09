@@ -1,0 +1,78 @@
+# Deploy the viewer to GitHub Pages.
+#
+# The site is the viewer's build plus the data bundle, and the two come from
+# different places on purpose. The build comes from this checkout. The bundle
+# comes from release corpus-v1, downloaded here exactly as `make demo`
+# downloads it, because data/ is git-ignored (CLAUDE.md rule 3) and nothing
+# here changes that: actions/deploy-pages uploads an artifact, so no page
+# image is ever committed to a branch.
+#
+# The build is told the project path with --base. vite.config.ts is left
+# alone so that `npm run dev` and `make demo` keep serving at the root, as
+# the README documents them.
+
+name: Deploy viewer to Pages
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - "viewer/**"
+      - ".github/workflows/pages.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one halfway: a cancelled deploy can
+# leave the site serving a build whose bundle was not copied in yet.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+
+      - name: Install
+        working-directory: viewer
+        run: npm ci
+
+      # npm run build is `tsc --noEmit && vite build`, so the flag lands on
+      # vite build, and the typecheck still gates the deploy.
+      - name: Build for the project path
+        working-directory: viewer
+        run: npm run build -- --base=/${{ github.event.repository.name }}/
+
+      - name: Download the published bundle
+        run: |
+          curl -fL -o bundle.tar.gz \
+            "https://github.com/${{ github.repository }}/releases/download/corpus-v1/rrc-viewer-bundle.tar.gz"
+          tar -xzf bundle.tar.gz
+          test -f data/viewer/documents.json
+          test -d data/viewer/pages
+
+      - name: Copy the bundle into the site
+        run: cp -R data/viewer/. viewer/dist/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: viewer/dist
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

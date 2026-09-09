@@ -6,9 +6,12 @@ run's results and cache, the reassembly grouping, the snap pass, the findings
 pass and the manifest. Run those first; this script joins, it does not infer.
 
 The bundle lands in data/viewer/ by default, which is inside data/ and so
-never committed (CLAUDE.md rule 3): the page images and extracted values
-carry personal information. The viewer's code is committable; its data is
-not, and the split is load-bearing, not incidental.
+git-ignored (CLAUDE.md rule 3): size, and reproduction runs against the
+archive itself. It is distributed instead as release corpus-v1, which
+`make demo` downloads and .github/workflows/pages.yml deploys. Alex's
+ruling of 2026-09-09 settled that these pages are public data, unrestricted
+at their public source; the split is about what belongs in git, not about
+what may be published.
 
 Region tiers, as shipped and measured (docs/modules/extract.md, mechanism
 decision of 2026-09-03, template tier added after the two passes of
