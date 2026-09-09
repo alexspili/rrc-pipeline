@@ -1275,3 +1275,14 @@ them. Masking public-record corporate data was considered and declined
 as theater. The first candidate for the second shot carried a witness's
 personal signature and was replaced before anything was committed, which
 is the #53 method doing its job.
+
+## The classifier thread, closed 2026-09-09
+
+The abstention fix turned out to be fully built, run and scored on
+2026-08-31 (classify.md: G-1 face 64.7 to 94.0, W-2 unmoved, union
+falling toward truth). Alex's call on the two genuinely open halves:
+NO district 03 re-census (the cascade through reassembly and extraction
+buys a per-form split the record explains better as-is; the fixed prompt
+applies to any future district for free), and the W-15 header fix stays
+deferred with its 7-of-7 instrument named. Nothing on this thread
+remains open.
