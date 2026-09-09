@@ -1286,3 +1286,17 @@ buys a per-form split the record explains better as-is; the fixed prompt
 applies to any future district for free), and the W-15 header fix stays
 deferred with its 7-of-7 instrument named. Nothing on this thread
 remains open.
+
+## The data ruling, and the viewer for everyone, 2026-09-09
+
+Alex's ruling: the corpus is public data, downloadable without
+restriction by anyone at its source, and there is no legal or ethical
+ground to withhold it. Publishable in principle, all of it; published in
+practice as the piece that lets a stranger see the work: release
+corpus-v1 carries the full viewer bundle, 225 documents, 124 MB, and
+`make demo` plus two npm commands runs it with no keys. The raw corpus
+and derived caches stay unmirrored, not withheld: reproduction fetches
+from the same source a reader can check. Rule 3's rationale is rewritten
+from privacy to size-and-source; the README's screenshot posture
+paragraph is superseded by the bundle-wide statement, on the same
+ruling. The interviewer path is now: clone, make demo, browse.

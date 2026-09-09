@@ -2,7 +2,7 @@
 # requirements.txt are installed there (see SETUP.md step 5).
 PY := .venv/bin/python
 
-.PHONY: fetch test eval label label2 workbook truthbook arms probe census smoke score findings overlay snap gradebook template probebox
+.PHONY: fetch test eval label label2 workbook truthbook arms probe census smoke score findings overlay snap gradebook template probebox demo
 fetch:
 	@set -a; . ./.env; set +a; $(PY) fetch.py $(ARGS)
 test:
@@ -58,3 +58,11 @@ template:
 
 probebox:
 	$(PY) scripts/probe_boxes.py $(ARGS)
+
+demo:
+	@test -d data/viewer && echo "data/viewer already present" || ( \
+	  echo "downloading the viewer bundle (124 MB, release corpus-v1)..." && \
+	  curl -L -o /tmp/rrc-viewer-bundle.tar.gz \
+	    https://github.com/alexspili/rrc-pipeline/releases/download/corpus-v1/rrc-viewer-bundle.tar.gz && \
+	  tar -xzf /tmp/rrc-viewer-bundle.tar.gz && rm /tmp/rrc-viewer-bundle.tar.gz )
+	@echo "now: cd viewer && npm install && npm run dev"

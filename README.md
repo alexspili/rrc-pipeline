@@ -142,10 +142,11 @@ by the printed field label and tagged with the tier that located it:
 ![The viewer on a 1966 G-1: the zoom card shows the operator address located by the text
 layer, with the field's printed label as the caption](docs/viewer-1966-g1.png)
 
-The pages shown are public regulatory filings from the Commission's own public archive, and the
-screenshots are chosen and reviewed so that no private individual's signature, address or phone
-number appears; operators of record, corporate or individual, appear as the public record prints
-them.
+You can browse all of this yourself: `make demo` downloads the full viewer bundle, 225
+documents, from the repository's release, and it runs with no API keys and no fetch. The pages
+are public regulatory filings from the Commission's own freely accessible archive, republished
+as the public record prints them; the archive imposes no restriction on them at the source, and
+the call to republish rather than gate them is deliberate.
 
 **The validation rules fire on real errors, with no labels involved.** Run over all 225
 documents: 157 come back clean and 68 carry at least one finding, 40 errors and 90 warnings
@@ -325,6 +326,16 @@ and I would treat that as an open question in any conversation about applying it
 
 ## Running it
 
+The fastest path is seeing it. This downloads the viewer bundle from the release (124 MB) and
+needs no keys of any kind:
+
+```
+make demo
+cd viewer && npm install && npm run dev
+```
+
+Verifying and reproducing:
+
 ```
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 brew install poppler   # pdfimages and pdftotext
@@ -333,10 +344,11 @@ make eval              # tier 3
 make score             # extraction against the hand-keyed truth
 ```
 
-The corpus is not in the repository: the raw records carry personal information and are fetched
-with `fetch.py` against a `NEUBUS_TOKEN` (a public 24-hour token from the archive's own login
-page, pasted into `.env`). Extraction needs `ANTHROPIC_API_KEY`. The viewer runs on the exported
-bundle: `scripts/export_viewer.py`, then `cd viewer && npm install && npm run dev`.
+The raw corpus is not mirrored in the repository; it is fetched from the archive itself with
+`fetch.py` against a `NEUBUS_TOKEN` (a public 24-hour token from the archive's own login page,
+pasted into `.env`), so a reproduction runs against the same source a reader can check.
+Extraction needs `ANTHROPIC_API_KEY`. Re-exporting the viewer bundle from a finished run:
+`scripts/export_viewer.py`.
 
 ## Contact
 

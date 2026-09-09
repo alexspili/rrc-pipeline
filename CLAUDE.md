@@ -73,10 +73,10 @@ line in an interview.
    client without a bounded test first. Origin: DEFECTS #3 — strict:"false"
    silently disabled all server-side filtering while the response echoed
    our filters back.
-3. data/ and raw fetched PDFs are never committed — they contain personal
-   information (surface owners' names, addresses, phone numbers). Fixtures
-   are redacted copies placed deliberately in tests/fixtures/, referenced
-   by record id. A pre-commit hook enforces this; do not work around it.
+3. data/ is never committed to git: size, and reproduction runs against
+   the archive itself. The viewer bundle IS published, whole, as release
+   corpus-v1 — Alex's ruling 2026-09-09: public data, unrestricted at its
+   public source. Fixtures in tests/fixtures/; the hook still enforces.
 4. Commit small and in sequence: failing test → fix → rule or doc update.
    Never amend or rebase anything already pushed. Dead ends stay in
    history; the history is the workflow evidence.
