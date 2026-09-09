@@ -1249,3 +1249,14 @@ column header), pool no anchor, and those blocks abstain; a table-first
 mechanism (locate blocks from pooled detected-table positions instead
 of headings) is the idea that would reach them, unbuilt. Its treatments
 grid matches but fails row pooling. Both are recorded, not gates.
+
+## The docs/recon question, resolved 2026-09-09
+
+Alex's call: drop the claim and free the line. The raw cURL captures
+from the recon session were never saved; reconstructions from fetch.py
+and this file's API-chain section would be exhibits rebuilt from
+conclusions and were declined on that ground. CLAUDE.md, SETUP.md and
+fetch.py no longer point at the directory; the API chain stays
+documented here. The two mentions above (the 2026-08-29 "should live"
+plan and the repo-conventions line) are left as the historical record of
+a plan that was dropped, which is what this file is for.

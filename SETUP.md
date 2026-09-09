@@ -127,7 +127,8 @@ Create CLAUDE.md with, at minimum:
 
 Copy in: fetch.py (latest patched version), HANDOFF.md, README.md (the
 [N]-placeholder draft), DEFECTS.md seeded with the five banked entries from
-HANDOFF.md, docs/recon/*.md (cURL captures, TOKENS REDACTED first).
+HANDOFF.md. (The planned docs/recon/ cURL captures were never saved and
+the claim was dropped 2026-09-09.)
 Move the corpus: mv ~/Projects/RRC/data ./data  (ignored, stays local).
 Recreate venv: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 
