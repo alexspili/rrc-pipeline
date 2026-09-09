@@ -1260,3 +1260,18 @@ fetch.py no longer point at the directory; the API chain stays
 documented here. The two mentions above (the 2026-08-29 "should live"
 plan and the repo-conventions line) are left as the historical record of
 a plan that was dropped, which is what this file is for.
+
+## The viewer-demo posture, decided 2026-09-09
+
+Alex's call, closing the last publication item. Two screenshots of the
+running viewer are committed under docs/ and shown in the README: the
+2008 W-2 reverse with measured casing rows and a struck-through
+correction, and the 1966 G-1 with the zoom card. The published line, now
+stated in the README: pages shown are public regulatory filings, chosen
+and reviewed by eye per DEFECTS #53's standard so that no private
+individual's signature, address or phone number appears; operators of
+record, corporate or individual, appear as the public record prints
+them. Masking public-record corporate data was considered and declined
+as theater. The first candidate for the second shot carried a witness's
+personal signature and was replaced before anything was committed, which
+is the #53 method doing its job.

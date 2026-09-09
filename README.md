@@ -129,6 +129,24 @@ single sample page, and was closed; it reopened only when new product-level evid
 closure's own clause, with fresh pre-registered bars, and passed. Both verdicts are in
 `docs/modules/extract.md` with the thresholds that were written before the numbers existed.
 
+What that looks like in the viewer. A 2008 W-2 reverse, with the casing record's measured row
+regions, every value's tier tag in the sidebar, and a struck-through correction carried rather
+than lost:
+
+![The viewer on a 2008 W-2 Section II: casing record rows located by committed template
+geometry, tier tags on every value, a struck-through correction preserved](docs/viewer-2008-section-ii.png)
+
+And a 1966 G-1, the worst-measured paper in the corpus, with the click-to-zoom card captioned
+by the printed field label and tagged with the tier that located it:
+
+![The viewer on a 1966 G-1: the zoom card shows the operator address located by the text
+layer, with the field's printed label as the caption](docs/viewer-1966-g1.png)
+
+The pages shown are public regulatory filings from the Commission's own public archive, and the
+screenshots are chosen and reviewed so that no private individual's signature, address or phone
+number appears; operators of record, corporate or individual, appear as the public record prints
+them.
+
 **The validation rules fire on real errors, with no labels involved.** Run over all 225
 documents: 157 come back clean and 68 carry at least one finding, 40 errors and 90 warnings
 across twelve rules. The commonest error is a depth recorded below the well's own total depth,
