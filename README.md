@@ -3,12 +3,18 @@
 An extraction pipeline over the Texas Railroad Commission's imaged well records, and a record of
 the workflow used to build it with an AI coding agent.
 
-Two things are on offer here. The pipeline is real software with measured accuracy numbers and
-a merge gate. The workflow layer is the part most repositories leave out: the context file, the
-per-module rules, the defect log, and the test tiers that make agent-generated code reviewable.
+Two things are on offer here and both are measured. The pipeline has extracted its full corpus,
+225 documents for $10.42 in model spend, locates 5,271 extracted values on the page images at a
+tagged confidence tier, reports accuracy per form era because a single figure would hide a
+gradient across the decades of paper, and runs validation rules that fire on errors the archive
+actually contains. The workflow layer is the part most repositories leave out: the context file,
+the per-module rules, the defect log, and the test tiers that make agent-generated code
+reviewable.
 
-If you are evaluating me for work on AI-assisted engineering practice, the second half is the
-part to read.
+One habit runs through both. Most numbers below are quoted next to what they do not cover, some
+are reported as provisional, and one finding is not quoted as a number at all because the
+measurement behind it will not carry one. Knowing which of your numbers you are allowed to say
+out loud is what this repository is for.
 
 ## What the pipeline does
 
@@ -19,9 +25,16 @@ apart, and extracts the two completion report forms, the G-1 (gas) and W-2 (oil)
 JSON where every value carries a pointer to the place on the page it was read from. Deterministic
 rules then check what a completion report lets you check: API numbers against the county prefix,
 dates against each other, depths against the total. The output is browsable in a static
-TypeScript viewer that shows each value on the page image at its stated confidence tier. The
+TypeScript viewer that shows each value on the page image at its stated confidence tier. Of those
+stages, reassembly is the least settled, and it is reported below with what it cannot reach. The
 corpus behind every number below is 202 records, 249 files and 3,689 pages from district 03,
 fetched once and cached.
+
+Texas completion data can be licensed from a vendor, so the public archive is not the version of
+this problem worth solving. An operator's own file room is: the same microfilm, the same two
+forms, the same unreadable mastheads and the same fields repeating across filings for one well,
+on documents nobody outside the company has indexed. This repository works that problem on a
+public corpus, where the same failure modes show up and every claim can be checked by a reader.
 
 The accuracy numbers come from 405 hand-keyed fields over 15 documents, are reproducible with
 `make score`, and are quoted below next to what they do and do not cover.
@@ -74,8 +87,7 @@ By form era, spelled as the paper spells them:
 
 | Form era | Fields | Status correct | Value equivalent |
 |---|---|---|---|
-| Rev. 4/ 1/ 83 | 27 | 100.0% | 87.5% |
-| Rev. 4/1/83 | 81 | 98.8% | 86.0% |
+| Rev. 4/1/83 | 108 | 99.1% | 86.3% |
 | Rev. 6/30/75 | 54 | 72.2% | 89.5% |
 | Rev. 7/5/66 | 108 | 85.2% | 85.5% |
 | Revision unreadable | 63 | 95.2% | 69.4% |
@@ -124,6 +136,19 @@ across twelve rules. The commonest error is a depth recorded below the well's ow
 itself contains: the demo document's G-5 carries an API number with two digits transposed, and
 the check catches it.
 
+**Reassembly is the least settled stage and is not carrying a current number.** Pages of one
+filing that were scanned apart are attached on identity agreement, and the first verification
+sitting judged eight of eighteen attachments against the paper and found five wrong. The reason
+is structural rather than a threshold: identity fields describe the *well*, and one file holds
+several filings for one well, so two filings agree on operator, lease, well number, district and
+completion date because they must. The last full measurement was 25 of 32 multi-page documents
+clean, with the wrong ones all same-form, same-well, different-filing. A structural change since
+then, that a face holds at most one back and a paper confirmation names which page that is,
+regrouped the corpus into 225 documents and corrected three of them; the clean count has not been
+re-measured on the new grouping and is not quoted as if it had been. The ceiling is a fact about
+the paper: 20 of the 57 candidate pages carry no identity fields at all and can never attach on
+any rule. Full working: `docs/modules/reassemble.md`.
+
 ## Roads not taken
 
 - **Reading the form number instead of abstaining on it.** A targeted OCR or vision read of the
@@ -151,6 +176,13 @@ I wrote this with an AI agent doing most of the typing. That is now common. What
 structure I use to keep the output reviewable, which is less common, and which is the substance
 of what I am showing you.
 
+The artifact worth reading is not the code, it is `DEFECTS.md`, because the failures recorded in
+it are the ones this way of working produces and ordinary review does not see: an API echoing my
+own parameters back and being read as proof it had applied them, provenance boxes that were well
+formed and pointed nowhere, abstention rates that looked like integrity and were bugs, and a
+value read from the wrong field that scored correct because two boxes happened to agree. Each of
+those surfaced because an instrument was built to catch it, and not otherwise.
+
 ### CLAUDE.md is an index, not a manual
 
 `CLAUDE.md` holds a stated budget of 145 lines and sits at exactly 145. The budget started at
@@ -177,7 +209,7 @@ R1. A page whose aspect ratio exceeds 2.0 is never extraction-eligible.
 
 There are 49 numbered rules across 4 module files. A test asserts that every module file carries
 both sections and that every rule names its pin, because for a while two files carried neither.
-`DEFECTS.md` is the append-only log the origins point back to: 80 entries, of which 5 predate
+`DEFECTS.md` is the append-only log the origins point back to: 81 entries, of which 5 predate
 the first line of code, and several record the same mistake being made twice by the same author
 on the same day, which is what the log is for.
 
@@ -193,7 +225,7 @@ other way. The mechanism, not the count, is the claim.
 
 | Tier | Scope | Runs on | Tests | Measured |
 |---|---|---|---|---|
-| 1 | Pure functions, no I/O | Save | 472 | 42s |
+| 1 | Pure functions, no I/O | Save | 475 | 42s |
 | 2 | Real boundaries, fixtures | Commit, via the hook | 282 + 28 TS | 52s |
 | 3 | Eval harness on labeled data | Merge, `make eval` | 29 | under 1s |
 
@@ -262,8 +294,8 @@ All from the repository. Nothing estimated.
 - Build-time Textract, committed as static templates: 343 page reads, $7.50, zero runtime AWS
 - `CLAUDE.md`: 145 lines, budget 145
 - Numbered rules: 49 across 4 module files; retired so far: 0
-- Logged defects: 80, of which 5 predate the first line of code
-- Tests: 472 tier 1, 282 tier 2, 29 tier 3, 28 TypeScript
+- Logged defects: 81, of which 5 predate the first line of code
+- Tests: 475 tier 1, 282 tier 2, 29 tier 3, 28 TypeScript
 
 ## What this is not
 
@@ -291,4 +323,4 @@ bundle: `scripts/export_viewer.py`, then `cd viewer && npm install && npm run de
 ## Contact
 
 Alex Spiliotopoulos
-[alexspi@gmail.com] · [linkedin.com/in/alexspiliotopoulos] · github.com/alexspili
+[linkedin.com/in/alexspiliotopoulos](https://www.linkedin.com/in/alexspiliotopoulos/) · [github.com/alexspili](https://github.com/alexspili)
