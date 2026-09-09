@@ -1,5 +1,8 @@
 # rrc-pipeline
 
+**[Open the live viewer](https://alexspili.github.io/rrc-pipeline/).** All 225 documents, each
+extracted value shown on the page image it was read from. Nothing to install and no API keys.
+
 An extraction pipeline over the Texas Railroad Commission's imaged well records, and a record of
 the workflow used to build it with an AI coding agent.
 
