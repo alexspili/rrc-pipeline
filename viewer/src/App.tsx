@@ -53,7 +53,7 @@ export function App() {
   return (
     <div className="app">
       <header>
-        <h1>RRC completion reports</h1>
+        <h1>Texas Railroad Commission completion reports</h1>
         <span className="meta">
           {loaded.meta.documents} documents · {loaded.meta.pages} pages ·
           prompt {loaded.meta.prompt_hash}
