@@ -142,8 +142,10 @@ by the printed field label and tagged with the tier that located it:
 ![The viewer on a 1966 G-1: the zoom card shows the operator address located by the text
 layer, with the field's printed label as the caption](docs/viewer-1966-g1.png)
 
-You can browse all of this yourself: `make demo` downloads the full viewer bundle, 225
-documents, from the repository's release, and it runs with no API keys and no fetch. The pages
+You can browse all of this yourself at <https://alexspili.github.io/rrc-pipeline/>, which
+serves the full bundle, 225 documents, with nothing to install. To run the same thing locally,
+`make demo` downloads that bundle from the repository's release and it needs no API keys and no
+fetch. The pages
 are public regulatory filings from the Commission's own freely accessible archive, republished
 as the public record prints them; the archive imposes no restriction on them at the source, and
 the call to republish rather than gate them is deliberate.
@@ -326,8 +328,12 @@ and I would treat that as an open question in any conversation about applying it
 
 ## Running it
 
-The fastest path is seeing it. This downloads the viewer bundle from the release (124 MB) and
-needs no keys of any kind:
+The fastest path is seeing it, hosted: <https://alexspili.github.io/rrc-pipeline/>. It is the
+viewer's build plus the same bundle the release carries, deployed by
+`.github/workflows/pages.yml`.
+
+To run it locally instead, this downloads the viewer bundle from the release (124 MB) and needs
+no keys of any kind:
 
 ```
 make demo
