@@ -3917,3 +3917,34 @@ a non-present value ships no region even when a template region is
 offered. The corpus tier mix quoted at wiring time (752 template-tier
 values) counted regions on non-present values and is restated from the
 corrected export.
+
+---
+
+## #81 — 2026-09-08 — One revision, two rows of the era table
+
+**Found:** by Alex reading the README. The by-form-era table carried
+`Rev. 4/ 1/ 83` and `Rev. 4/1/83` as separate rows, at n=27 and n=81.
+They are one revision. The OCR that keyed document 15's ground truth put
+spaces inside the date and the other three 1983 documents were keyed
+without them, and `scripts/score_extract.py` bucketed on the raw string.
+
+**Why nothing caught it:** `pipeline/template.py` has carried
+`revision_key` since the template work, for exactly this reason, and a
+tier-1 test pins that the two spellings are one template. The scorer
+never used it. The invariant existed, was tested, and was enforced in one
+of the two places that needed it, which is the same shape as #80.
+
+**What it did and did not affect:** nothing but the era table. The
+headline is 89.5% status and 82.4% value equivalent before and after, and
+the bucketing is a display grouping downstream of every comparison. The
+merged row is n=108, 99.1% status, 86.3% value equivalent. The split
+understated the 1983 sample by presenting 108 fields as two thin slices,
+and a reader has no way to tell a deliberate distinction from an
+accident, which is what Alex flagged.
+
+**Fix, after the failing test:** `era_buckets` keys on
+`template.revision_key` and labels each bucket with the shortest spelling
+in it. README table rebuilt from `make score`.
+
+**Pin:** tests/tier1/test_score_eras.py::test_one_revision_is_one_era_however_it_is_spelled
+and ::test_the_bucket_key_is_the_pipeline_s_own_revision_key

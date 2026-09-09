@@ -50,6 +50,7 @@ sys.path.insert(0, str(ROOT))
 from pipeline import classify                      # noqa: E402
 from pipeline import extract as ex                 # noqa: E402
 from pipeline import extractor                     # noqa: E402
+from pipeline.template import revision_key             # noqa: E402
 from pipeline.validate import parse_date, parse_depth   # noqa: E402
 
 TRUTH = ROOT / "tests" / "fixtures" / "extract_truth.csv"
@@ -190,6 +191,25 @@ def compare(docs) -> list[dict]:
     return rows
 
 
+def era_buckets(rows) -> list[tuple[str, list[dict]]]:
+    """Group scored rows by form era, one bucket per revision.
+
+    Keyed by `template.revision_key`, not by the string on the label, so
+    that `Rev. 4/1/83` and `Rev. 4/ 1/ 83` are the era they both are
+    (DEFECTS #81). The label shown is the shortest spelling in the
+    bucket, which is the one without the OCR's inserted spaces.
+    """
+    by_era = defaultdict(list)
+    for row in rows:
+        by_era[revision_key(row["revision"])].append(row)
+    out = []
+    for key, group in sorted(by_era.items()):
+        spellings = {r["revision"] for r in group if r["revision"]}
+        label = min(sorted(spellings), key=len) if spellings else "unknown"
+        out.append((label, group))
+    return out
+
+
 def table(rows, title):
     if not rows:
         print(f"\n{title}\n   nothing in this slice")
@@ -268,10 +288,7 @@ def main() -> None:
     print("\n" + "=" * 72)
     print("BY FORM ERA, headline slice")
     print("=" * 72)
-    by_era = defaultdict(list)
-    for row in headline:
-        by_era[row["revision"] or "unknown"].append(row)
-    for era, group in sorted(by_era.items()):
+    for era, group in era_buckets(headline):
         ok = sum(r["status_ok"] for r in group)
         both = [r for r in group if r["want_status"] == r["got_status"] == "present"]
         value = (sum(r["equivalent"] for r in both) / len(both)) if both else None
