@@ -75,13 +75,15 @@ placed deliberately in tests/fixtures/, referenced by record id.
     git config core.hooksPath .githooks
     git add .githooks && git commit -m "pre-commit tripwire: secrets, data/, oversized files"
 
-Note: the hook lives IN the repo and is itself a nice artifact. The redacted
-cURL captures in docs/recon must have tokens replaced with REDACTED or the
-hook will (correctly) block them.
+Note: the hook lives IN the repo and is itself a nice artifact. Anything
+carrying a token must have it replaced with REDACTED or the hook will
+(correctly) block it. (docs/recon/, planned for the raw cURL captures,
+was dropped 2026-09-09: the captures were never saved and reconstructions
+would not be captures.)
 
 ## Step 3 — skeleton
 
-    mkdir -p pipeline docs/recon docs/modules tests/tier1 tests/tier2 tests/tier3 tests/fixtures viewer
+    mkdir -p pipeline docs/modules tests/tier1 tests/tier2 tests/tier3 tests/fixtures viewer
     printf 'NEUBUS_TOKEN=paste-daily-from-devtools\n' > .env.example
     printf 'requests>=2.31\n' > requirements.txt
     # NOTE: recipe lines below MUST begin with a literal tab. A plain heredoc
@@ -181,9 +183,9 @@ CLAUDE.md carries the live figures):
 5. Dead ends stay in history. The strict:"false" saga pattern — confused
    commits, then fix, then DEFECTS entry — is the portfolio content, not
    the mess.
-6. Daily token: .env only, never exported in a committed script, never in
-   docs/recon un-redacted. The hook catches eyJ-shaped strings; trust it
-   but don't test it with a real token.
+6. Daily token: .env only, never exported in a committed script, never
+   un-redacted in any committed doc. The hook catches eyJ-shaped strings;
+   trust it but don't test it with a real token.
 7. If a mistake lands anyway: secret → rewrite immediately + rotate (token
    is 24h public-user anyway, low stakes); wrong file → `git rm --cached` +
    amend if unpushed, follow-up removal commit if pushed; ugly message
@@ -195,5 +197,5 @@ Run `sh scripts/check_clean_clone.sh`. It clones the repo into a scratch
 directory with no data/ and no .env and runs every command the README
 names; a stranger's first ten minutes must be skips and passes, not
 tracebacks about files the README explains are deliberately absent
-(DEFECTS #75). Then re-read README's contact block and docs/recon/ with a
-stranger's eyes.
+(DEFECTS #75). Then re-read README's contact block with a stranger's
+eyes.

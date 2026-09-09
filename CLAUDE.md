@@ -28,8 +28,7 @@ line in an interview.
   Read it before proposing.
 - DEFECTS.md — append-only defect log; 5 entries predate the code.
 - SETUP.md — repo mechanics, guardrails, commit rules in full.
-- docs/modules/ — per-module rules with defect origins; docs/recon/ — raw
-  captures behind fetch.py, tokens redacted.
+- docs/modules/ — per-module rules with defect origins.
 
 ## Current state
 - fetch.py works. Corpus 357 records, 405 files, 6,443 pages in data/raw

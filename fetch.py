@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Fetch well-record documents from the RRC imaged-records system (Neubus).
 
-Verified call chain (2026-08-28 recon, captures in docs/recon/):
+Verified call chain (2026-08-28 recon; the chain is documented in
+HANDOFF.md, and the raw captures were never committed, a claim dropped
+deliberately on 2026-09-09 rather than backfilled with reconstructions):
 
   1. token   -- 24h public bearer JWT. Paste into NEUBUS_TOKEN daily (see
                 mint_token() for the automation TODO).
