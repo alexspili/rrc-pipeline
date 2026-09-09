@@ -14,6 +14,7 @@ import type {
   ViewerValue,
 } from "../types";
 import { SOURCES, STATUSES } from "../types";
+import { assetUrl } from "./paths";
 
 export class BundleError extends Error {}
 
@@ -91,9 +92,9 @@ export interface Loaded {
 
 export async function loadAll(base = ""): Promise<Loaded> {
   const [bundleRaw, meta, search] = await Promise.all([
-    fetchJson(`${base}/documents.json`),
-    fetchJson(`${base}/meta.json`) as Promise<Meta>,
-    fetchJson(`${base}/search.json`) as Promise<SearchRow[]>,
+    fetchJson(assetUrl(base, "documents.json")),
+    fetchJson(assetUrl(base, "meta.json")) as Promise<Meta>,
+    fetchJson(assetUrl(base, "search.json")) as Promise<SearchRow[]>,
   ]);
   return { bundle: parseBundle(bundleRaw), meta, search };
 }

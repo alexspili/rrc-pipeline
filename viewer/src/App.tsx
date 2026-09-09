@@ -5,6 +5,7 @@ import { PagePane } from "./components/PagePane";
 import { ValueTable } from "./components/ValueTable";
 import type { Loaded } from "./lib/load";
 import { loadAll } from "./lib/load";
+import { SITE_BASE } from "./lib/paths";
 import { matches } from "./lib/search";
 import type { Doc } from "./types";
 
@@ -16,7 +17,7 @@ export function App() {
   const [selectedField, setSelectedField] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAll()
+    loadAll(SITE_BASE)
       .then(setLoaded)
       .catch((e: unknown) => setError(String(e)));
   }, []);

@@ -1,6 +1,7 @@
 import type { Box, Doc, PageMeta, Region, ViewerValue } from "../types";
 import { pageKey } from "../types";
 import { bandBox, toPixels, zoomViewport } from "../lib/geometry";
+import { pageUrl } from "../lib/paths";
 
 /** Rendered width of a page column, px. A display choice. */
 const PAGE_WIDTH = 760;
@@ -40,7 +41,7 @@ function ZoomCard(props: {
         style={{ width: ZOOM_WIDTH, height: cardHeight }}
       >
         <img
-          src={`/pages/${key}.jpg`}
+          src={pageUrl(key)}
           alt={key}
           style={{
             width: imgWidth,
@@ -93,7 +94,7 @@ export function PagePane(props: {
             className="page"
             style={{ width: PAGE_WIDTH, height }}
           >
-            <img src={`/pages/${key}.jpg`} alt={key} width={PAGE_WIDTH} />
+            <img src={pageUrl(key)} alt={key} width={PAGE_WIDTH} />
             {doc.values
               .filter((v) => v.region && v.region.page === page)
               .map((v) => {
